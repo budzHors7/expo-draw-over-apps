@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ExpoDrawOverAppsModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.drawoverapps.ExpoDrawOverAppsModule"]
+  }
+}
