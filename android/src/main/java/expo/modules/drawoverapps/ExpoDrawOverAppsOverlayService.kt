@@ -2,20 +2,20 @@ package expo.modules.drawoverapps
 
 import android.app.Service
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import android.view.Gravity
-import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import com.facebook.react.ReactApplication
 import com.facebook.react.interfaces.fabric.ReactSurface
 
 class ExpoDrawOverAppsOverlayService : Service() {
   private lateinit var windowManager: WindowManager
-  private var overlayView: View? = null
+  private var overlayView: DraggableOverlayLayout? = null
   private var reactSurface: ReactSurface? = null
 
   override fun onCreate() {
@@ -28,7 +28,7 @@ class ExpoDrawOverAppsOverlayService : Service() {
       ACTION_HIDE_BUBBLE -> stopSelf()
       else -> showBubble()
     }
-    return START_STICKY
+    return START_NOT_STICKY
   }
 
   override fun onDestroy() {
@@ -62,12 +62,36 @@ class ExpoDrawOverAppsOverlayService : Service() {
       return
     }
 
-    surfaceView.setBackgroundColor(Color.TRANSPARENT)
-    windowManager.addView(surfaceView, createLayoutParams())
+    val layoutParams = createLayoutParams()
+    val container = DraggableOverlayLayout(this) { dx, dy ->
+      layoutParams.x += dx
+      layoutParams.y += dy
+      bubblePositionX = layoutParams.x
+      bubblePositionY = layoutParams.y
+      overlayView?.let { currentView ->
+        runCatching {
+          windowManager.updateViewLayout(currentView, layoutParams)
+        }
+      }
+    }.apply {
+      layoutParams = FrameLayout.LayoutParams(
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+        ViewGroup.LayoutParams.WRAP_CONTENT
+      )
+      addView(
+        surfaceView,
+        FrameLayout.LayoutParams(
+          ViewGroup.LayoutParams.WRAP_CONTENT,
+          ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+      )
+    }
+
+    windowManager.addView(container, layoutParams)
     surface.start()
 
     reactSurface = surface
-    overlayView = surfaceView
+    overlayView = container
     isBubbleVisible = true
   }
 
@@ -96,15 +120,16 @@ class ExpoDrawOverAppsOverlayService : Service() {
       }
 
     return WindowManager.LayoutParams(
-      WindowManager.LayoutParams.MATCH_PARENT,
-      WindowManager.LayoutParams.MATCH_PARENT,
+      WindowManager.LayoutParams.WRAP_CONTENT,
+      WindowManager.LayoutParams.WRAP_CONTENT,
       overlayType,
-      WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
       PixelFormat.TRANSLUCENT
     ).apply {
       gravity = Gravity.TOP or Gravity.START
+      x = bubblePositionX
+      y = bubblePositionY
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         layoutInDisplayCutoutMode =
           WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -116,6 +141,12 @@ class ExpoDrawOverAppsOverlayService : Service() {
     const val ACTION_SHOW_BUBBLE = "expo.modules.drawoverapps.action.SHOW_BUBBLE"
     const val ACTION_HIDE_BUBBLE = "expo.modules.drawoverapps.action.HIDE_BUBBLE"
     const val BUBBLE_COMPONENT_NAME = "ExpoDrawOverAppsBubble"
+
+    @Volatile
+    private var bubblePositionX: Int = 48
+
+    @Volatile
+    private var bubblePositionY: Int = 180
 
     @Volatile
     var isBubbleVisible: Boolean = false

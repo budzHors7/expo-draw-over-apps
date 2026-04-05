@@ -69,3 +69,9 @@ export function incrementBubbleCount(source: BubbleChangeSource = 'bubble'): num
   setBubbleCount(nextCount, source);
   return nextCount;
 }
+
+export function decrementBubbleCount(source: BubbleChangeSource = 'bubble'): number {
+  const nextCount = Math.max(0, bubbleState.count - 1);
+  setBubbleCount(nextCount, source);
+  return nextCount;
+}

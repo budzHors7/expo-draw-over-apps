@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, AppStateStatus, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   canDrawOverlays,
+  decrementBubbleCount,
   hideBubble,
   incrementBubbleCount,
   isBubbleVisible,
@@ -97,6 +98,10 @@ export default function App() {
         <View style={styles.row}>
           <Pressable onPress={() => incrementBubbleCount('app')} style={[styles.smallButton, styles.blueButton]}>
             <Text style={styles.smallButtonText}>+1 In App</Text>
+          </Pressable>
+
+          <Pressable onPress={() => decrementBubbleCount('app')} style={[styles.smallButton, styles.amberButton]}>
+            <Text style={styles.smallButtonText}>-1 In App</Text>
           </Pressable>
 
           <Pressable onPress={() => setBubbleCount(0)} style={[styles.smallButton, styles.slateButton]}>
@@ -199,6 +204,9 @@ const styles = StyleSheet.create({
   },
   blueButton: {
     backgroundColor: '#2563eb',
+  },
+  amberButton: {
+    backgroundColor: '#d97706',
   },
   slateButton: {
     backgroundColor: '#475569',

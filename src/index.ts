@@ -1,5 +1,6 @@
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
 import {
+  decrementBubbleCount,
   getBubbleState,
   incrementBubbleCount,
   setBubbleCount,
@@ -61,6 +62,7 @@ export async function openApp(): Promise<boolean> {
 }
 
 export {
+  decrementBubbleCount,
   incrementBubbleCount,
   setBubbleCount,
   subscribeToBubbleState,
