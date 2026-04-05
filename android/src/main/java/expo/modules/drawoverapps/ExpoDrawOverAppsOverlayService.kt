@@ -62,15 +62,15 @@ class ExpoDrawOverAppsOverlayService : Service() {
       return
     }
 
-    val layoutParams = createLayoutParams()
+    val windowLayoutParams = createLayoutParams()
     val container = DraggableOverlayLayout(this) { dx, dy ->
-      layoutParams.x += dx
-      layoutParams.y += dy
-      bubblePositionX = layoutParams.x
-      bubblePositionY = layoutParams.y
+      windowLayoutParams.x += dx
+      windowLayoutParams.y += dy
+      bubblePositionX = windowLayoutParams.x
+      bubblePositionY = windowLayoutParams.y
       overlayView?.let { currentView ->
         runCatching {
-          windowManager.updateViewLayout(currentView, layoutParams)
+          windowManager.updateViewLayout(currentView, windowLayoutParams)
         }
       }
     }.apply {
@@ -87,7 +87,7 @@ class ExpoDrawOverAppsOverlayService : Service() {
       )
     }
 
-    windowManager.addView(container, layoutParams)
+    windowManager.addView(container, windowLayoutParams)
     surface.start()
 
     reactSurface = surface
