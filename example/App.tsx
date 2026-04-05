@@ -1,36 +1,68 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, AppStateStatus, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
+  type BubbleRendererProps,
   canDrawOverlays,
   decrementBubbleCount,
   hideBubble,
   incrementBubbleCount,
   isBubbleVisible,
+  setBubbleRenderer,
   requestPermission,
   setBubbleCount,
   showBubble,
   useBubbleState,
 } from 'expo-draw-over-apps';
 
+function StyledBubbleRenderer({ state, decrement, increment, hide, openApp }: BubbleRendererProps) {
+  return (
+    <View style={bubbleStyles.shell}>
+      <Text style={bubbleStyles.eyebrow}>Custom Bubble</Text>
+      <Text style={bubbleStyles.count}>{state.count}</Text>
+
+      <View style={bubbleStyles.actions}>
+        <Pressable onPress={decrement} style={[bubbleStyles.actionButton, bubbleStyles.negativeButton]}>
+          <Text style={bubbleStyles.actionText}>-</Text>
+        </Pressable>
+
+        <Pressable onPress={increment} style={[bubbleStyles.actionButton, bubbleStyles.positiveButton]}>
+          <Text style={bubbleStyles.actionText}>+</Text>
+        </Pressable>
+      </View>
+
+      <Pressable onPress={() => void openApp()} style={bubbleStyles.openButton}>
+        <Text style={bubbleStyles.openText}>Open app</Text>
+      </Pressable>
+
+      <Pressable onPress={hide} style={bubbleStyles.hideButton}>
+        <Text style={bubbleStyles.hideText}>Hide bubble</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 export default function App() {
   const [granted, setGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
-  const [bubbleVisible, setBubbleVisibleState] = useState(false);
   const bubbleState = useBubbleState();
 
   const refreshState = useCallback(() => {
     setGranted(canDrawOverlays());
-    setBubbleVisibleState(isBubbleVisible());
+    isBubbleVisible();
   }, []);
 
   useEffect(() => {
+    setBubbleRenderer(StyledBubbleRenderer);
     refreshState();
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
         refreshState();
       }
     });
-    return () => sub.remove();
+    return () => {
+      sub.remove();
+      setBubbleRenderer(null);
+    };
   }, [refreshState]);
 
   const handleRequestPermission = async () => {
@@ -46,14 +78,12 @@ export default function App() {
   const handleToggleBubble = async () => {
     setLoading(true);
     try {
-      if (bubbleVisible) {
+      if (bubbleState.isVisible) {
         hideBubble();
-        setBubbleVisibleState(false);
         return;
       }
 
-      const didShow = await showBubble();
-      setBubbleVisibleState(didShow);
+      await showBubble();
     } finally {
       setLoading(false);
     }
@@ -83,16 +113,17 @@ export default function App() {
 
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>Realtime Bubble Listener</Text>
-        <Text style={styles.panelText}>Visible: {bubbleVisible ? 'Yes' : 'No'}</Text>
+        <Text style={styles.panelText}>Visible: {bubbleState.isVisible ? 'Yes' : 'No'}</Text>
         <Text style={styles.panelText}>Counter: {bubbleState.count}</Text>
         <Text style={styles.panelText}>Last changed by: {bubbleState.lastChangeSource}</Text>
+        <Text style={styles.panelText}>Hold the bubble to remove it from the floating menu.</Text>
 
         <Pressable
           disabled={!isGranted || loading}
           onPress={() => void handleToggleBubble()}
           style={[styles.primaryButton, (!isGranted || loading) && styles.disabledButton]}
         >
-          <Text style={styles.primaryButtonText}>{bubbleVisible ? 'Hide Bubble' : 'Show Bubble'}</Text>
+          <Text style={styles.primaryButtonText}>{bubbleState.isVisible ? 'Hide Bubble' : 'Show Bubble'}</Text>
         </Pressable>
 
         <View style={styles.row}>
@@ -222,5 +253,84 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     maxWidth: 320,
+  },
+});
+
+const bubbleStyles = StyleSheet.create({
+  shell: {
+    width: 196,
+    minHeight: 182,
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    gap: 12,
+    backgroundColor: '#111827',
+    borderWidth: 2,
+    borderColor: '#22c55e',
+    shadowColor: '#030712',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.28,
+    shadowRadius: 24,
+    elevation: 18,
+  },
+  eyebrow: {
+    color: '#86efac',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
+  count: {
+    color: '#f9fafb',
+    fontSize: 34,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  positiveButton: {
+    backgroundColor: '#2563eb',
+  },
+  negativeButton: {
+    backgroundColor: '#f97316',
+  },
+  actionText: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  openButton: {
+    borderRadius: 16,
+    paddingVertical: 11,
+    backgroundColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  openText: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  hideButton: {
+    borderRadius: 16,
+    paddingVertical: 10,
+    backgroundColor: '#1f2937',
+    borderWidth: 1,
+    borderColor: '#4b5563',
+    alignItems: 'center',
+  },
+  hideText: {
+    color: '#f9fafb',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

@@ -1,16 +1,50 @@
 package expo.modules.drawoverapps
 
 import android.content.Context
+import android.view.GestureDetector
+import android.view.Menu
 import android.view.MotionEvent
-import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
+import android.widget.PopupMenu
 import kotlin.math.abs
 
 class DraggableOverlayLayout(
   context: Context,
-  private val onDrag: (dx: Int, dy: Int) -> Unit
+  private val onDrag: (dx: Int, dy: Int) -> Unit,
+  private val onRemoveRequested: () -> Unit
 ) : FrameLayout(context) {
+  private val actionMenu = PopupMenu(context, this).apply {
+    menu.add(Menu.NONE, MENU_REMOVE, Menu.NONE, "Remove bubble")
+    setOnMenuItemClickListener { item ->
+      if (item.itemId == MENU_REMOVE) {
+        onRemoveRequested()
+        true
+      } else {
+        false
+      }
+    }
+    setOnDismissListener {
+      isLongPressActive = false
+    }
+  }
+  private val gestureDetector =
+    GestureDetector(
+      context,
+      object : GestureDetector.SimpleOnGestureListener() {
+        override fun onDown(event: MotionEvent): Boolean = true
+
+        override fun onLongPress(event: MotionEvent) {
+          if (isDragging) {
+            return
+          }
+
+          isLongPressActive = true
+          cancelChildTouch(event)
+          actionMenu.show()
+        }
+      }
+    )
   private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
   private var downRawX = 0f
@@ -18,8 +52,11 @@ class DraggableOverlayLayout(
   private var lastRawX = 0f
   private var lastRawY = 0f
   private var isDragging = false
+  private var isLongPressActive = false
 
-  override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
+  override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+    gestureDetector.onTouchEvent(event)
+
     when (event.actionMasked) {
       MotionEvent.ACTION_DOWN -> {
         downRawX = event.rawX
@@ -27,38 +64,17 @@ class DraggableOverlayLayout(
         lastRawX = downRawX
         lastRawY = downRawY
         isDragging = false
+        isLongPressActive = false
       }
 
       MotionEvent.ACTION_MOVE -> {
         val movedX = abs(event.rawX - downRawX)
         val movedY = abs(event.rawY - downRawY)
-        if (movedX > touchSlop || movedY > touchSlop) {
+
+        if (!isDragging && !isLongPressActive && (movedX > touchSlop || movedY > touchSlop)) {
+          isDragging = true
+          cancelChildTouch(event)
           parent?.requestDisallowInterceptTouchEvent(true)
-          isDragging = true
-          return true
-        }
-      }
-    }
-    return super.onInterceptTouchEvent(event)
-  }
-
-  override fun onTouchEvent(event: MotionEvent): Boolean {
-    when (event.actionMasked) {
-      MotionEvent.ACTION_DOWN -> {
-        downRawX = event.rawX
-        downRawY = event.rawY
-        lastRawX = downRawX
-        lastRawY = downRawY
-        isDragging = false
-        return true
-      }
-
-      MotionEvent.ACTION_MOVE -> {
-        val movedX = abs(event.rawX - downRawX)
-        val movedY = abs(event.rawY - downRawY)
-
-        if (!isDragging && (movedX > touchSlop || movedY > touchSlop)) {
-          isDragging = true
         }
 
         if (isDragging) {
@@ -69,46 +85,38 @@ class DraggableOverlayLayout(
           }
           lastRawX = event.rawX
           lastRawY = event.rawY
+          return true
         }
-        return true
       }
 
       MotionEvent.ACTION_UP,
       MotionEvent.ACTION_CANCEL -> {
-        if (!isDragging) {
-          val target = findClickableChildUnder(event.x, event.y)
-          if (target != null) {
-            target.performClick()
-          } else {
-            performClick()
-          }
-        }
+        val shouldConsume = isDragging || isLongPressActive
         isDragging = false
-        return true
+        if (event.actionMasked == MotionEvent.ACTION_CANCEL) {
+          isLongPressActive = false
+        }
+        if (shouldConsume) {
+          return true
+        }
       }
     }
 
-    return super.onTouchEvent(event)
-  }
-
-  override fun performClick(): Boolean {
-    super.performClick()
-    return true
-  }
-
-  private fun findClickableChildUnder(x: Float, y: Float): View? {
-    for (index in childCount - 1 downTo 0) {
-      val child = getChildAt(index)
-      if (!child.isShown) {
-        continue
-      }
-
-      val withinChild =
-        x >= child.left && x <= child.right && y >= child.top && y <= child.bottom
-      if (withinChild && child.isClickable) {
-        return child
-      }
+    if (isDragging || isLongPressActive) {
+      return true
     }
-    return null
+
+    return super.dispatchTouchEvent(event)
+  }
+
+  private fun cancelChildTouch(event: MotionEvent) {
+    val cancelEvent = MotionEvent.obtain(event)
+    cancelEvent.action = MotionEvent.ACTION_CANCEL
+    super.dispatchTouchEvent(cancelEvent)
+    cancelEvent.recycle()
+  }
+
+  companion object {
+    private const val MENU_REMOVE = 1
   }
 }

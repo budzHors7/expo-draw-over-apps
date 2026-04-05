@@ -1,13 +1,13 @@
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
 import {
   decrementBubbleCount,
-  getBubbleState,
   incrementBubbleCount,
+  refreshBubbleState,
   setBubbleCount,
-  setBubbleVisible,
   subscribeToBubbleState,
   useBubbleState,
 } from './bubbleState';
+import { setBubbleRenderer } from './bubbleRenderer';
 import { ensureBubbleSurfaceRegistered } from './registerBubbleSurface';
 
 ensureBubbleSurfaceRegistered();
@@ -28,31 +28,25 @@ export async function showBubble(): Promise<boolean> {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
 
-  setBubbleVisible(true);
   const didShow = await ExpoDrawOverAppsModule.showBubble();
-  if (!didShow) {
-    setBubbleVisible(false);
-  }
+  refreshBubbleState();
   return didShow;
 }
 
 export function hideBubble(): boolean {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
-  setBubbleVisible(false);
   if (!ExpoDrawOverAppsModule) return false;
-  return ExpoDrawOverAppsModule.hideBubble();
+  const didHide = ExpoDrawOverAppsModule.hideBubble();
+  refreshBubbleState();
+  return didHide;
 }
 
 export function isBubbleVisible(): boolean {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) {
-    return getBubbleState().isVisible;
+    return refreshBubbleState().isVisible;
   }
-  const nativeVisibility = ExpoDrawOverAppsModule.isBubbleVisible();
-  if (nativeVisibility !== getBubbleState().isVisible) {
-    setBubbleVisible(nativeVisibility);
-  }
-  return nativeVisibility;
+  return refreshBubbleState().isVisible;
 }
 
 export async function openApp(): Promise<boolean> {
@@ -64,7 +58,12 @@ export async function openApp(): Promise<boolean> {
 export {
   decrementBubbleCount,
   incrementBubbleCount,
+  refreshBubbleState,
   setBubbleCount,
+  setBubbleRenderer,
   subscribeToBubbleState,
   useBubbleState,
 };
+
+export type { BubbleRenderer, BubbleRendererProps } from './bubbleRenderer';
+export type { BubbleChangeSource, BubbleState } from './bubbleTypes';

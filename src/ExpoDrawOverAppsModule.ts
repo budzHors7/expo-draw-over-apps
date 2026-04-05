@@ -1,10 +1,26 @@
-type ExpoDrawOverAppsNativeModule = {
+import type { EventSubscription, NativeModule } from 'expo-modules-core';
+
+import type { BubbleChangeSource, BubbleState } from './bubbleTypes';
+
+type BubbleStateChangedEvent = BubbleState;
+
+type ExpoDrawOverAppsNativeModule = NativeModule<{
+  onBubbleStateChanged(event: BubbleStateChangedEvent): void;
+}> & {
   canDrawOverlays(): boolean;
   requestPermission(): Promise<boolean>;
+  getBubbleState(): BubbleState;
+  setBubbleCount(count: number, source?: BubbleChangeSource): number;
+  incrementBubbleCount(source?: BubbleChangeSource): number;
+  decrementBubbleCount(source?: BubbleChangeSource): number;
   showBubble(): Promise<boolean>;
   hideBubble(): boolean;
   isBubbleVisible(): boolean;
   openApp(): Promise<boolean>;
+  addListener(
+    eventName: 'onBubbleStateChanged',
+    listener: (event: BubbleStateChangedEvent) => void
+  ): EventSubscription;
 };
 
 export function getExpoDrawOverAppsModule(): ExpoDrawOverAppsNativeModule | null {

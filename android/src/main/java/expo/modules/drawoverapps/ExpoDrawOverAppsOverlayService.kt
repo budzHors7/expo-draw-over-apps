@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import com.facebook.react.ReactApplication
 import com.facebook.react.interfaces.fabric.ReactSurface
+import java.lang.ref.WeakReference
 
 class ExpoDrawOverAppsOverlayService : Service() {
   private lateinit var windowManager: WindowManager
@@ -21,18 +22,25 @@ class ExpoDrawOverAppsOverlayService : Service() {
   override fun onCreate() {
     super.onCreate()
     windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+    serviceReference = WeakReference(this)
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     when (intent?.action) {
-      ACTION_HIDE_BUBBLE -> stopSelf()
+      ACTION_HIDE_BUBBLE -> {
+        hideBubble(SOURCE_APP)
+        stopSelf()
+      }
       else -> showBubble()
     }
     return START_NOT_STICKY
   }
 
   override fun onDestroy() {
-    hideBubble()
+    hideBubble(SOURCE_APP)
+    if (serviceReference.get() === this) {
+      serviceReference.clear()
+    }
     super.onDestroy()
   }
 
@@ -41,16 +49,20 @@ class ExpoDrawOverAppsOverlayService : Service() {
   private fun showBubble() {
     if (overlayView != null) {
       isBubbleVisible = true
+      ExpoDrawOverAppsModule.setBubbleVisibilityInternal(true, SOURCE_APP)
+      requestOverlayRedraw()
       return
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
       isBubbleVisible = false
+      ExpoDrawOverAppsModule.setBubbleVisibilityInternal(false, SOURCE_APP)
       stopSelf()
       return
     }
 
     val reactHost = (application as? ReactApplication)?.reactHost ?: run {
       isBubbleVisible = false
+      ExpoDrawOverAppsModule.setBubbleVisibilityInternal(false, SOURCE_APP)
       stopSelf()
       return
     }
@@ -58,44 +70,56 @@ class ExpoDrawOverAppsOverlayService : Service() {
     val surface = reactHost.createSurface(this, BUBBLE_COMPONENT_NAME, null)
     val surfaceView = surface.view ?: run {
       isBubbleVisible = false
+      ExpoDrawOverAppsModule.setBubbleVisibilityInternal(false, SOURCE_APP)
       stopSelf()
       return
     }
 
     val windowLayoutParams = createLayoutParams()
-    val container = DraggableOverlayLayout(this) { dx, dy ->
-      windowLayoutParams.x += dx
-      windowLayoutParams.y += dy
-      bubblePositionX = windowLayoutParams.x
-      bubblePositionY = windowLayoutParams.y
-      overlayView?.let { currentView ->
-        runCatching {
-          windowManager.updateViewLayout(currentView, windowLayoutParams)
+    val container =
+      DraggableOverlayLayout(
+        this,
+        onDrag = { dx, dy ->
+          windowLayoutParams.x += dx
+          windowLayoutParams.y += dy
+          bubblePositionX = windowLayoutParams.x
+          bubblePositionY = windowLayoutParams.y
+          overlayView?.let { currentView ->
+            runCatching {
+              windowManager.updateViewLayout(currentView, windowLayoutParams)
+            }
+          }
+        },
+        onRemoveRequested = {
+          hideBubble(SOURCE_BUBBLE)
+          stopSelf()
         }
-      }
-    }.apply {
-      layoutParams = FrameLayout.LayoutParams(
-        ViewGroup.LayoutParams.WRAP_CONTENT,
-        ViewGroup.LayoutParams.WRAP_CONTENT
-      )
-      addView(
-        surfaceView,
-        FrameLayout.LayoutParams(
+      ).apply {
+        layoutParams = FrameLayout.LayoutParams(
           ViewGroup.LayoutParams.WRAP_CONTENT,
           ViewGroup.LayoutParams.WRAP_CONTENT
         )
-      )
-    }
+        addView(
+          surfaceView,
+          FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+          )
+        )
+      }
 
     windowManager.addView(container, windowLayoutParams)
     surface.start()
 
     reactSurface = surface
     overlayView = container
+    overlayViewReference = WeakReference(container)
     isBubbleVisible = true
+    ExpoDrawOverAppsModule.setBubbleVisibilityInternal(true, SOURCE_APP)
+    requestOverlayRedraw()
   }
 
-  private fun hideBubble() {
+  private fun hideBubble(source: String) {
     reactSurface?.stop()
     reactSurface?.clear()
     reactSurface?.detach()
@@ -107,7 +131,9 @@ class ExpoDrawOverAppsOverlayService : Service() {
       }
     }
     overlayView = null
+    overlayViewReference.clear()
     isBubbleVisible = false
+    ExpoDrawOverAppsModule.setBubbleVisibilityInternal(false, source)
   }
 
   private fun createLayoutParams(): WindowManager.LayoutParams {
@@ -124,6 +150,7 @@ class ExpoDrawOverAppsOverlayService : Service() {
       WindowManager.LayoutParams.WRAP_CONTENT,
       overlayType,
       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
         WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
       PixelFormat.TRANSLUCENT
     ).apply {
@@ -141,6 +168,8 @@ class ExpoDrawOverAppsOverlayService : Service() {
     const val ACTION_SHOW_BUBBLE = "expo.modules.drawoverapps.action.SHOW_BUBBLE"
     const val ACTION_HIDE_BUBBLE = "expo.modules.drawoverapps.action.HIDE_BUBBLE"
     const val BUBBLE_COMPONENT_NAME = "ExpoDrawOverAppsBubble"
+    private const val SOURCE_APP = "app"
+    private const val SOURCE_BUBBLE = "bubble"
 
     @Volatile
     private var bubblePositionX: Int = 48
@@ -151,5 +180,16 @@ class ExpoDrawOverAppsOverlayService : Service() {
     @Volatile
     var isBubbleVisible: Boolean = false
       private set
+
+    private var serviceReference = WeakReference<ExpoDrawOverAppsOverlayService?>(null)
+    private var overlayViewReference = WeakReference<DraggableOverlayLayout?>(null)
+
+    internal fun requestOverlayRedraw() {
+      overlayViewReference.get()?.post {
+        overlayViewReference.get()?.requestLayout()
+        overlayViewReference.get()?.invalidate()
+        overlayViewReference.get()?.postInvalidateOnAnimation()
+      }
+    }
   }
 }

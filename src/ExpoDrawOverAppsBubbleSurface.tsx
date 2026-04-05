@@ -1,13 +1,28 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
-import { decrementBubbleCount, incrementBubbleCount, useBubbleState } from './bubbleState';
+import { decrementBubbleCount, incrementBubbleCount, setBubbleCount, useBubbleState } from './bubbleState';
+import { useBubbleRenderer } from './bubbleRenderer';
 
 export default function ExpoDrawOverAppsBubbleSurface() {
   const bubbleState = useBubbleState();
+  const BubbleRenderer = useBubbleRenderer();
 
   if (!bubbleState.isVisible) {
     return null;
+  }
+
+  if (BubbleRenderer) {
+    return (
+      <BubbleRenderer
+        state={bubbleState}
+        increment={() => incrementBubbleCount('bubble')}
+        decrement={() => decrementBubbleCount('bubble')}
+        setCount={(count) => setBubbleCount(count, 'bubble')}
+        hide={() => getExpoDrawOverAppsModule()?.hideBubble() ?? false}
+        openApp={() => getExpoDrawOverAppsModule()?.openApp() ?? Promise.resolve(false)}
+      />
+    );
   }
 
   return (
@@ -28,6 +43,7 @@ export default function ExpoDrawOverAppsBubbleSurface() {
       <Pressable onPress={() => void getExpoDrawOverAppsModule()?.openApp()} style={styles.openAppButton}>
         <Text style={styles.openAppText}>Open app</Text>
       </Pressable>
+      <Text style={styles.longPressHint}>Hold bubble for menu</Text>
     </View>
   );
 }
@@ -108,5 +124,11 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontSize: 13,
     fontWeight: '700',
+  },
+  longPressHint: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
