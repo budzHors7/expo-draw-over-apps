@@ -16,3 +16,7 @@ android {
     abortOnError false
   }
 }
+
+dependencies {
+  compileOnly("com.facebook.react:react-android")
+}

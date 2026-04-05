@@ -1,12 +1,22 @@
-import { NativeModule, requireNativeModule } from 'expo';
+type ExpoDrawOverAppsNativeModule = {
+  canDrawOverlays(): boolean;
+  requestPermission(): Promise<boolean>;
+  showBubble(): Promise<boolean>;
+  hideBubble(): boolean;
+  isBubbleVisible(): boolean;
+  openApp(): Promise<boolean>;
+};
 
-import { ExpoDrawOverAppsModuleEvents } from './ExpoDrawOverApps.types';
-
-declare class ExpoDrawOverAppsModule extends NativeModule<ExpoDrawOverAppsModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+export function getExpoDrawOverAppsModule(): ExpoDrawOverAppsNativeModule | null {
+  try {
+    const { requireOptionalNativeModule } = require('expo-modules-core') as typeof import('expo-modules-core');
+    return requireOptionalNativeModule<ExpoDrawOverAppsNativeModule>('ExpoDrawOverApps');
+  } catch (error) {
+    console.warn(
+      `ExpoDrawOverApps native module is unavailable: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    return null;
+  }
 }
-
-// This call loads the native module object from the JSI.
-export default requireNativeModule<ExpoDrawOverAppsModule>('ExpoDrawOverApps');

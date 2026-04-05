@@ -1,50 +1,87 @@
 package expo.modules.drawoverapps
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import java.net.URL
+import expo.modules.kotlin.Promise
 
 class ExpoDrawOverAppsModule : Module() {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
+  private val context: Context
+    get() = requireNotNull(appContext.reactContext) { "React context is not available" }
+
   override fun definition() = ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('ExpoDrawOverApps')` in JavaScript.
     Name("ExpoDrawOverApps")
 
-    // Defines constant property on the module.
-    Constant("PI") {
-      Math.PI
-    }
-
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      "Hello world! 👋"
-    }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { value: String ->
-      // Send an event to JavaScript.
-      sendEvent("onChange", mapOf(
-        "value" to value
-      ))
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of
-    // the view definition: Prop, Events.
-    View(ExpoDrawOverAppsView::class) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { view: ExpoDrawOverAppsView, url: URL ->
-        view.webView.loadUrl(url.toString())
+    Function("canDrawOverlays") {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Settings.canDrawOverlays(context)
+      } else {
+        true
       }
-      // Defines an event that the view can send to JavaScript.
-      Events("onLoad")
+    }
+
+    AsyncFunction("requestPermission") { promise: Promise ->
+      val activity = appContext.currentActivity ?: run {
+        promise.reject("ERR_NO_ACTIVITY", "No current activity", null)
+        return@AsyncFunction
+      }
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Settings.canDrawOverlays(context)) {
+          promise.resolve(true)
+        } else {
+          val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:${activity.packageName}")
+          )
+          activity.startActivity(intent)
+          promise.resolve(false)
+        }
+      } else {
+        promise.resolve(true)
+      }
+    }
+
+    AsyncFunction("showBubble") { promise: Promise ->
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+        promise.resolve(false)
+        return@AsyncFunction
+      }
+
+      val serviceIntent = Intent(context, ExpoDrawOverAppsOverlayService::class.java).apply {
+        action = ExpoDrawOverAppsOverlayService.ACTION_SHOW_BUBBLE
+      }
+      context.startService(serviceIntent)
+      promise.resolve(true)
+    }
+
+    Function("hideBubble") {
+      val serviceIntent = Intent(context, ExpoDrawOverAppsOverlayService::class.java).apply {
+        action = ExpoDrawOverAppsOverlayService.ACTION_HIDE_BUBBLE
+      }
+      context.stopService(serviceIntent)
+      true
+    }
+
+    Function("isBubbleVisible") {
+      ExpoDrawOverAppsOverlayService.isBubbleVisible
+    }
+
+    AsyncFunction("openApp") { promise: Promise ->
+      val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+      }
+
+      if (launchIntent == null) {
+        promise.resolve(false)
+        return@AsyncFunction
+      }
+
+      context.startActivity(launchIntent)
+      promise.resolve(true)
     }
   }
 }
