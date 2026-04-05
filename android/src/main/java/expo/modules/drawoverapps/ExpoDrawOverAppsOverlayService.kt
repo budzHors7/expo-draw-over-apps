@@ -17,6 +17,7 @@ import java.lang.ref.WeakReference
 class ExpoDrawOverAppsOverlayService : Service() {
   private lateinit var windowManager: WindowManager
   private var overlayView: DraggableOverlayLayout? = null
+  private var overlayLayoutParams: WindowManager.LayoutParams? = null
   private var reactSurface: ReactSurface? = null
 
   override fun onCreate() {
@@ -113,6 +114,7 @@ class ExpoDrawOverAppsOverlayService : Service() {
 
     reactSurface = surface
     overlayView = container
+    overlayLayoutParams = windowLayoutParams
     overlayViewReference = WeakReference(container)
     isBubbleVisible = true
     ExpoDrawOverAppsModule.setBubbleVisibilityInternal(true, SOURCE_APP)
@@ -131,6 +133,7 @@ class ExpoDrawOverAppsOverlayService : Service() {
       }
     }
     overlayView = null
+    overlayLayoutParams = null
     overlayViewReference.clear()
     isBubbleVisible = false
     ExpoDrawOverAppsModule.setBubbleVisibilityInternal(false, source)
@@ -185,10 +188,22 @@ class ExpoDrawOverAppsOverlayService : Service() {
     private var overlayViewReference = WeakReference<DraggableOverlayLayout?>(null)
 
     internal fun requestOverlayRedraw() {
-      overlayViewReference.get()?.post {
-        overlayViewReference.get()?.requestLayout()
-        overlayViewReference.get()?.invalidate()
-        overlayViewReference.get()?.postInvalidateOnAnimation()
+      val service = serviceReference.get() ?: return
+      val overlayView = overlayViewReference.get() ?: return
+
+      overlayView.post {
+        val currentLayoutParams = service.overlayLayoutParams ?: return@post
+        runCatching {
+          service.windowManager.updateViewLayout(overlayView, currentLayoutParams)
+        }
+        overlayView.requestLayout()
+        overlayView.invalidate()
+        overlayView.postInvalidateOnAnimation()
+        overlayView.getChildAt(0)?.let { contentView ->
+          contentView.requestLayout()
+          contentView.invalidate()
+          contentView.postInvalidateOnAnimation()
+        }
       }
     }
   }

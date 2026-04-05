@@ -1,5 +1,6 @@
 package expo.modules.drawoverapps
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -99,8 +100,30 @@ class ExpoDrawOverAppsModule : Module() {
     }
 
     AsyncFunction("openApp") { promise: Promise ->
+      val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+      val didMoveExistingTaskToFront =
+        runCatching {
+          val appTask = activityManager?.appTasks?.firstOrNull()
+          if (appTask != null) {
+            appTask.moveToFront()
+            true
+          } else {
+            false
+          }
+        }.getOrDefault(false)
+
+      if (didMoveExistingTaskToFront) {
+        promise.resolve(true)
+        return@AsyncFunction
+      }
+
       val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        addFlags(
+          Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        )
       }
 
       if (launchIntent == null) {
