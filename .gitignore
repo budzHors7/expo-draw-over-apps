@@ -35,6 +35,7 @@ project.xcworkspace
 .project
 .settings
 local.properties
+android/build/
 android.iml
 android/app/libs
 android/keystores/debug.keystore
@@ -51,6 +52,11 @@ example/vendor/
 .next/
 out/
 node_modules/
+docs/.next/
+docs/out/
+docs/node_modules/
+docs/dev-stdout.log
+*.tgz
 npm-debug.log
 yarn-debug.log
 yarn-error.log
