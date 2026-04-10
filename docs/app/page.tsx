@@ -1,3 +1,4 @@
+import { GitHubStarButton } from '../components/github-star-button';
 import { HighlightedCode } from '../components/highlighted-code';
 import { CodePanel, ExternalLinkCard, SectionHeader } from '../components/home-primitives';
 import { ThemeToggle } from '../components/theme-toggle';
@@ -59,14 +60,7 @@ export default function HomePage() {
 
               <div className="flex flex-wrap items-center gap-3">
                 <ThemeToggle />
-                <a
-                  href="https://github.com/budzHors7/expo-draw-over-apps"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-zinc-900/10 bg-white px-4 py-2 text-sm font-medium text-zinc-950 transition hover:border-zinc-900/20 hover:bg-zinc-100 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:bg-zinc-800"
-                >
-                  GitHub
-                </a>
+                <GitHubStarButton />
               </div>
             </div>
           </div>
