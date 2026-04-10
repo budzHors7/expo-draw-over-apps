@@ -59,6 +59,7 @@ export function GitHubStarButton() {
         <span className="inline-flex items-center gap-1.5">
           <svg
             aria-hidden="true"
+            focusable="false"
             viewBox="0 0 20 20"
             className="h-3.5 w-3.5 fill-current"
           >

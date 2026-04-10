@@ -34,7 +34,12 @@ const openSourceQuickLinks = [
 
 export default function HomePage() {
   return (
-    <main className="relative w-full overflow-x-hidden overflow-y-visible bg-zinc-50 text-zinc-950 transition-colors dark:bg-zinc-950 dark:text-zinc-50">
+    <main
+      id="main-content"
+      role="main"
+      tabIndex={-1}
+      className="relative w-full overflow-x-hidden overflow-y-visible bg-zinc-50 text-zinc-950 transition-colors dark:bg-zinc-950 dark:text-zinc-50"
+    >
       <div className="pointer-events-none absolute inset-0 bg-grid-fade opacity-55 dark:opacity-25" />
 
       <section className="relative px-4 pb-24 pt-32 sm:px-6 sm:pt-36 lg:px-8 lg:pt-32">
