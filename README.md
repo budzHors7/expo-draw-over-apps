@@ -20,6 +20,11 @@ This module is currently Android only.
 - Long-press menu to remove the bubble
 - Custom bubble renderer support with `StyleSheet` or NativeWind
 
+## Open Source
+
+- [Contributing guide](./CONTRIBUTING.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+
 ## Installation
 
 ```bash
