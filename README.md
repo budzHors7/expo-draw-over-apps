@@ -23,7 +23,7 @@ This module is currently Android only.
 ## Installation
 
 ```bash
-npm install expo-draw-over-apps
+bun add expo-draw-over-apps
 ```
 
 If your app does not already use Expo modules in a bare React Native app, install Expo modules first:
@@ -372,6 +372,33 @@ The repo includes a working example app in `example/` showing:
 - custom bubble styling
 - open app from bubble
 - long-press remove menu
+
+## Documentation website
+
+The repo now includes a standalone Next.js documentation site in `docs/`.
+
+Run it locally:
+
+```bash
+npm run docs:install
+npm run docs:dev
+```
+
+Build the static export:
+
+```bash
+npm run docs:build
+```
+
+That will generate the static site in `docs/out`.
+
+If you prefer running the docs app directly:
+
+```bash
+cd docs
+npm install
+npm run dev
+```
 
 ## Development
 

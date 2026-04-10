@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Roboto", "Segoe UI Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Roboto", "Segoe UI Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Roboto Mono", "Cascadia Code", "Consolas", monospace;
+
+  --color-ink-950: #101010;
+  --color-ink-900: #1a1a1a;
+  --color-sand-50: #fafafa;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  ::selection {
+    background: rgba(17, 17, 17, 0.16);
+    color: #111111;
+  }
+}
+
+@layer components {
+  .code-block {
+    max-width: 100%;
+    overflow: auto;
+  }
+
+  .code-block .shiki {
+    margin: 0;
+    width: fit-content;
+    min-width: 100%;
+    overflow: visible !important;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.65;
+    tab-size: 2;
+    font-variant-ligatures: none;
+    white-space: pre;
+  }
+
+  .code-block .shiki code {
+    display: block;
+    width: fit-content;
+    min-width: 100%;
+    white-space: pre;
+  }
+
+  .code-block .shiki .line {
+    display: block;
+  }
+
+  .code-block--framed .shiki {
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    border-radius: 1rem;
+  }
+
+  .code-block--wrap {
+    overflow: hidden;
+  }
+
+  .code-block--wrap .shiki {
+    width: 100%;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .code-block--wrap .shiki code {
+    width: 100%;
+    min-width: 0;
+    white-space: inherit;
+  }
+
+  .code-block--flush .shiki {
+    border-radius: 0;
+  }
+
+  .dark .code-block .shiki {
+    background-color: var(--shiki-dark-bg) !important;
+    color: var(--shiki-dark) !important;
+  }
+
+  .dark .code-block .shiki span {
+    color: var(--shiki-dark) !important;
+  }
+
+  .dark .code-block--framed .shiki {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  @media (min-width: 640px) {
+    .code-block .shiki {
+      padding: 1rem 1.25rem;
+      font-size: 12px;
+      line-height: 1.75;
+    }
+  }
+}
+
+@utility bg-grid-fade {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.82), transparent 84%);
+}
+
+.dark .bg-grid-fade {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+}
