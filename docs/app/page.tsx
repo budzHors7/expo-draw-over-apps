@@ -1,3 +1,4 @@
+import { BrandLogo } from '../components/brand-logo';
 import { GitHubStarButton } from '../components/github-star-button';
 import { HighlightedCode } from '../components/highlighted-code';
 import { CodePanel, ExternalLinkCard, SectionHeader } from '../components/home-primitives';
@@ -47,12 +48,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.75rem] border border-zinc-900/10 bg-white/70 px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_20px_48px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/70 dark:shadow-[0_18px_40px_rgba(0,0,0,0.34)]">
               <a href="#top" className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-900/10 bg-zinc-950 [font-family:var(--font-display)] text-sm font-medium tracking-[0.18em] text-white dark:border-white/10 dark:bg-white dark:text-zinc-950">
-                  EOA
-                </span>
-                <span className="text-sm font-medium tracking-[0.04em] text-zinc-950 dark:text-zinc-50 sm:text-base">
-                  expo-draw-over-apps
-                </span>
+                <BrandLogo />
               </a>
 
               <nav className="hidden items-center gap-6 text-sm text-zinc-600 md:flex dark:text-zinc-300">
