@@ -1,7 +1,7 @@
 {
   "name": "expo-draw-over-apps",
   "version": "55.0.0",
-  "description": "Expo module for Android overlay permissions and floating React Native bubbles.",
+  "description": "Expo module for Android overlay permissions and floating React Native or Jetpack Compose bubbles.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -32,7 +32,9 @@
   "author": "Anda Hanise <haniseanda@gmail.com> (https://github.com/budzHors7)",
   "license": "MIT",
   "homepage": "https://expo-draw-over-apps.vercel.app/",
-  "dependencies": {},
+  "dependencies": {
+    "@expo/ui": "~55.0.11"
+  },
   "devDependencies": {
     "@types/react": "~19.1.1",
     "expo-module-scripts": "^55.0.2",

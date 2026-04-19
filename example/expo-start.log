@@ -1,0 +1,7 @@
+env: load .env
+env: export RCT_METRO_PORT
+Starting project at C:\Users\Anda Hanise\Desktop\Projects\expo-draw-over-apps\example
+Starting Metro Bundler
+
+Waiting on http://localhost:8082
+Logs for your project will appear below.

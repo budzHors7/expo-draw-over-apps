@@ -1,24 +1,45 @@
 import { useSyncExternalStore } from 'react';
 
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
-import type { BubbleChangeSource, BubbleState } from './bubbleTypes';
+import { DEFAULT_BUBBLE_ID, type BubbleChangeSource, type BubbleState } from './bubbleTypes';
 
-type BubbleListener = (state: BubbleState) => void;
+type BubbleListener = () => void;
 
 const listeners = new Set<BubbleListener>();
 
-let bubbleState: BubbleState = {
-  count: 0,
-  isVisible: false,
-  lastUpdatedAt: Date.now(),
-  lastChangeSource: 'app',
+let bubbleStates: Record<string, BubbleState> = {
+  [DEFAULT_BUBBLE_ID]: createDefaultBubbleState(DEFAULT_BUBBLE_ID),
 };
+let allBubbleStatesSnapshot = createAllBubbleStatesSnapshot(bubbleStates);
 
 let hasBoundNativeState = false;
 
+function normalizeBubbleId(bubbleId?: string): string {
+  return bubbleId && bubbleId.trim().length > 0 ? bubbleId : DEFAULT_BUBBLE_ID;
+}
+
+function createDefaultBubbleState(bubbleId: string): BubbleState {
+  return {
+    bubbleId,
+    count: 0,
+    isVisible: false,
+    lastUpdatedAt: Date.now(),
+    lastChangeSource: 'app',
+  };
+}
+
+function createAllBubbleStatesSnapshot(states: Record<string, BubbleState>): BubbleState[] {
+  return Object.values(states).sort((left, right) => left.bubbleId.localeCompare(right.bubbleId));
+}
+
+function commitBubbleStates(nextStates: Record<string, BubbleState>) {
+  bubbleStates = nextStates;
+  allBubbleStatesSnapshot = createAllBubbleStatesSnapshot(nextStates);
+}
+
 function emitBubbleState() {
   for (const listener of listeners) {
-    listener(bubbleState);
+    listener();
   }
 }
 
@@ -26,18 +47,46 @@ function normalizeChangeSource(source: BubbleState['lastChangeSource'] | string 
   return source === 'bubble' ? 'bubble' : 'app';
 }
 
-function normalizeBubbleState(nextState: Partial<BubbleState>): BubbleState {
+function normalizeBubbleState(nextState: Partial<BubbleState>, bubbleId?: string): BubbleState {
+  const normalizedBubbleId = normalizeBubbleId(nextState.bubbleId ?? bubbleId);
+  const previousState = bubbleStates[normalizedBubbleId] ?? createDefaultBubbleState(normalizedBubbleId);
+
   return {
-    count: Math.max(0, Math.floor(nextState.count ?? bubbleState.count)),
-    isVisible: Boolean(nextState.isVisible ?? bubbleState.isVisible),
+    bubbleId: normalizedBubbleId,
+    count: Math.max(0, Math.floor(nextState.count ?? previousState.count)),
+    isVisible: Boolean(nextState.isVisible ?? previousState.isVisible),
     lastUpdatedAt: Number(nextState.lastUpdatedAt ?? Date.now()),
-    lastChangeSource: normalizeChangeSource(nextState.lastChangeSource),
+    lastChangeSource: normalizeChangeSource(nextState.lastChangeSource ?? previousState.lastChangeSource),
   };
 }
 
-function updateBubbleState(nextState: Partial<BubbleState>) {
-  bubbleState = normalizeBubbleState(nextState);
-  emitBubbleState();
+function updateBubbleStates(nextStates: Partial<BubbleState>[]) {
+  let hasChanges = false;
+  let nextBubbleStates = bubbleStates;
+
+  for (const nextState of nextStates) {
+    const normalizedState = normalizeBubbleState(nextState);
+    const previousState = nextBubbleStates[normalizedState.bubbleId];
+
+    if (
+      !previousState ||
+      previousState.count !== normalizedState.count ||
+      previousState.isVisible !== normalizedState.isVisible ||
+      previousState.lastUpdatedAt !== normalizedState.lastUpdatedAt ||
+      previousState.lastChangeSource !== normalizedState.lastChangeSource
+    ) {
+      nextBubbleStates = {
+        ...nextBubbleStates,
+        [normalizedState.bubbleId]: normalizedState,
+      };
+      hasChanges = true;
+    }
+  }
+
+  if (hasChanges) {
+    commitBubbleStates(nextBubbleStates);
+    emitBubbleState();
+  }
 }
 
 function bindNativeBubbleState() {
@@ -51,27 +100,47 @@ function bindNativeBubbleState() {
   }
 
   hasBoundNativeState = true;
-  updateBubbleState(nativeModule.getBubbleState());
+  updateBubbleStates(nativeModule.getAllBubbleStates());
 
   nativeModule.addListener('onBubbleStateChanged', (nextState) => {
-    updateBubbleState(nextState);
+    updateBubbleStates([nextState]);
+  });
+
+  nativeModule.addListener('onBubbleStatesChanged', (event) => {
+    updateBubbleStates(event.states);
   });
 }
 
-function syncBubbleStateFromNative() {
+function syncBubbleStatesFromNative() {
   const nativeModule = getExpoDrawOverAppsModule();
   if (!nativeModule) {
-    return bubbleState;
+    return getAllBubbleStates();
   }
 
-  const nextState = nativeModule.getBubbleState();
-  updateBubbleState(nextState);
-  return nextState;
+  const nextStates = nativeModule.getAllBubbleStates();
+  updateBubbleStates(nextStates);
+  return nextStates;
 }
 
-export function getBubbleState(): BubbleState {
+export function getBubbleState(bubbleId: string = DEFAULT_BUBBLE_ID): BubbleState {
   bindNativeBubbleState();
-  return bubbleState;
+  const normalizedBubbleId = normalizeBubbleId(bubbleId);
+  const existingState = bubbleStates[normalizedBubbleId];
+  if (existingState) {
+    return existingState;
+  }
+
+  const defaultState = createDefaultBubbleState(normalizedBubbleId);
+  commitBubbleStates({
+    ...bubbleStates,
+    [normalizedBubbleId]: defaultState,
+  });
+  return defaultState;
+}
+
+export function getAllBubbleStates(): BubbleState[] {
+  bindNativeBubbleState();
+  return allBubbleStatesSnapshot;
 }
 
 export function subscribeToBubbleState(listener: BubbleListener): () => void {
@@ -82,69 +151,113 @@ export function subscribeToBubbleState(listener: BubbleListener): () => void {
   };
 }
 
-export function useBubbleState(): BubbleState {
-  return useSyncExternalStore(subscribeToBubbleState, getBubbleState, getBubbleState);
+export function useBubbleState(bubbleId: string = DEFAULT_BUBBLE_ID): BubbleState {
+  return useSyncExternalStore(
+    subscribeToBubbleState,
+    () => getBubbleState(bubbleId),
+    () => getBubbleState(bubbleId)
+  );
 }
 
-export function setBubbleVisible(isVisible: boolean, source: BubbleChangeSource = 'app') {
-  updateBubbleState({
-    ...bubbleState,
-    isVisible,
-    lastChangeSource: source,
-    lastUpdatedAt: Date.now(),
-  });
+export function useAllBubbleStates(): BubbleState[] {
+  return useSyncExternalStore(subscribeToBubbleState, getAllBubbleStates, getAllBubbleStates);
 }
 
-export function setBubbleCount(count: number, source: BubbleChangeSource = 'app') {
-  bindNativeBubbleState();
-
-  const nativeModule = getExpoDrawOverAppsModule();
-  if (!nativeModule) {
-    updateBubbleState({
-      ...bubbleState,
-      count,
+export function setBubbleVisible(
+  isVisible: boolean,
+  source: BubbleChangeSource = 'app',
+  bubbleId: string = DEFAULT_BUBBLE_ID
+) {
+  updateBubbleStates([
+    {
+      ...getBubbleState(bubbleId),
+      bubbleId,
+      isVisible,
       lastChangeSource: source,
       lastUpdatedAt: Date.now(),
-    });
-    return bubbleState.count;
+    },
+  ]);
+}
+
+export function setBubbleCount(
+  count: number,
+  source: BubbleChangeSource = 'app',
+  bubbleId: string = DEFAULT_BUBBLE_ID
+) {
+  bindNativeBubbleState();
+
+  const normalizedBubbleId = normalizeBubbleId(bubbleId);
+  const nativeModule = getExpoDrawOverAppsModule();
+  if (!nativeModule) {
+    updateBubbleStates([
+      {
+        ...getBubbleState(normalizedBubbleId),
+        bubbleId: normalizedBubbleId,
+        count,
+        lastChangeSource: source,
+        lastUpdatedAt: Date.now(),
+      },
+    ]);
+    return getBubbleState(normalizedBubbleId).count;
   }
 
-  const nextCount = nativeModule.setBubbleCount(Math.max(0, Math.floor(count)), source);
-  syncBubbleStateFromNative();
+  const nextCount =
+    normalizedBubbleId === DEFAULT_BUBBLE_ID
+      ? nativeModule.setBubbleCount(Math.max(0, Math.floor(count)), source)
+      : nativeModule.setBubbleCountForBubble(normalizedBubbleId, Math.max(0, Math.floor(count)), source);
+
+  syncBubbleStatesFromNative();
   return nextCount;
 }
 
-export function incrementBubbleCount(source: BubbleChangeSource = 'bubble'): number {
+export function incrementBubbleCount(
+  source: BubbleChangeSource = 'bubble',
+  bubbleId: string = DEFAULT_BUBBLE_ID
+): number {
   bindNativeBubbleState();
 
+  const normalizedBubbleId = normalizeBubbleId(bubbleId);
   const nativeModule = getExpoDrawOverAppsModule();
   if (!nativeModule) {
-    const nextCount = bubbleState.count + 1;
-    setBubbleCount(nextCount, source);
+    const nextCount = getBubbleState(normalizedBubbleId).count + 1;
+    setBubbleCount(nextCount, source, normalizedBubbleId);
     return nextCount;
   }
 
-  const nextCount = nativeModule.incrementBubbleCount(source);
-  syncBubbleStateFromNative();
+  const nextCount =
+    normalizedBubbleId === DEFAULT_BUBBLE_ID
+      ? nativeModule.incrementBubbleCount(source)
+      : nativeModule.incrementBubbleCountForBubble(normalizedBubbleId, source);
+
+  syncBubbleStatesFromNative();
   return nextCount;
 }
 
-export function decrementBubbleCount(source: BubbleChangeSource = 'bubble'): number {
+export function decrementBubbleCount(
+  source: BubbleChangeSource = 'bubble',
+  bubbleId: string = DEFAULT_BUBBLE_ID
+): number {
   bindNativeBubbleState();
 
+  const normalizedBubbleId = normalizeBubbleId(bubbleId);
   const nativeModule = getExpoDrawOverAppsModule();
   if (!nativeModule) {
-    const nextCount = Math.max(0, bubbleState.count - 1);
-    setBubbleCount(nextCount, source);
+    const nextCount = Math.max(0, getBubbleState(normalizedBubbleId).count - 1);
+    setBubbleCount(nextCount, source, normalizedBubbleId);
     return nextCount;
   }
 
-  const nextCount = nativeModule.decrementBubbleCount(source);
-  syncBubbleStateFromNative();
+  const nextCount =
+    normalizedBubbleId === DEFAULT_BUBBLE_ID
+      ? nativeModule.decrementBubbleCount(source)
+      : nativeModule.decrementBubbleCountForBubble(normalizedBubbleId, source);
+
+  syncBubbleStatesFromNative();
   return nextCount;
 }
 
-export function refreshBubbleState(): BubbleState {
+export function refreshBubbleState(bubbleId: string = DEFAULT_BUBBLE_ID): BubbleState {
   bindNativeBubbleState();
-  return syncBubbleStateFromNative();
+  syncBubbleStatesFromNative();
+  return getBubbleState(bubbleId);
 }

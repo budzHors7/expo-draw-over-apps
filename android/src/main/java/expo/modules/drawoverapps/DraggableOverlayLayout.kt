@@ -12,7 +12,9 @@ import kotlin.math.abs
 class DraggableOverlayLayout(
   context: Context,
   private val onDrag: (dx: Int, dy: Int) -> Unit,
-  private val onRemoveRequested: () -> Unit
+  private val onRemoveRequested: () -> Unit,
+  private val onDragFinished: () -> Unit,
+  private val onDockedTap: () -> Unit
 ) : FrameLayout(context) {
   private val actionMenu = PopupMenu(context, this).apply {
     menu.add(Menu.NONE, MENU_REMOVE, Menu.NONE, "Remove bubble")
@@ -35,7 +37,7 @@ class DraggableOverlayLayout(
         override fun onDown(event: MotionEvent): Boolean = true
 
         override fun onLongPress(event: MotionEvent) {
-          if (isDragging) {
+          if (isDragging || isDocked) {
             return
           }
 
@@ -53,6 +55,7 @@ class DraggableOverlayLayout(
   private var lastRawY = 0f
   private var isDragging = false
   private var isLongPressActive = false
+  private var isDocked = false
 
   override fun dispatchTouchEvent(event: MotionEvent): Boolean {
     gestureDetector.onTouchEvent(event)
@@ -70,6 +73,16 @@ class DraggableOverlayLayout(
       MotionEvent.ACTION_MOVE -> {
         val movedX = abs(event.rawX - downRawX)
         val movedY = abs(event.rawY - downRawY)
+
+        if (isDocked && (movedX > touchSlop || movedY > touchSlop)) {
+          onDockedTap()
+          isDocked = false
+          downRawX = event.rawX
+          downRawY = event.rawY
+          lastRawX = event.rawX
+          lastRawY = event.rawY
+          return true
+        }
 
         if (!isDragging && !isLongPressActive && (movedX > touchSlop || movedY > touchSlop)) {
           isDragging = true
@@ -92,6 +105,13 @@ class DraggableOverlayLayout(
       MotionEvent.ACTION_UP,
       MotionEvent.ACTION_CANCEL -> {
         val shouldConsume = isDragging || isLongPressActive
+        if (isDragging) {
+          onDragFinished()
+        } else if (event.actionMasked == MotionEvent.ACTION_UP && isDocked) {
+          onDockedTap()
+          isDocked = false
+          return true
+        }
         isDragging = false
         if (event.actionMasked == MotionEvent.ACTION_CANCEL) {
           isLongPressActive = false
@@ -114,6 +134,14 @@ class DraggableOverlayLayout(
     cancelEvent.action = MotionEvent.ACTION_CANCEL
     super.dispatchTouchEvent(cancelEvent)
     cancelEvent.recycle()
+  }
+
+  fun setDocked(docked: Boolean) {
+    isDocked = docked
+    if (docked) {
+      isLongPressActive = false
+      actionMenu.dismiss()
+    }
   }
 
   companion object {

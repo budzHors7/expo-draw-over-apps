@@ -3,10 +3,17 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
 import { decrementBubbleCount, incrementBubbleCount, setBubbleCount, useBubbleState } from './bubbleState';
 import { useBubbleRenderer } from './bubbleRenderer';
+import { DEFAULT_BUBBLE_ID } from './bubbleTypes';
 
-export default function ExpoDrawOverAppsBubbleSurface() {
-  const bubbleState = useBubbleState();
-  const BubbleRenderer = useBubbleRenderer();
+type ExpoDrawOverAppsBubbleSurfaceProps = {
+  bubbleId?: string;
+};
+
+export default function ExpoDrawOverAppsBubbleSurface({
+  bubbleId = DEFAULT_BUBBLE_ID,
+}: ExpoDrawOverAppsBubbleSurfaceProps) {
+  const bubbleState = useBubbleState(bubbleId);
+  const BubbleRenderer = useBubbleRenderer(bubbleId);
 
   if (!bubbleState.isVisible) {
     return null;
@@ -15,11 +22,16 @@ export default function ExpoDrawOverAppsBubbleSurface() {
   if (BubbleRenderer) {
     return (
       <BubbleRenderer
+        bubbleId={bubbleId}
         state={bubbleState}
-        increment={() => incrementBubbleCount('bubble')}
-        decrement={() => decrementBubbleCount('bubble')}
-        setCount={(count) => setBubbleCount(count, 'bubble')}
-        hide={() => getExpoDrawOverAppsModule()?.hideBubble() ?? false}
+        increment={() => incrementBubbleCount('bubble', bubbleId)}
+        decrement={() => decrementBubbleCount('bubble', bubbleId)}
+        setCount={(count) => setBubbleCount(count, 'bubble', bubbleId)}
+        hide={() =>
+          (bubbleId === DEFAULT_BUBBLE_ID
+            ? getExpoDrawOverAppsModule()?.hideBubble()
+            : getExpoDrawOverAppsModule()?.hideBubbleInstance(bubbleId)) ?? false
+        }
         openApp={() => getExpoDrawOverAppsModule()?.openApp() ?? Promise.resolve(false)}
       />
     );
@@ -28,15 +40,24 @@ export default function ExpoDrawOverAppsBubbleSurface() {
   return (
     <View style={styles.bubble}>
       <Text style={styles.caption}>Bubble Counter</Text>
+      <View style={styles.debugBadge}>
+        <Text style={styles.debugBadgeText}>ID: {bubbleId}</Text>
+      </View>
       <View style={styles.counterRow}>
-        <Pressable onPress={() => decrementBubbleCount('bubble')} style={[styles.counterAction, styles.counterActionDark]}>
+        <Pressable
+          onPress={() => decrementBubbleCount('bubble', bubbleId)}
+          style={[styles.counterAction, styles.counterActionDark]}
+        >
           <Text style={styles.counterActionText}>-</Text>
         </Pressable>
-        <Pressable onPress={() => incrementBubbleCount('bubble')} style={styles.counterButton}>
+        <Pressable onPress={() => incrementBubbleCount('bubble', bubbleId)} style={styles.counterButton}>
           <Text style={styles.counterValue}>{bubbleState.count}</Text>
           <Text style={styles.counterHint}>Tap + / -</Text>
         </Pressable>
-        <Pressable onPress={() => incrementBubbleCount('bubble')} style={[styles.counterAction, styles.counterActionBright]}>
+        <Pressable
+          onPress={() => incrementBubbleCount('bubble', bubbleId)}
+          style={[styles.counterAction, styles.counterActionBright]}
+        >
           <Text style={styles.counterActionText}>+</Text>
         </Pressable>
       </View>
@@ -70,6 +91,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
     textAlign: 'center',
+  },
+  debugBadge: {
+    alignSelf: 'center',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: '#020617',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  debugBadgeText: {
+    color: '#cbd5e1',
+    fontSize: 10,
+    fontWeight: '700',
   },
   counterRow: {
     flexDirection: 'row',

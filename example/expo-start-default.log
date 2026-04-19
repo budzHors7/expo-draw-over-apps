@@ -1,0 +1,20 @@
+env: load .env
+env: export RCT_METRO_PORT
+Starting project at C:\Users\Anda Hanise\Desktop\Projects\expo-draw-over-apps\example
+Metro is running in CI mode, reloads are disabled. Remove CI=true to enable watch mode.
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+Android .\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android .\index.ts ░░░░░░░░░░░░░░░░  1.0% (1/1)
+Android .\index.ts ▓▓▓▓░░░░░░░░░░░░ 30.9% (30/54)
+Android .\index.ts ▓▓▓▓▓░░░░░░░░░░░ 35.0% ( 95/230)
+Android .\index.ts ▓▓▓▓▓▓░░░░░░░░░░ 43.3% (242/378)
+Android .\index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.8% (403/521)
+Android .\index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.8% (580/626)
+Android .\index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.7% (672/680)
+Android .\index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.7% (748/765)
+Android .\index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.7% (769/770)
+Android Bundled 36062ms index.ts (780 modules)

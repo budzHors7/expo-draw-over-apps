@@ -1,69 +1,113 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AppState, AppStateStatus, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppState, AppStateStatus, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  type BubbleRendererProps,
   canDrawOverlays,
   decrementBubbleCount,
   hideBubble,
   incrementBubbleCount,
   isBubbleVisible,
-  setBubbleRenderer,
   requestPermission,
   setBubbleCount,
+  setBubbleRenderer,
+  setBubbleRendererForBubble,
   showBubble,
+  useAllBubbleStates,
   useBubbleState,
 } from 'expo-draw-over-apps';
+import {
+  CountdownTimerBubbleRenderer,
+  JetpackComposeBubbleRenderer,
+  ReactNativeBubbleRenderer,
+  TIMER_DURATION_SECONDS,
+} from './components';
+import { hideAsync, preventAutoHideAsync, setOptions } from 'expo-splash-screen';
 
-function StyledBubbleRenderer({ state, decrement, increment, hide, openApp }: BubbleRendererProps) {
-  return (
-    <View style={bubbleStyles.shell}>
-      <Text style={bubbleStyles.eyebrow}>Custom Bubble</Text>
-      <Text style={bubbleStyles.count}>{state.count}</Text>
+// Set the animation options. This is optional.
+setOptions({
+  duration: 200,
+  fade: true,
+});
 
-      <View style={bubbleStyles.actions}>
-        <Pressable onPress={decrement} style={[bubbleStyles.actionButton, bubbleStyles.negativeButton]}>
-          <Text style={bubbleStyles.actionText}>-</Text>
-        </Pressable>
+// Keep the splash screen visible while we fetch resources
+preventAutoHideAsync();
 
-        <Pressable onPress={increment} style={[bubbleStyles.actionButton, bubbleStyles.positiveButton]}>
-          <Text style={bubbleStyles.actionText}>+</Text>
-        </Pressable>
-      </View>
+type BubbleExampleId = 'react-native-counter' | 'jetpack-compose-counter' | 'countdown-timer';
 
-      <Pressable onPress={() => void openApp()} style={bubbleStyles.openButton}>
-        <Text style={bubbleStyles.openText}>Open app</Text>
-      </Pressable>
+const EXAMPLE_BUBBLE_IDS: BubbleExampleId[] = ['react-native-counter', 'jetpack-compose-counter', 'countdown-timer'];
 
-      <Pressable onPress={hide} style={bubbleStyles.hideButton}>
-        <Text style={bubbleStyles.hideText}>Hide bubble</Text>
-      </Pressable>
-    </View>
-  );
-}
+const BUBBLE_EXAMPLE_LABELS: Record<BubbleExampleId, { title: string; description: string }> = {
+  'react-native-counter': {
+    title: 'React Native Counter Bubble',
+    description: 'Counter bubble rendered with React Native views and Pressables.',
+  },
+  'jetpack-compose-counter': {
+    title: 'Jetpack Compose Counter Bubble',
+    description: 'Counter bubble rendered with native Android Compose UI via expo-ui.',
+  },
+  'countdown-timer': {
+    title: 'Countdown Timer Bubble',
+    description: 'A timer example that refreshes every second without moving the bubble.',
+  },
+};
 
 export default function App() {
   const [granted, setGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
-  const bubbleState = useBubbleState();
+  const [activeExample, setActiveExample] = useState<BubbleExampleId>('react-native-counter');
+  const activeBubbleState = useBubbleState(activeExample);
+  const allBubbleStates = useAllBubbleStates();
 
   const refreshState = useCallback(() => {
     setGranted(canDrawOverlays());
-    isBubbleVisible();
+    EXAMPLE_BUBBLE_IDS.forEach((bubbleId) => {
+      isBubbleVisible(bubbleId);
+    });
   }, []);
 
   useEffect(() => {
-    setBubbleRenderer(StyledBubbleRenderer);
+    setBubbleRendererForBubble('react-native-counter', ReactNativeBubbleRenderer);
+    setBubbleRendererForBubble('jetpack-compose-counter', JetpackComposeBubbleRenderer);
+    setBubbleRendererForBubble('countdown-timer', CountdownTimerBubbleRenderer);
     refreshState();
+    void hideAsync().catch(() => {
+      // Ignore splash hide races during fast refresh/dev reloads.
+    });
+
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
         refreshState();
       }
     });
+
     return () => {
       sub.remove();
+      EXAMPLE_BUBBLE_IDS.forEach((bubbleId) => {
+        setBubbleRendererForBubble(bubbleId, null);
+      });
       setBubbleRenderer(null);
     };
   }, [refreshState]);
+
+  const visibleStates = useMemo(
+    () =>
+      EXAMPLE_BUBBLE_IDS.map((bubbleId) => {
+        const state = allBubbleStates.find((entry) => entry.bubbleId === bubbleId) ?? {
+          bubbleId,
+          count: bubbleId === 'countdown-timer' ? TIMER_DURATION_SECONDS : 0,
+          isVisible: false,
+          lastUpdatedAt: Date.now(),
+          lastChangeSource: 'app' as const,
+        };
+
+        return {
+          bubbleId,
+          state,
+          meta: BUBBLE_EXAMPLE_LABELS[bubbleId],
+        };
+      }),
+    [allBubbleStates]
+  );
 
   const handleRequestPermission = async () => {
     setLoading(true);
@@ -75,99 +119,248 @@ export default function App() {
     }
   };
 
-  const handleToggleBubble = async () => {
+  const handleShowExample = async (exampleId: BubbleExampleId) => {
     setLoading(true);
     try {
-      if (bubbleState.isVisible) {
-        hideBubble();
-        return;
+      setActiveExample(exampleId);
+      if (exampleId === 'countdown-timer') {
+        setBubbleCount(TIMER_DURATION_SECONDS, 'bubble', exampleId);
       }
-
-      await showBubble();
+      await showBubble(exampleId);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleHideBubble = () => {
+    hideBubble(activeExample);
+  };
+
   const isGranted = granted === true;
+  const activeExampleMeta = BUBBLE_EXAMPLE_LABELS[activeExample];
+  const visibleBubbleCount = visibleStates.filter(({ state }) => state.isVisible).length;
+  const activeControls =
+    activeExample === 'countdown-timer'
+      ? [
+          {
+            label: 'Restart',
+            onPress: () => setBubbleCount(TIMER_DURATION_SECONDS, 'app', activeExample),
+            style: styles.blueButton,
+          },
+          {
+            label: '10 Seconds',
+            onPress: () => setBubbleCount(10, 'app', activeExample),
+            style: styles.amberButton,
+          },
+          {
+            label: 'Stop',
+            onPress: () => setBubbleCount(0, 'app', activeExample),
+            style: styles.slateButton,
+          },
+        ]
+      : [
+          {
+            label: '+1 In App',
+            onPress: () => incrementBubbleCount('app', activeExample),
+            style: styles.blueButton,
+          },
+          {
+            label: '-1 In App',
+            onPress: () => decrementBubbleCount('app', activeExample),
+            style: styles.amberButton,
+          },
+          {
+            label: 'Reset',
+            onPress: () => setBubbleCount(0, 'app', activeExample),
+            style: styles.slateButton,
+          },
+        ];
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Draw Over Apps Bubble</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.heroCard}>
+          <View style={styles.heroHeader}>
+            <Text style={styles.eyebrow}>Expo Draw Over Apps</Text>
+            <Text style={styles.title}>Bubble Playground</Text>
+            <Text style={styles.subtitle}>
+              Test overlay permission, launch different bubble renderers, and control the active bubble without the UI
+              collapsing on smaller screens.
+            </Text>
+          </View>
 
-      <View style={[styles.badge, isGranted ? styles.badgeGranted : styles.badgeDenied]}>
-        <Text style={styles.badgeText}>
-          {granted === null ? 'Checking...' : isGranted ? 'Overlay permission granted' : 'Overlay permission needed'}
-        </Text>
-      </View>
+          <View style={[styles.badge, isGranted ? styles.badgeGranted : styles.badgeDenied]}>
+            <Text style={styles.badgeText}>
+              {granted === null ? 'Checking permission' : isGranted ? 'Overlay permission granted' : 'Overlay permission needed'}
+            </Text>
+          </View>
 
-      <Pressable
-        style={[styles.primaryButton, isGranted && styles.secondaryButton]}
-        disabled={isGranted || loading}
-        onPress={() => void handleRequestPermission()}
-      >
-        <Text style={styles.primaryButtonText}>
-          {loading ? 'Working...' : isGranted ? 'Permission Granted' : 'Request Permission'}
-        </Text>
-      </Pressable>
-
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Realtime Bubble Listener</Text>
-        <Text style={styles.panelText}>Visible: {bubbleState.isVisible ? 'Yes' : 'No'}</Text>
-        <Text style={styles.panelText}>Counter: {bubbleState.count}</Text>
-        <Text style={styles.panelText}>Last changed by: {bubbleState.lastChangeSource}</Text>
-        <Text style={styles.panelText}>Hold the bubble to remove it from the floating menu.</Text>
-
-        <Pressable
-          disabled={!isGranted || loading}
-          onPress={() => void handleToggleBubble()}
-          style={[styles.primaryButton, (!isGranted || loading) && styles.disabledButton]}
-        >
-          <Text style={styles.primaryButtonText}>{bubbleState.isVisible ? 'Hide Bubble' : 'Show Bubble'}</Text>
-        </Pressable>
-
-        <View style={styles.row}>
-          <Pressable onPress={() => incrementBubbleCount('app')} style={[styles.smallButton, styles.blueButton]}>
-            <Text style={styles.smallButtonText}>+1 In App</Text>
+          <Pressable
+            style={[styles.primaryButton, isGranted && styles.secondaryButton, (isGranted || loading) && styles.disabledButton]}
+            disabled={isGranted || loading}
+            onPress={() => void handleRequestPermission()}
+          >
+            <Text style={styles.primaryButtonText}>
+              {loading ? 'Working...' : isGranted ? 'Permission Granted' : 'Request Permission'}
+            </Text>
           </Pressable>
 
-          <Pressable onPress={() => decrementBubbleCount('app')} style={[styles.smallButton, styles.amberButton]}>
-            <Text style={styles.smallButtonText}>-1 In App</Text>
-          </Pressable>
-
-          <Pressable onPress={() => setBubbleCount(0)} style={[styles.smallButton, styles.slateButton]}>
-            <Text style={styles.smallButtonText}>Reset</Text>
-          </Pressable>
+          {!isGranted && granted !== null && (
+            <Text style={styles.hint}>
+              Grant the overlay permission first, then launch one of the examples below.
+            </Text>
+          )}
         </View>
-      </View>
 
-      {!isGranted && granted !== null && (
-        <Text style={styles.hint}>
-          Grant the overlay permission first, then show the bubble and drag it over other apps.
-        </Text>
-      )}
-    </View>
+        <View style={styles.metricsRow}>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricLabel}>Visible bubbles</Text>
+            <Text style={styles.metricValue}>{visibleBubbleCount}</Text>
+          </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricLabel}>Active bubble</Text>
+            <Text style={styles.metricValueSmall}>{activeBubbleState.isVisible ? 'Visible' : 'Hidden'}</Text>
+          </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricLabel}>Active value</Text>
+            <Text style={styles.metricValue}>{activeBubbleState.count}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Examples</Text>
+          <Text style={styles.sectionText}>
+            Tap a card to make it active. Use the launch button inside each card to show that bubble.
+          </Text>
+
+          <View style={styles.exampleGrid}>
+            {visibleStates.map(({ bubbleId, meta, state }) => {
+              const isActiveCard = bubbleId === activeExample;
+              const toneStyle =
+                bubbleId === 'react-native-counter'
+                  ? styles.reactNativeExampleButton
+                  : bubbleId === 'jetpack-compose-counter'
+                    ? styles.composeExampleButton
+                    : styles.timerExampleButton;
+
+              return (
+                <Pressable
+                  key={bubbleId}
+                  onPress={() => setActiveExample(bubbleId)}
+                  style={[styles.exampleCard, isActiveCard && styles.exampleCardActive]}
+                >
+                  <View style={styles.exampleCardHeader}>
+                    <View style={[styles.exampleAccent, toneStyle]} />
+                    <View style={styles.exampleCardCopy}>
+                      <Text style={styles.exampleCardTitle}>{meta.title}</Text>
+                      <Text style={styles.exampleCardDescription}>{meta.description}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.statusPillsRow}>
+                    <View style={[styles.statusPill, state.isVisible ? styles.statusPillVisible : styles.statusPillHidden]}>
+                      <Text style={styles.statusPillText}>{state.isVisible ? 'Visible' : 'Hidden'}</Text>
+                    </View>
+                    <View style={styles.statusPill}>
+                      <Text style={styles.statusPillText}>Value {state.count}</Text>
+                    </View>
+                  </View>
+
+                  <Pressable
+                    disabled={!isGranted || loading}
+                    onPress={() => void handleShowExample(bubbleId)}
+                    style={[styles.launchButton, toneStyle, (!isGranted || loading) && styles.disabledButton]}
+                  >
+                    <Text style={styles.launchButtonText}>Show Bubble</Text>
+                  </Pressable>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Active Bubble</Text>
+          <Text style={styles.activeTitle}>{activeExampleMeta.title}</Text>
+          <Text style={styles.sectionText}>{activeExampleMeta.description}</Text>
+          <Text style={styles.helperText}>Hold any visible bubble to open the remove menu.</Text>
+
+          <View style={styles.activeSummaryCard}>
+            <Text style={styles.activeSummaryLabel}>Bubble ID</Text>
+            <Text style={styles.activeSummaryValue}>{activeBubbleState.bubbleId}</Text>
+            <Text style={styles.activeSummaryMeta}>
+              {activeBubbleState.isVisible ? 'Visible on screen' : 'Currently hidden'} | Last source:{' '}
+              {activeBubbleState.lastChangeSource}
+            </Text>
+          </View>
+
+          <Pressable
+            disabled={!activeBubbleState.isVisible || loading}
+            onPress={handleHideBubble}
+            style={[styles.primaryButton, styles.hideBubbleButton, (!activeBubbleState.isVisible || loading) && styles.disabledButton]}
+          >
+            <Text style={styles.primaryButtonText}>Hide Active Bubble</Text>
+          </Pressable>
+
+          <View style={styles.controlsWrap}>
+            {activeControls.map((control) => (
+              <Pressable key={control.label} onPress={control.onPress} style={[styles.controlButton, control.style]}>
+                <Text style={styles.smallButtonText}>{control.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 28,
-    gap: 22,
+    backgroundColor: '#eef2ff',
+  },
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 32,
+    gap: 18,
+  },
+  heroCard: {
+    borderRadius: 28,
+    padding: 22,
+    backgroundColor: '#0f172a',
+    gap: 16,
+    shadowColor: '#020617',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.2,
+    shadowRadius: 28,
+    elevation: 10,
+  },
+  heroHeader: {
+    gap: 8,
+  },
+  eyebrow: {
+    color: '#93c5fd',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '800',
-    color: '#0f172a',
-    textAlign: 'center',
+    color: '#f8fafc',
+  },
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#cbd5e1',
   },
   badge: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 999,
   },
   badgeGranted: {
@@ -177,15 +370,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#fee2e2',
   },
   badgeText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#111827',
   },
   primaryButton: {
-    minWidth: 240,
+    width: '100%',
     alignItems: 'center',
-    borderRadius: 14,
-    paddingHorizontal: 28,
+    borderRadius: 18,
+    paddingHorizontal: 20,
     paddingVertical: 14,
     backgroundColor: '#2563eb',
   },
@@ -200,36 +393,179 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  panel: {
-    width: '100%',
-    maxWidth: 340,
-    backgroundColor: '#ffffff',
-    borderRadius: 22,
-    padding: 20,
+  metricsRow: {
+    flexDirection: 'row',
     gap: 12,
+  },
+  metricCard: {
+    flex: 1,
+    minHeight: 92,
+    borderRadius: 22,
+    padding: 16,
+    backgroundColor: '#ffffff',
+    justifyContent: 'space-between',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  metricLabel: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  metricValue: {
+    color: '#0f172a',
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  metricValueSmall: {
+    color: '#0f172a',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  section: {
+    borderRadius: 26,
+    padding: 18,
+    gap: 14,
+    backgroundColor: '#ffffff',
     shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.08,
     shadowRadius: 20,
     elevation: 5,
   },
-  panelTitle: {
-    fontSize: 19,
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: '800',
     color: '#0f172a',
   },
-  panelText: {
+  sectionText: {
     fontSize: 14,
+    lineHeight: 21,
     color: '#334155',
   },
-  row: {
-    flexDirection: 'row',
+  helperText: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  exampleGrid: {
     gap: 12,
   },
-  smallButton: {
+  exampleCard: {
+    borderRadius: 22,
+    padding: 16,
+    gap: 14,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  exampleCardActive: {
+    borderColor: '#2563eb',
+    backgroundColor: '#eff6ff',
+  },
+  exampleCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  exampleAccent: {
+    width: 12,
+    height: 48,
+    borderRadius: 999,
+  },
+  exampleCardCopy: {
     flex: 1,
+    gap: 6,
+  },
+  exampleCardTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  exampleCardDescription: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#475569',
+  },
+  statusPillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#e2e8f0',
+  },
+  statusPillVisible: {
+    backgroundColor: '#dcfce7',
+  },
+  statusPillHidden: {
+    backgroundColor: '#fee2e2',
+  },
+  statusPillText: {
+    color: '#0f172a',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  launchButton: {
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: 'center',
-    borderRadius: 14,
+  },
+  launchButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  activeTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  activeSummaryCard: {
+    borderRadius: 20,
+    padding: 16,
+    gap: 6,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  activeSummaryLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  activeSummaryValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  activeSummaryMeta: {
+    fontSize: 13,
+    color: '#475569',
+  },
+  hideBubbleButton: {
+    backgroundColor: '#475569',
+  },
+  controlsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  controlButton: {
+    minWidth: '30%',
+    flexGrow: 1,
+    alignItems: 'center',
+    borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
@@ -248,89 +584,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   hint: {
-    textAlign: 'center',
-    color: '#64748b',
     fontSize: 13,
     lineHeight: 20,
-    maxWidth: 320,
+    color: '#cbd5e1',
   },
-});
-
-const bubbleStyles = StyleSheet.create({
-  shell: {
-    width: 196,
-    minHeight: 182,
-    borderRadius: 28,
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    gap: 12,
-    backgroundColor: '#111827',
-    borderWidth: 2,
-    borderColor: '#22c55e',
-    shadowColor: '#030712',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.28,
-    shadowRadius: 24,
-    elevation: 18,
+  reactNativeExampleButton: {
+    backgroundColor: '#0f766e',
   },
-  eyebrow: {
-    color: '#86efac',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-    textAlign: 'center',
-    textTransform: 'uppercase',
+  composeExampleButton: {
+    backgroundColor: '#0369a1',
   },
-  count: {
-    color: '#f9fafb',
-    fontSize: 34,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  actionButton: {
-    flex: 1,
-    minHeight: 46,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  positiveButton: {
-    backgroundColor: '#2563eb',
-  },
-  negativeButton: {
-    backgroundColor: '#f97316',
-  },
-  actionText: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '900',
-  },
-  openButton: {
-    borderRadius: 16,
-    paddingVertical: 11,
-    backgroundColor: '#e5e7eb',
-    alignItems: 'center',
-  },
-  openText: {
-    color: '#111827',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  hideButton: {
-    borderRadius: 16,
-    paddingVertical: 10,
-    backgroundColor: '#1f2937',
-    borderWidth: 1,
-    borderColor: '#4b5563',
-    alignItems: 'center',
-  },
-  hideText: {
-    color: '#f9fafb',
-    fontSize: 12,
-    fontWeight: '700',
+  timerExampleButton: {
+    backgroundColor: '#b45309',
   },
 });

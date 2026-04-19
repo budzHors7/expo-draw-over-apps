@@ -7,6 +7,7 @@
 - keep a shared counter in sync between the app and the bubble
 - open the app from the bubble
 - render the bubble with React Native components
+- switch the bubble to a native Jetpack Compose renderer powered by `@expo/ui`
 - replace the default bubble UI with your own styled React Native component
 
 This module is currently Android only.
@@ -14,11 +15,11 @@ This module is currently Android only.
 ## Features
 
 - Android overlay permission helpers
-- Floating bubble overlay rendered with React Native
+- Floating bubble overlay rendered with React Native or Jetpack Compose
 - Draggable bubble window
 - Shared realtime bubble state
 - Long-press menu to remove the bubble
-- Custom bubble renderer support with `StyleSheet` or NativeWind
+- Custom bubble renderer support with `StyleSheet`, NativeWind, or `expo-ui`
 
 ## Open Source
 
@@ -135,7 +136,25 @@ The built-in bubble:
 - can be hidden
 - shows a long-press remove menu
 
-The bubble uses React Native UI, not native Android widgets.
+The default bubble uses React Native UI.
+
+If you want the same counter overlay rendered with native Android widgets, use the packaged Compose renderer:
+
+```tsx
+import { useEffect } from 'react';
+import { setBubbleRenderer, setComposeBubbleRenderer } from 'expo-draw-over-apps';
+
+export default function Screen() {
+  useEffect(() => {
+    setComposeBubbleRenderer();
+    return () => setBubbleRenderer(null);
+  }, []);
+
+  return null;
+}
+```
+
+That renderer uses `@expo/ui/jetpack-compose` inside the overlay surface and prefers Android system icons for its action buttons when they are available.
 
 ## Custom bubble UI
 
@@ -146,6 +165,8 @@ That means you can style it with:
 - React Native `StyleSheet`
 - inline styles
 - NativeWind `className` if your host app already has NativeWind configured
+
+If you want a ready-made native Android renderer instead of building your own React Native one, call `setComposeBubbleRenderer()`.
 
 ### Example
 
@@ -333,6 +354,10 @@ Registers a custom React Native bubble renderer.
 
 Pass `null` to restore the default renderer.
 
+### `setComposeBubbleRenderer(): BubbleRenderer`
+
+Registers the packaged Jetpack Compose counter overlay renderer built with `@expo/ui`.
+
 ## Types
 
 ### `BubbleState`
@@ -365,7 +390,7 @@ type BubbleRendererProps = {
 - not supported in Expo Go
 - overlay permission must be granted by the user
 - the floating bubble is hosted by an Android service
-- custom bubble UI must still use React Native components
+- custom bubble UI can use React Native components, or you can opt into the packaged Jetpack Compose renderer
 
 ## Example app
 
@@ -375,6 +400,7 @@ The repo includes a working example app in `example/` showing:
 - show/hide bubble
 - shared realtime counter updates
 - custom bubble styling
+- live switching between React Native views and native Jetpack Compose
 - open app from bubble
 - long-press remove menu
 
