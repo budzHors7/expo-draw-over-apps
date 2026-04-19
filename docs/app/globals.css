@@ -28,6 +28,13 @@
     overflow-x: hidden;
   }
 
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
   a {
     text-decoration: none;
   }
@@ -42,6 +49,7 @@
   .code-block {
     max-width: 100%;
     overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .code-block .shiki {
@@ -107,6 +115,15 @@
 
   .dark .code-block--framed .shiki {
     border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
   @media (min-width: 640px) {

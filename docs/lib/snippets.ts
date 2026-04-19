@@ -1,4 +1,7 @@
-export const installSnippet = String.raw`npm install expo-draw-over-apps`;
+export const installSnippet = String.raw`npm install expo-draw-over-apps
+
+# Optional if you want the packaged Compose-flavored renderer API
+npm install @expo/ui`;
 
 export const quickStartSnippet = String.raw`import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -30,7 +33,7 @@ export default function App() {
       return;
     }
 
-    await showBubble();
+    await showBubble('default', { edgeHideEnabled: true });
   }
 
   return (
@@ -54,12 +57,59 @@ export default function App() {
   );
 }`;
 
+export const edgeHideSnippet = String.raw`import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import {
+  hideBubble,
+  setEdgeHideEnabled,
+  showBubble,
+  useBubbleState,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'chat-head';
+
+export default function EdgeHideControls() {
+  const [edgeHideEnabled, setEdgeHide] = useState(true);
+  const bubbleState = useBubbleState(bubbleId);
+
+  async function handleShow() {
+    await showBubble(bubbleId, { edgeHideEnabled });
+  }
+
+  function handleToggleEdgeHide() {
+    const nextValue = !edgeHideEnabled;
+    setEdgeHideEnabled(nextValue, bubbleId);
+    setEdgeHide(nextValue);
+  }
+
+  return (
+    <View style={{ gap: 12 }}>
+      <Text>Bubble visible: {bubbleState.isVisible ? 'yes' : 'no'}</Text>
+      <Text>Edge hide: {edgeHideEnabled ? 'enabled' : 'disabled'}</Text>
+
+      <Pressable onPress={() => void handleShow()}>
+        <Text>Show chat head</Text>
+      </Pressable>
+
+      <Pressable onPress={handleToggleEdgeHide}>
+        <Text>{edgeHideEnabled ? 'Disable' : 'Enable'} edge hide</Text>
+      </Pressable>
+
+      <Pressable onPress={() => hideBubble(bubbleId)}>
+        <Text>Hide bubble</Text>
+      </Pressable>
+    </View>
+  );
+}`;
+
 export const customRendererSnippet = String.raw`import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   type BubbleRendererProps,
-  setBubbleRenderer,
+  setBubbleRendererForBubble,
 } from 'expo-draw-over-apps';
+
+const bubbleId = 'chat-head';
 
 function MyBubble({ state, increment, decrement, hide, openApp }: BubbleRendererProps) {
   return (
@@ -89,8 +139,8 @@ function MyBubble({ state, increment, decrement, hide, openApp }: BubbleRenderer
 
 export default function Screen() {
   useEffect(() => {
-    setBubbleRenderer(MyBubble);
-    return () => setBubbleRenderer(null);
+    setBubbleRendererForBubble(bubbleId, MyBubble);
+    return () => setBubbleRendererForBubble(bubbleId, null);
   }, []);
 
   return null;
@@ -141,6 +191,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });`;
+
+export const composeRendererSnippet = String.raw`import { useEffect } from 'react';
+import {
+  setBubbleRendererForBubble,
+  setComposeBubbleRenderer,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'jetpack-compose-counter';
+
+export default function ComposeBubbleRegistration() {
+  useEffect(() => {
+    setComposeBubbleRenderer(bubbleId);
+
+    return () => {
+      setBubbleRendererForBubble(bubbleId, null);
+    };
+  }, []);
+
+  return null;
+}`;
 
 export const tailwindRendererSnippet = String.raw`import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';

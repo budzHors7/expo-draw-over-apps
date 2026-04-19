@@ -55,7 +55,7 @@ export function ThemeToggle() {
   const selectedTheme = mounted ? (theme ?? 'system') : 'system';
 
   return (
-    <div className="inline-flex rounded-full border border-zinc-900/10 bg-white p-1 text-xs font-medium text-zinc-700 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_8px_24px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200">
+    <div className="inline-flex shrink-0 rounded-full border border-zinc-900/10 bg-white p-1 text-xs font-medium text-zinc-700 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_8px_24px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-200">
       {themeOptions.map((option) => {
         const isActive = selectedTheme === option.value;
 
@@ -66,7 +66,7 @@ export function ThemeToggle() {
             onClick={() => setTheme(option.value)}
             aria-label={option.label}
             title={option.label}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition ${
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition sm:h-9 sm:w-9 ${
               isActive
                 ? 'bg-zinc-950 text-white dark:bg-white dark:text-zinc-950'
                 : 'text-zinc-700 hover:bg-zinc-950/5 dark:text-zinc-200 dark:hover:bg-white/8'

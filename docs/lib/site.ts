@@ -3,7 +3,7 @@ export const siteConfig = {
   packageName: 'expo-draw-over-apps',
   title: 'Expo Draw Over Apps | Android overlay permissions and floating bubble UI for Expo apps',
   description:
-    'Open source Expo module for Android overlay permissions, draggable floating bubble UI, synchronized bubble state, and custom React Native renderers.',
+    'Open source Expo module for Android overlay permissions, edge-hide floating bubbles, synchronized bubble state, and React Native or expo-ui-flavored renderer paths.',
   url: 'https://expo-draw-over-apps.vercel.app',
   repoUrl: 'https://github.com/budzHors7/expo-draw-over-apps',
   creatorName: 'Anda Hanise',
@@ -23,6 +23,9 @@ export const siteConfig = {
     'expo module',
     'react native overlay permission',
     'expo android permission',
+    'edge hide bubble',
+    'expo ui bubble renderer',
+    'jetpack compose bubble',
     'nativewind bubble renderer',
   ],
 } as const;

@@ -4,10 +4,11 @@
 
 - check and request the `draw over other apps` permission
 - show a draggable floating bubble over other apps
+- control whether a bubble can edge-hide on the left or right side of the screen
 - keep a shared counter in sync between the app and the bubble
 - open the app from the bubble
 - render the bubble with React Native components
-- switch the bubble to a native Jetpack Compose renderer powered by `@expo/ui`
+- use the packaged `@expo/ui` Compose-flavored bubble renderer API
 - replace the default bubble UI with your own styled React Native component
 
 This module is currently Android only.
@@ -17,6 +18,7 @@ This module is currently Android only.
 - Android overlay permission helpers
 - Floating bubble overlay rendered with React Native or Jetpack Compose
 - Draggable bubble window
+- Optional edge-hide behavior with a clickable side sliver
 - Shared realtime bubble state
 - Long-press menu to remove the bubble
 - Custom bubble renderer support with `StyleSheet`, NativeWind, or `expo-ui`
@@ -30,6 +32,12 @@ This module is currently Android only.
 
 ```bash
 bun add expo-draw-over-apps
+```
+
+If you want to use the packaged Compose-oriented bubble renderer helpers, install `@expo/ui` too:
+
+```bash
+bun add @expo/ui
 ```
 
 If your app does not already use Expo modules in a bare React Native app, install Expo modules first:
@@ -90,7 +98,7 @@ export default function App() {
       return;
     }
 
-    await showBubble();
+    await showBubble('default', { edgeHideEnabled: true });
   }
 
   return (
@@ -131,12 +139,35 @@ Typical flow:
 The built-in bubble:
 
 - can be dragged around the screen
+- can move up/down and left/right while staying reachable
 - exposes `+` and `-` counter actions
 - can open the app
 - can be hidden
 - shows a long-press remove menu
 
 The default bubble uses React Native UI.
+
+### Edge hide
+
+You can opt a bubble into edge-hide mode so dragging it far enough off the left or right edge leaves a clickable sliver visible.
+
+```tsx
+await showBubble('chat-head', { edgeHideEnabled: true });
+```
+
+To disable that behavior:
+
+```tsx
+await showBubble('chat-head', { edgeHideEnabled: false });
+```
+
+Or update an existing bubble later:
+
+```tsx
+import { setEdgeHideEnabled } from 'expo-draw-over-apps';
+
+setEdgeHideEnabled(false, 'chat-head');
+```
 
 If you want the same counter overlay rendered with native Android widgets, use the packaged Compose renderer:
 
@@ -154,7 +185,17 @@ export default function Screen() {
 }
 ```
 
-That renderer uses `@expo/ui/jetpack-compose` inside the overlay surface and prefers Android system icons for its action buttons when they are available.
+## `expo-ui` support
+
+This package includes a packaged Compose-style renderer API for apps that use [`@expo/ui`](https://docs.expo.dev/guides/expo-ui/).
+
+Current status:
+
+- `@expo/ui` is supported as a dependency and renderer integration point
+- `setComposeBubbleRenderer()` is available and can be used from JavaScript
+- for Android overlay stability, the packaged overlay renderer currently falls back to a React Native implementation instead of mounting a live Compose overlay surface
+
+So if you call `setComposeBubbleRenderer()` today, you still get a working bubble, but it uses the safe fallback renderer while keeping the same public API.
 
 ## Custom bubble UI
 
@@ -166,7 +207,7 @@ That means you can style it with:
 - inline styles
 - NativeWind `className` if your host app already has NativeWind configured
 
-If you want a ready-made native Android renderer instead of building your own React Native one, call `setComposeBubbleRenderer()`.
+If you want the packaged `expo-ui` / Compose-flavored renderer API instead of building your own React Native one, call `setComposeBubbleRenderer()`.
 
 ### Example
 
@@ -306,11 +347,13 @@ Returns:
 - `true` if permission is already granted
 - `false` if Android opened settings and the user still needs to grant it
 
-### `showBubble(): Promise<boolean>`
+### `showBubble(bubbleId?: string, options?: BubbleDisplayOptions): Promise<boolean>`
 
-Shows the floating bubble.
+Shows a named bubble and optionally configures display behavior.
 
-Returns `true` when the request was accepted.
+Supported options:
+
+- `edgeHideEnabled?: boolean`
 
 ### `hideBubble(): boolean`
 
@@ -356,7 +399,13 @@ Pass `null` to restore the default renderer.
 
 ### `setComposeBubbleRenderer(): BubbleRenderer`
 
-Registers the packaged Jetpack Compose counter overlay renderer built with `@expo/ui`.
+Registers the packaged `expo-ui` Compose-flavored renderer entry point.
+
+On current Android overlay builds, this renderer falls back to a React Native implementation for stability.
+
+### `setEdgeHideEnabled(enabled: boolean, bubbleId?: string): boolean`
+
+Enables or disables left/right edge-hide behavior for a bubble.
 
 ## Types
 
@@ -364,6 +413,7 @@ Registers the packaged Jetpack Compose counter overlay renderer built with `@exp
 
 ```ts
 type BubbleState = {
+  bubbleId: string;
   count: number;
   isVisible: boolean;
   lastUpdatedAt: number;
@@ -371,10 +421,19 @@ type BubbleState = {
 };
 ```
 
+### `BubbleDisplayOptions`
+
+```ts
+type BubbleDisplayOptions = {
+  edgeHideEnabled?: boolean;
+};
+```
+
 ### `BubbleRendererProps`
 
 ```ts
 type BubbleRendererProps = {
+  bubbleId: string;
   state: BubbleState;
   increment(): number;
   decrement(): number;
@@ -390,7 +449,9 @@ type BubbleRendererProps = {
 - not supported in Expo Go
 - overlay permission must be granted by the user
 - the floating bubble is hosted by an Android service
-- custom bubble UI can use React Native components, or you can opt into the packaged Jetpack Compose renderer
+- custom bubble UI can use React Native components
+- the packaged `expo-ui` Compose renderer API currently uses a React Native fallback in Android overlays for stability
+- edge-hide can be enabled or disabled per bubble
 
 ## Example app
 
@@ -398,9 +459,10 @@ The repo includes a working example app in `example/` showing:
 
 - permission handling
 - show/hide bubble
+- edge-hide on/off
 - shared realtime counter updates
 - custom bubble styling
-- live switching between React Native views and native Jetpack Compose
+- live switching between React Native views and the packaged Compose-flavored renderer API
 - open app from bubble
 - long-press remove menu
 
