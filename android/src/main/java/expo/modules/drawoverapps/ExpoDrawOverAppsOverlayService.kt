@@ -12,12 +12,15 @@ import android.view.Gravity
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.FrameLayout
 import com.facebook.react.ReactApplication
 import com.facebook.react.interfaces.fabric.ReactSurface
 import java.lang.ref.WeakReference
 import java.util.LinkedHashMap
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 class ExpoDrawOverAppsOverlayService : Service() {
   private lateinit var windowManager: WindowManager
@@ -37,6 +40,13 @@ class ExpoDrawOverAppsOverlayService : Service() {
     val reactSurface: ReactSurface,
     var isDocked: Boolean = false,
     var dockEdge: DockEdge? = null,
+  )
+
+  private data class MovementBounds(
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int,
   )
 
   override fun onCreate() {
@@ -106,10 +116,11 @@ class ExpoDrawOverAppsOverlayService : Service() {
       DraggableOverlayLayout(
         this,
         onDrag = { dx, dy ->
-          windowLayoutParams.x += dx
-          windowLayoutParams.y += dy
-          storeBubblePosition(bubbleId, windowLayoutParams.x, windowLayoutParams.y)
           overlayInstances[bubbleId]?.let { currentOverlay ->
+            windowLayoutParams.x += dx
+            windowLayoutParams.y += dy
+            constrainDraggedPosition(currentOverlay)
+            storeBubblePosition(bubbleId, windowLayoutParams.x, windowLayoutParams.y)
             runCatching {
               windowManager.updateViewLayout(currentOverlay.container, windowLayoutParams)
             }
@@ -193,46 +204,65 @@ class ExpoDrawOverAppsOverlayService : Service() {
       return
     }
 
-    val screenBounds = getScreenBounds()
+    val movementBounds = getMovementBounds()
     val currentLeft = overlayInstance.layoutParams.x
     val currentTop = overlayInstance.layoutParams.y
-    val currentRight = currentLeft + bubbleWidth
-    val currentBottom = currentTop + bubbleHeight
+    val maxPositionX = (movementBounds.right - bubbleWidth).coerceAtLeast(movementBounds.left)
+    val maxPositionY = getMaxReachableY(movementBounds)
+    val edgeHideEnabled = isEdgeHideEnabled(bubbleId)
 
-    val isOutsideHorizontal = currentLeft < 0 || currentRight > screenBounds.right
-    val isOutsideVertical = currentTop < 0 || currentBottom > screenBounds.bottom
-
-    if (!isOutsideHorizontal && !isOutsideVertical) {
+    if (!edgeHideEnabled) {
+      val clampedX = currentLeft.coerceIn(movementBounds.left, maxPositionX)
+      val clampedY = currentTop.coerceIn(movementBounds.top, maxPositionY)
+      if (clampedX != currentLeft || clampedY != currentTop) {
+        overlayInstance.layoutParams.x = clampedX
+        overlayInstance.layoutParams.y = clampedY
+        storeBubblePosition(bubbleId, clampedX, clampedY)
+      }
       applyDockState(overlayInstance, false, null)
       return
     }
 
+    val currentRight = currentLeft + bubbleWidth
     val visibleSliver = dpToPx(DOCKED_VISIBLE_SLIVER_DP)
-    val dockEdge =
-      when {
-        currentLeft < 0 -> DockEdge.LEFT
-        currentRight > screenBounds.right -> DockEdge.RIGHT
-        currentTop < 0 -> DockEdge.TOP
-        else -> DockEdge.BOTTOM
+    val horizontalDockThreshold = calculateDockThreshold(bubbleWidth, visibleSliver)
+    val hiddenWidth = (bubbleWidth - visibleSliver).coerceAtLeast(0)
+    val leftOverflow = (movementBounds.left - currentLeft).coerceAtLeast(0)
+    val rightOverflow = (currentRight - movementBounds.right).coerceAtLeast(0)
+
+    val dockCandidates = mutableListOf<Pair<DockEdge, Int>>()
+    if (leftOverflow >= horizontalDockThreshold) {
+      dockCandidates.add(DockEdge.LEFT to leftOverflow)
+    }
+    if (rightOverflow >= horizontalDockThreshold) {
+      dockCandidates.add(DockEdge.RIGHT to rightOverflow)
+    }
+
+    if (dockCandidates.isEmpty()) {
+      val clampedX = currentLeft.coerceIn(movementBounds.left, maxPositionX)
+      val clampedY = currentTop.coerceIn(movementBounds.top, maxPositionY)
+      if (clampedX != currentLeft || clampedY != currentTop) {
+        overlayInstance.layoutParams.x = clampedX
+        overlayInstance.layoutParams.y = clampedY
+        storeBubblePosition(bubbleId, clampedX, clampedY)
       }
+      applyDockState(overlayInstance, false, null)
+      return
+    }
+
+    val dockEdge = dockCandidates.maxByOrNull { it.second }?.first ?: return
 
     when (dockEdge) {
       DockEdge.LEFT -> {
-        overlayInstance.layoutParams.x = -(bubbleWidth - visibleSliver)
-        overlayInstance.layoutParams.y = currentTop.coerceIn(0, screenBounds.bottom - bubbleHeight)
+        overlayInstance.layoutParams.x = movementBounds.left - hiddenWidth
+        overlayInstance.layoutParams.y = currentTop.coerceIn(movementBounds.top, maxPositionY)
       }
       DockEdge.RIGHT -> {
-        overlayInstance.layoutParams.x = screenBounds.right - visibleSliver
-        overlayInstance.layoutParams.y = currentTop.coerceIn(0, screenBounds.bottom - bubbleHeight)
+        overlayInstance.layoutParams.x = movementBounds.right - visibleSliver
+        overlayInstance.layoutParams.y = currentTop.coerceIn(movementBounds.top, maxPositionY)
       }
-      DockEdge.TOP -> {
-        overlayInstance.layoutParams.x = currentLeft.coerceIn(0, screenBounds.right - bubbleWidth)
-        overlayInstance.layoutParams.y = -(bubbleHeight - visibleSliver)
-      }
-      DockEdge.BOTTOM -> {
-        overlayInstance.layoutParams.x = currentLeft.coerceIn(0, screenBounds.right - bubbleWidth)
-        overlayInstance.layoutParams.y = screenBounds.bottom - visibleSliver
-      }
+      DockEdge.TOP,
+      DockEdge.BOTTOM -> return
     }
 
     storeBubblePosition(bubbleId, overlayInstance.layoutParams.x, overlayInstance.layoutParams.y)
@@ -251,33 +281,27 @@ class ExpoDrawOverAppsOverlayService : Service() {
       return
     }
 
-    val screenBounds = getScreenBounds()
+    val movementBounds = getMovementBounds()
+    val maxPositionX = (movementBounds.right - bubbleWidth).coerceAtLeast(movementBounds.left)
+    val maxPositionY = getMaxReachableY(movementBounds)
     when (overlayInstance.dockEdge) {
       DockEdge.LEFT -> {
-        overlayInstance.layoutParams.x = 0
+        overlayInstance.layoutParams.x = movementBounds.left
         overlayInstance.layoutParams.y =
-          overlayInstance.layoutParams.y.coerceIn(0, screenBounds.bottom - bubbleHeight)
+          overlayInstance.layoutParams.y.coerceIn(movementBounds.top, maxPositionY)
       }
       DockEdge.RIGHT -> {
-        overlayInstance.layoutParams.x = (screenBounds.right - bubbleWidth).coerceAtLeast(0)
+        overlayInstance.layoutParams.x = maxPositionX
         overlayInstance.layoutParams.y =
-          overlayInstance.layoutParams.y.coerceIn(0, screenBounds.bottom - bubbleHeight)
+          overlayInstance.layoutParams.y.coerceIn(movementBounds.top, maxPositionY)
       }
-      DockEdge.TOP -> {
-        overlayInstance.layoutParams.x =
-          overlayInstance.layoutParams.x.coerceIn(0, screenBounds.right - bubbleWidth)
-        overlayInstance.layoutParams.y = 0
-      }
-      DockEdge.BOTTOM -> {
-        overlayInstance.layoutParams.x =
-          overlayInstance.layoutParams.x.coerceIn(0, screenBounds.right - bubbleWidth)
-        overlayInstance.layoutParams.y = (screenBounds.bottom - bubbleHeight).coerceAtLeast(0)
-      }
+      DockEdge.TOP,
+      DockEdge.BOTTOM -> return
       null -> {
         overlayInstance.layoutParams.x =
-          overlayInstance.layoutParams.x.coerceIn(0, screenBounds.right - bubbleWidth)
+          overlayInstance.layoutParams.x.coerceIn(movementBounds.left, maxPositionX)
         overlayInstance.layoutParams.y =
-          overlayInstance.layoutParams.y.coerceIn(0, screenBounds.bottom - bubbleHeight)
+          overlayInstance.layoutParams.y.coerceIn(movementBounds.top, maxPositionY)
       }
     }
 
@@ -317,22 +341,99 @@ class ExpoDrawOverAppsOverlayService : Service() {
     return Pair(width, height)
   }
 
-  private fun getScreenBounds(): Rect {
+  private fun getMovementBounds(): MovementBounds {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      windowManager.currentWindowMetrics.bounds
+      val windowMetrics = windowManager.currentWindowMetrics
+      val systemBarInsets =
+        windowMetrics.windowInsets.getInsetsIgnoringVisibility(
+          WindowInsets.Type.systemBars() or
+            WindowInsets.Type.displayCutout() or
+            WindowInsets.Type.mandatorySystemGestures()
+        )
+      val sideMargin = dpToPx(SCREEN_EDGE_MARGIN_DP)
+      val top = systemBarInsets.top + sideMargin
+      val bottomInset = max(systemBarInsets.bottom, dpToPx(BOTTOM_SAFE_GAP_DP))
+      MovementBounds(
+        left = systemBarInsets.left + sideMargin,
+        top = top,
+        right = (windowMetrics.bounds.right - systemBarInsets.right - sideMargin).coerceAtLeast(sideMargin),
+        bottom = (windowMetrics.bounds.bottom - bottomInset - sideMargin).coerceAtLeast(top),
+      )
     } else {
       @Suppress("DEPRECATION")
-      Rect(
-        0,
-        0,
-        resources.displayMetrics.widthPixels,
-        resources.displayMetrics.heightPixels
+      MovementBounds(
+        left = dpToPx(SCREEN_EDGE_MARGIN_DP),
+        top = dpToPx(SCREEN_EDGE_MARGIN_DP),
+        right = resources.displayMetrics.widthPixels - dpToPx(SCREEN_EDGE_MARGIN_DP),
+        bottom = resources.displayMetrics.heightPixels - dpToPx(BOTTOM_SAFE_GAP_DP),
       )
+    }
+  }
+
+  private fun constrainDraggedPosition(overlayInstance: OverlayInstance) {
+    val (bubbleWidth, bubbleHeight) = getOverlaySize(overlayInstance.container)
+    if (bubbleWidth <= 0 || bubbleHeight <= 0) {
+      return
+    }
+
+    val movementBounds = getMovementBounds()
+    val edgeHideEnabled = isEdgeHideEnabled(overlayInstance.bubbleId)
+    val visibleSliver = dpToPx(DOCKED_VISIBLE_SLIVER_DP)
+    val hiddenWidth = (bubbleWidth - visibleSliver).coerceAtLeast(0)
+    val minX = if (edgeHideEnabled) movementBounds.left - hiddenWidth else movementBounds.left
+    val maxX =
+      if (edgeHideEnabled) {
+        movementBounds.right - visibleSliver
+      } else {
+        (movementBounds.right - bubbleWidth).coerceAtLeast(movementBounds.left)
+      }
+    val minY = movementBounds.top
+    val maxY = getMaxReachableY(movementBounds)
+
+    overlayInstance.layoutParams.x = overlayInstance.layoutParams.x.coerceIn(minX, maxX)
+    overlayInstance.layoutParams.y = overlayInstance.layoutParams.y.coerceIn(minY, maxY)
+  }
+
+  private fun getMaxReachableY(movementBounds: MovementBounds): Int {
+    return (movementBounds.bottom - dpToPx(MIN_VISIBLE_VERTICAL_SLIVER_DP)).coerceAtLeast(movementBounds.top)
+  }
+
+  private fun invalidateViewTree(view: View) {
+    view.requestLayout()
+    view.invalidate()
+    view.postInvalidateOnAnimation()
+
+    if (view is ViewGroup) {
+      for (index in 0 until view.childCount) {
+        invalidateViewTree(view.getChildAt(index))
+      }
+    }
+  }
+
+  private fun refreshOverlayTree(overlayInstance: OverlayInstance) {
+    overlayInstance.container.post {
+      overlayInstance.container.alpha = if (overlayInstance.isDocked) DOCKED_OPACITY else RESTORED_OPACITY
+      runCatching {
+        windowManager.updateViewLayout(overlayInstance.container, overlayInstance.layoutParams)
+      }
+      invalidateViewTree(overlayInstance.container)
     }
   }
 
   private fun dpToPx(value: Int): Int {
     return (value * resources.displayMetrics.density).toInt()
+  }
+
+  private fun calculateDockThreshold(bubbleSize: Int, visibleSliver: Int): Int {
+    val hiddenPortion = (bubbleSize - visibleSliver).coerceAtLeast(0)
+    if (hiddenPortion == 0) {
+      return 0
+    }
+
+    return max(
+      dpToPx(MIN_DOCK_THRESHOLD_DP),
+      (hiddenPortion * DOCK_THRESHOLD_RATIO).roundToInt()
+    ).coerceAtMost(hiddenPortion)
   }
 
   private fun createLayoutParams(bubbleId: String): WindowManager.LayoutParams {
@@ -379,11 +480,17 @@ class ExpoDrawOverAppsOverlayService : Service() {
     private const val POSITION_X_OFFSET = 36
     private const val POSITION_Y_OFFSET = 140
     private const val DOCKED_VISIBLE_SLIVER_DP = 28
+    private const val MIN_VISIBLE_VERTICAL_SLIVER_DP = 40
+    private const val SCREEN_EDGE_MARGIN_DP = 8
+    private const val BOTTOM_SAFE_GAP_DP = 32
+    private const val MIN_DOCK_THRESHOLD_DP = 20
+    private const val DOCK_THRESHOLD_RATIO = 0.35f
     private const val DOCKED_OPACITY = 0.5f
     private const val RESTORED_OPACITY = 1f
 
     private var serviceReference = WeakReference<ExpoDrawOverAppsOverlayService?>(null)
     private val bubblePositions = LinkedHashMap<String, Pair<Int, Int>>()
+    private val edgeHideEnabledStates = LinkedHashMap<String, Boolean>()
 
     internal fun requestOverlayRedraw(bubbleId: String? = null) {
       val service = serviceReference.get() ?: return
@@ -396,22 +503,27 @@ class ExpoDrawOverAppsOverlayService : Service() {
 
       for (targetBubbleId in bubbleIds) {
         val overlayInstance = service.overlayInstances[targetBubbleId] ?: continue
-
-        overlayInstance.container.post {
-          overlayInstance.container.alpha = if (overlayInstance.isDocked) DOCKED_OPACITY else RESTORED_OPACITY
-          runCatching {
-            service.windowManager.updateViewLayout(overlayInstance.container, overlayInstance.layoutParams)
-          }
-          overlayInstance.container.requestLayout()
-          overlayInstance.container.invalidate()
-          overlayInstance.container.postInvalidateOnAnimation()
-          overlayInstance.container.getChildAt(0)?.let { contentView ->
-            contentView.requestLayout()
-            contentView.invalidate()
-            contentView.postInvalidateOnAnimation()
-          }
-        }
+        service.refreshOverlayTree(overlayInstance)
       }
+    }
+
+    internal fun setEdgeHideEnabled(bubbleId: String, enabled: Boolean) {
+      val normalizedBubbleId = normalizeBubbleId(bubbleId)
+      edgeHideEnabledStates[normalizedBubbleId] = enabled
+      val service = serviceReference.get() ?: return
+      val overlayInstance = service.overlayInstances[normalizedBubbleId] ?: return
+
+      if (!enabled && overlayInstance.isDocked) {
+        service.restoreDockedBubble(normalizedBubbleId)
+      } else {
+        service.constrainDraggedPosition(overlayInstance)
+        storeBubblePosition(normalizedBubbleId, overlayInstance.layoutParams.x, overlayInstance.layoutParams.y)
+        service.applyDockState(overlayInstance, false, null)
+      }
+    }
+
+    internal fun isEdgeHideEnabled(bubbleId: String): Boolean {
+      return edgeHideEnabledStates[normalizeBubbleId(bubbleId)] ?: true
     }
 
     private fun normalizeBubbleId(bubbleId: String?): String {

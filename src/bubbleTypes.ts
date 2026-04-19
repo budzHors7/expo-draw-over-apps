@@ -9,3 +9,7 @@ export type BubbleState = {
   lastUpdatedAt: number;
   lastChangeSource: BubbleChangeSource;
 };
+
+export type BubbleDisplayOptions = {
+  edgeHideEnabled?: boolean;
+};

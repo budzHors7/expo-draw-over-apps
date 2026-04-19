@@ -24,6 +24,8 @@ type ExpoDrawOverAppsNativeModule = NativeModule<{
   decrementBubbleCountForBubble(bubbleId: string, source?: BubbleChangeSource): number;
   showBubble(): Promise<boolean>;
   showBubbleInstance(bubbleId: string): Promise<boolean>;
+  setEdgeHideEnabled(enabled: boolean): boolean;
+  setEdgeHideEnabledForBubble(bubbleId: string, enabled: boolean): boolean;
   hideBubble(): boolean;
   hideBubbleInstance(bubbleId: string): boolean;
   hideAllBubbles(): boolean;

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppState, AppStateStatus, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppState, AppStateStatus, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import {
   canDrawOverlays,
   decrementBubbleCount,
@@ -9,6 +8,7 @@ import {
   isBubbleVisible,
   requestPermission,
   setBubbleCount,
+  setEdgeHideEnabled as setBubbleEdgeHideEnabled,
   setBubbleRenderer,
   setBubbleRendererForBubble,
   showBubble,
@@ -55,6 +55,7 @@ export default function App() {
   const [granted, setGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeExample, setActiveExample] = useState<BubbleExampleId>('react-native-counter');
+  const [edgeHideEnabled, setEdgeHideEnabledState] = useState(true);
   const activeBubbleState = useBubbleState(activeExample);
   const allBubbleStates = useAllBubbleStates();
 
@@ -126,7 +127,7 @@ export default function App() {
       if (exampleId === 'countdown-timer') {
         setBubbleCount(TIMER_DURATION_SECONDS, 'bubble', exampleId);
       }
-      await showBubble(exampleId);
+      await showBubble(exampleId, { edgeHideEnabled });
     } finally {
       setLoading(false);
     }
@@ -177,7 +178,7 @@ export default function App() {
         ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
           <View style={styles.heroHeader}>
@@ -284,6 +285,9 @@ export default function App() {
           <Text style={styles.activeTitle}>{activeExampleMeta.title}</Text>
           <Text style={styles.sectionText}>{activeExampleMeta.description}</Text>
           <Text style={styles.helperText}>Hold any visible bubble to open the remove menu.</Text>
+          <Text style={styles.helperText}>
+            Edge hide is currently {edgeHideEnabled ? 'enabled' : 'disabled'} for newly shown bubbles.
+          </Text>
 
           <View style={styles.activeSummaryCard}>
             <Text style={styles.activeSummaryLabel}>Bubble ID</Text>
@@ -303,6 +307,16 @@ export default function App() {
           </Pressable>
 
           <View style={styles.controlsWrap}>
+            <Pressable
+              onPress={() => {
+                const nextValue = !edgeHideEnabled;
+                setBubbleEdgeHideEnabled(nextValue, activeExample);
+                setEdgeHideEnabledState(nextValue);
+              }}
+              style={[styles.controlButton, edgeHideEnabled ? styles.tealButton : styles.slateButton]}
+            >
+              <Text style={styles.smallButtonText}>{edgeHideEnabled ? 'Disable Edge Hide' : 'Enable Edge Hide'}</Text>
+            </Pressable>
             {activeControls.map((control) => (
               <Pressable key={control.label} onPress={control.onPress} style={[styles.controlButton, control.style]}>
                 <Text style={styles.smallButtonText}>{control.label}</Text>
@@ -311,7 +325,7 @@ export default function App() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -319,6 +333,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#eef2ff',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 18) : 18,
   },
   scrollContent: {
     paddingHorizontal: 18,
@@ -577,6 +592,9 @@ const styles = StyleSheet.create({
   },
   slateButton: {
     backgroundColor: '#475569',
+  },
+  tealButton: {
+    backgroundColor: '#0f766e',
   },
   smallButtonText: {
     color: '#ffffff',

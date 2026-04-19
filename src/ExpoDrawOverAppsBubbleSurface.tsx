@@ -14,6 +14,7 @@ export default function ExpoDrawOverAppsBubbleSurface({
 }: ExpoDrawOverAppsBubbleSurfaceProps) {
   const bubbleState = useBubbleState(bubbleId);
   const BubbleRenderer = useBubbleRenderer(bubbleId);
+  const renderKey = `${bubbleId}:${bubbleState.count}:${bubbleState.lastUpdatedAt}:${bubbleState.isVisible ? '1' : '0'}`;
 
   if (!bubbleState.isVisible) {
     return null;
@@ -22,6 +23,7 @@ export default function ExpoDrawOverAppsBubbleSurface({
   if (BubbleRenderer) {
     return (
       <BubbleRenderer
+        key={renderKey}
         bubbleId={bubbleId}
         state={bubbleState}
         increment={() => incrementBubbleCount('bubble', bubbleId)}
@@ -38,7 +40,7 @@ export default function ExpoDrawOverAppsBubbleSurface({
   }
 
   return (
-    <View style={styles.bubble}>
+    <View key={renderKey} style={styles.bubble}>
       <Text style={styles.caption}>Bubble Counter</Text>
       <View style={styles.debugBadge}>
         <Text style={styles.debugBadgeText}>ID: {bubbleId}</Text>

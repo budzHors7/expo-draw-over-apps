@@ -124,6 +124,16 @@ class ExpoDrawOverAppsModule : Module() {
       promise.resolve(true)
     }
 
+    Function("setEdgeHideEnabled") { enabled: Boolean ->
+      ExpoDrawOverAppsOverlayService.setEdgeHideEnabled(DEFAULT_BUBBLE_ID, enabled)
+      true
+    }
+
+    Function("setEdgeHideEnabledForBubble") { bubbleId: String, enabled: Boolean ->
+      ExpoDrawOverAppsOverlayService.setEdgeHideEnabled(bubbleId, enabled)
+      true
+    }
+
     Function("hideBubble") {
       val serviceIntent = Intent(context, ExpoDrawOverAppsOverlayService::class.java).apply {
         action = ExpoDrawOverAppsOverlayService.ACTION_HIDE_BUBBLE
