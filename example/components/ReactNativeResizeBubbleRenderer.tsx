@@ -1,69 +1,28 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { BubbleRendererProps } from 'expo-draw-over-apps';
+import { ExpoDrawOverAppsReactNativeWindowContainer, type BubbleRendererProps } from 'expo-draw-over-apps';
 import {
   RESIZE_BUBBLE_MAX_STEP,
   RESIZE_BUBBLE_MIN_STEP,
-  RESIZE_BUBBLE_STEPS,
   getResizeBubbleStep,
   getResizeBubbleStepConfig,
 } from './resizeBubbleSizing';
 
-const INPUT_RANGE = RESIZE_BUBBLE_STEPS.map((_, index) => index);
-
 export function ReactNativeResizeBubbleRenderer({ state, setCount, hide }: BubbleRendererProps) {
   const activeStep = getResizeBubbleStep(state.count);
   const activeConfig = getResizeBubbleStepConfig(state.count);
-  const animatedStep = useRef(new Animated.Value(activeStep)).current;
-
-  useEffect(() => {
-    Animated.timing(animatedStep, {
-      toValue: activeStep,
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [activeStep, animatedStep]);
-
-  const animatedShellStyle = useMemo(
-    () => ({
-      width: animatedStep.interpolate({
-        inputRange: INPUT_RANGE,
-        outputRange: RESIZE_BUBBLE_STEPS.map((step) => step.dimension),
-      }),
-      height: animatedStep.interpolate({
-        inputRange: INPUT_RANGE,
-        outputRange: RESIZE_BUBBLE_STEPS.map((step) => step.height),
-      }),
-      borderRadius: animatedStep.interpolate({
-        inputRange: INPUT_RANGE,
-        outputRange: RESIZE_BUBBLE_STEPS.map((step) => step.radius),
-      }),
-    }),
-    [animatedStep]
-  );
-
-  const animatedOrbStyle = useMemo(
-    () => ({
-      width: animatedStep.interpolate({
-        inputRange: INPUT_RANGE,
-        outputRange: RESIZE_BUBBLE_STEPS.map((step) => step.orbSize),
-      }),
-      height: animatedStep.interpolate({
-        inputRange: INPUT_RANGE,
-        outputRange: RESIZE_BUBBLE_STEPS.map((step) => step.orbSize),
-      }),
-      borderRadius: animatedStep.interpolate({
-        inputRange: INPUT_RANGE,
-        outputRange: RESIZE_BUBBLE_STEPS.map((step) => step.orbSize / 2),
-      }),
-    }),
-    [animatedStep]
-  );
 
   return (
-    <Animated.View style={[styles.shell, animatedShellStyle]}>
+    <ExpoDrawOverAppsReactNativeWindowContainer
+      width={activeConfig.dimension}
+      height={activeConfig.height}
+      borderRadius={activeConfig.radius}
+      backgroundColor="#101820"
+      animationConfig={{ duration: 220 }}
+      style={styles.shell}
+      contentContainerStyle={styles.content}
+      testID="react-native-resize-window"
+    >
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.eyebrow}>React Native</Text>
@@ -75,9 +34,18 @@ export function ReactNativeResizeBubbleRenderer({ state, setCount, hide }: Bubbl
       </View>
 
       <View style={styles.stage}>
-        <Animated.View style={[styles.orb, animatedOrbStyle]}>
+        <View
+          style={[
+            styles.orb,
+            {
+              width: activeConfig.orbSize,
+              height: activeConfig.orbSize,
+              borderRadius: activeConfig.orbSize / 2,
+            },
+          ]}
+        >
           <Text style={styles.orbLabel}>{activeConfig.shortLabel}</Text>
-        </Animated.View>
+        </View>
         <Text style={styles.sizeLabel}>{activeConfig.label}</Text>
       </View>
 
@@ -95,17 +63,15 @@ export function ReactNativeResizeBubbleRenderer({ state, setCount, hide }: Bubbl
           <Text style={styles.sizeButtonText}>Big</Text>
         </Pressable>
       </View>
-    </Animated.View>
+    </ExpoDrawOverAppsReactNativeWindowContainer>
   );
 }
 
 const styles = StyleSheet.create({
   shell: {
-    overflow: 'hidden',
+    borderRadius: 28,
     paddingHorizontal: 14,
     paddingVertical: 14,
-    gap: 10,
-    backgroundColor: '#101820',
     borderWidth: 2,
     borderColor: '#fb7185',
     shadowColor: '#030712',
@@ -113,6 +79,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.32,
     shadowRadius: 26,
     elevation: 20,
+  },
+  content: {
+    flex: 1,
+    gap: 10,
   },
   headerRow: {
     flexDirection: 'row',

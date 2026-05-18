@@ -461,3 +461,101 @@ body {
     width: auto;
   }
 }
+/*
+ * Version chooser used on the getting-started page.
+ */
+.versionInstallSelector {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  background: var(--ifm-background-surface-color);
+}
+
+.versionInstallSelector__header,
+.versionInstallSelector__body {
+  display: grid;
+  gap: 1rem;
+}
+
+.versionInstallSelector__header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.versionInstallSelector__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--ifm-color-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.versionInstallSelector__title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.versionInstallSelector__control {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.versionInstallSelector__control select {
+  min-width: 10rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 0.45rem 0.65rem;
+  color: var(--ifm-font-color-base);
+  background: var(--ifm-background-color);
+}
+
+.versionInstallSelector__body {
+  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.9fr);
+  align-items: start;
+}
+
+.versionInstallSelector__badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  color: var(--ifm-color-primary-darkest);
+  background: var(--ifm-color-primary-lightest);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.versionInstallSelector__body h3 {
+  margin: 0.65rem 0 0.5rem;
+}
+
+.versionInstallSelector__body ul {
+  margin-bottom: 0.75rem;
+}
+
+.versionInstallSelector__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-weight: 700;
+}
+
+.versionInstallSelector__command {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .versionInstallSelector__header,
+  .versionInstallSelector__body {
+    grid-template-columns: 1fr;
+  }
+
+  .versionInstallSelector__control select {
+    width: 100%;
+  }
+}

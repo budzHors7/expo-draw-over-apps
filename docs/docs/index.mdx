@@ -6,11 +6,15 @@ sidebar_position: 1
 description: Install expo-draw-over-apps and start Android overlay bubbles with React Native, NativeWind, or expo-ui renderer paths.
 ---
 
+import VersionInstallSelector from '@site/src/components/VersionInstallSelector';
+
 # Expo Draw Over Apps
 
-`expo-draw-over-apps` is an Expo module for Android overlays. It lets an app check the draw-over-apps permission, open the Android permission screen, show named floating bubbles, edge-hide a bubble, keep bubble state in sync, preview bubble UI inside the app, and use React Native or NativeWind renderers.
+`expo-draw-over-apps` is an Expo module for Android overlays. It lets an app check the draw-over-apps permission, open the Android permission screen, show named floating bubbles, edge-hide a bubble, keep bubble state in sync, preview bubble UI inside the app, and use React Native, NativeWind, Reanimated, or Expo UI renderer paths.
 
 The package is Android only. It does not run in Expo Go because it includes native Android code.
+
+<VersionInstallSelector />
 
 ## Install
 
@@ -18,13 +22,19 @@ The package is Android only. It does not run in Expo Go because it includes nati
 npm install expo-draw-over-apps
 ```
 
-If you want to use the packaged Compose-flavored renderer API, install `@expo/ui` too:
+For SDK 56 beta, install Reanimated as the window container animation engine:
 
 ```bash
-npm install @expo/ui
+npx expo install react-native-reanimated
 ```
 
-`@expo/ui` is optional. Apps that use only React Native renderers do not need it.
+If you want to use the packaged Expo UI native window path, install `@expo/ui` too:
+
+```bash
+npx expo install @expo/ui
+```
+
+`@expo/ui` is optional. Apps that use only React Native window containers do not need it.
 
 ## Expo app requirements
 
@@ -97,6 +107,38 @@ export default function App() {
         <Text>+1 in app</Text>
       </Pressable>
     </View>
+  );
+}
+```
+
+## Reanimated window containers
+
+SDK 56 beta adds two window containers for custom bubble renderers:
+
+- `ExpoDrawOverAppsReactNativeWindowContainer` renders a React Native window surface and animates numeric `width`, `height`, and `borderRadius` changes with Reanimated.
+- `ExpoDrawOverAppsNativeWindowContainer` uses an Expo UI native Host/Surface on Android for the clipped backdrop, then layers React Native children inside the same Reanimated window. It falls back to the React Native container when `@expo/ui` is not installed.
+
+Both containers accept normal React Native `style` props and `className` / `contentClassName` for apps that already use NativeWind.
+
+```tsx
+import { Text } from 'react-native';
+import { ExpoDrawOverAppsReactNativeWindowContainer } from 'expo-draw-over-apps';
+
+export function ResizeBubble({ state }) {
+  const large = state.count > 0;
+
+  return (
+    <ExpoDrawOverAppsReactNativeWindowContainer
+      width={large ? 238 : 154}
+      height={large ? 256 : 172}
+      borderRadius={large ? 44 : 28}
+      className="border-2 border-rose-400 bg-slate-950 px-4 py-4"
+      contentClassName="flex-1 items-center justify-center"
+    >
+      <Text style={{ color: 'white', fontWeight: '900' }}>
+        Smooth resize
+      </Text>
+    </ExpoDrawOverAppsReactNativeWindowContainer>
   );
 }
 ```

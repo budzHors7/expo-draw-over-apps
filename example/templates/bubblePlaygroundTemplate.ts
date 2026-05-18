@@ -64,7 +64,7 @@ export const BUBBLE_PLAYGROUND_TEMPLATES: BubblePlaygroundTemplate[] = [
   {
     id: 'expo-ui-resize-bubble',
     title: 'Native Expo UI Resize Bubble',
-    description: 'Native Expo UI bubble using Jetpack Compose Host, Slider, and content-size animation.',
+    description: 'Native Expo UI surface with Reanimated resize and React Native children.',
     initialCount: RESIZE_BUBBLE_INITIAL_STEP,
     renderer: NativeExpoUiResizeBubbleRenderer,
     tone: 'resizeExpoUi',

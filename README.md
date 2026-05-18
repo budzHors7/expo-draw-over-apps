@@ -13,6 +13,7 @@ It can:
 - register custom React Native renderers
 - style custom renderers with NativeWind when your app already uses it
 - use the packaged `@expo/ui` Compose-flavored renderer API
+- wrap custom renderers in Reanimated React Native or Expo UI native window containers for smoother resizing
 
 This package is Android only. It does not run in Expo Go because it includes native Android code.
 
@@ -39,13 +40,24 @@ Docusaurus writes the static output to `docs/build`. The repo also includes a Gi
 npm install expo-draw-over-apps
 ```
 
-Install `@expo/ui` only if you want the packaged Compose-flavored renderer API:
+For the SDK 56 beta window containers, install Reanimated with Expo's installer:
 
 ```bash
-npm install @expo/ui
+npx expo install react-native-reanimated
 ```
 
-`@expo/ui` is an optional peer dependency. Apps that use only React Native renderers do not need it.
+Install `@expo/ui` only if you want the packaged Compose-flavored renderer API or the native Expo UI window container:
+
+```bash
+npx expo install @expo/ui
+```
+
+`@expo/ui` is an optional peer dependency. Apps that use only React Native window containers do not need it.
+
+## Version tracks
+
+- SDK 56 beta: current repo implementation. Adds Reanimated-backed `ExpoDrawOverAppsReactNativeWindowContainer` and `ExpoDrawOverAppsNativeWindowContainer`.
+- SDK 55: latest npm release is `55.0.2`. It supports Android overlay permission and floating React Native or Jetpack Compose bubbles. Install with `npm install expo-draw-over-apps@55`.
 
 If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:
 
@@ -105,6 +117,31 @@ export default function App() {
         <Text>+1 in app</Text>
       </Pressable>
     </View>
+  );
+}
+```
+
+## Smooth window containers
+
+Use the window containers when a bubble changes size. Both accept React Native children, React Native `style`, and NativeWind `className` / `contentClassName`.
+
+```tsx
+import { Text } from 'react-native';
+import { ExpoDrawOverAppsReactNativeWindowContainer } from 'expo-draw-over-apps';
+
+export function SmoothBubble({ state }) {
+  const expanded = state.count > 0;
+
+  return (
+    <ExpoDrawOverAppsReactNativeWindowContainer
+      width={expanded ? 238 : 154}
+      height={expanded ? 256 : 172}
+      borderRadius={expanded ? 44 : 28}
+      className="border-2 border-rose-400 bg-slate-950 px-4 py-4"
+      contentClassName="flex-1 items-center justify-center"
+    >
+      <Text style={{ color: 'white', fontWeight: '900' }}>Smooth resize</Text>
+    </ExpoDrawOverAppsReactNativeWindowContainer>
   );
 }
 ```

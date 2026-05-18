@@ -80,6 +80,7 @@ export default {
 
 ## Notes
 
-- NativeWind classes run in JavaScript-rendered bubble surfaces.
+- NativeWind classes run in JavaScript-rendered bubble surfaces and in the React Native children passed to the window containers.
+- `ExpoDrawOverAppsReactNativeWindowContainer` and `ExpoDrawOverAppsNativeWindowContainer` accept `className` and `contentClassName`.
+- For smooth resizing, pass numeric `width`, `height`, and `borderRadius` props to a window container instead of swapping unrelated wrapper layouts.
 - The packaged Compose-flavored renderer does not read NativeWind classes.
-- Keep renderer dimensions stable. The Android overlay window uses the rendered bubble size.

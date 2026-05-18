@@ -5,6 +5,8 @@ describe('bubble playground templates', () => {
       'expo-draw-over-apps',
       () => ({
         ExpoDrawOverAppsComposeBubbleRenderer: jest.fn(() => null),
+        ExpoDrawOverAppsNativeWindowContainer: jest.fn(({ children }) => children),
+        ExpoDrawOverAppsReactNativeWindowContainer: jest.fn(({ children }) => children),
       }),
       { virtual: true }
     );

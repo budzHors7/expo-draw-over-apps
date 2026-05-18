@@ -129,6 +129,59 @@ export function TailwindBubble({ state, increment, decrement }: BubbleRendererPr
 }
 ```
 
+## Reanimated window containers
+
+Use the built-in window containers when a renderer changes size. They keep resize animation inside Reanimated instead of repeatedly driving overlay layout through React state.
+
+```tsx
+import { Pressable, Text } from 'react-native';
+import {
+  ExpoDrawOverAppsNativeWindowContainer,
+  ExpoDrawOverAppsReactNativeWindowContainer,
+  type BubbleRendererProps,
+} from 'expo-draw-over-apps';
+
+export function SmoothReactNativeBubble({ state, increment }: BubbleRendererProps) {
+  const expanded = state.count % 2 === 1;
+
+  return (
+    <ExpoDrawOverAppsReactNativeWindowContainer
+      width={expanded ? 238 : 154}
+      height={expanded ? 256 : 172}
+      borderRadius={expanded ? 44 : 28}
+      className="border-2 border-rose-400 bg-slate-950 px-4 py-4"
+      contentClassName="flex-1 items-center justify-center"
+    >
+      <Pressable onPress={increment}>
+        <Text style={{ color: 'white', fontWeight: '900' }}>Toggle size</Text>
+      </Pressable>
+    </ExpoDrawOverAppsReactNativeWindowContainer>
+  );
+}
+
+export function SmoothExpoUiBubble({ state, increment }: BubbleRendererProps) {
+  const expanded = state.count % 2 === 1;
+
+  return (
+    <ExpoDrawOverAppsNativeWindowContainer
+      width={expanded ? 238 : 154}
+      height={expanded ? 256 : 172}
+      borderRadius={expanded ? 44 : 28}
+      backgroundColor="#f8fafc"
+      surfaceColor="#f8fafc"
+      className="border-2 border-cyan-600 px-4 py-4"
+      contentClassName="flex-1 items-center justify-center"
+    >
+      <Pressable onPress={increment}>
+        <Text style={{ color: '#0f172a', fontWeight: '900' }}>Toggle size</Text>
+      </Pressable>
+    </ExpoDrawOverAppsNativeWindowContainer>
+  );
+}
+```
+
+`ExpoDrawOverAppsNativeWindowContainer` uses Expo UI's Android Host/Surface when `@expo/ui` is installed and falls back to the React Native container otherwise. Both paths accept React Native children.
+
 ## Compose-flavored renderer
 
 `setComposeBubbleRenderer()` registers the packaged `@expo/ui` entry point.
