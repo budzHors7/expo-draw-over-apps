@@ -1,5 +1,10 @@
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
 import {
+  FloatingWindowPreview,
+  createFloatingWindowPreviewState,
+  getNextFloatingWindowPreviewState,
+} from './FloatingWindowPreview';
+import {
   ExpoDrawOverAppsComposeBubbleRenderer,
   setComposeBubbleRenderer,
 } from './ExpoDrawOverAppsComposeBubbleRenderer';
@@ -15,26 +20,31 @@ import {
 } from './bubbleState';
 import { setBubbleRenderer, setBubbleRendererForBubble } from './bubbleRenderer';
 import { ensureBubbleSurfaceRegistered } from './registerBubbleSurface';
-import { DEFAULT_BUBBLE_ID, type BubbleDisplayOptions } from './bubbleTypes';
+import { DEFAULT_BUBBLE_ID, normalizeBubbleId, type BubbleDisplayOptions } from './bubbleTypes';
 
 ensureBubbleSurfaceRegistered();
 
-function normalizeBubbleId(bubbleId?: string): string {
-  return bubbleId && bubbleId.trim().length > 0 ? bubbleId : DEFAULT_BUBBLE_ID;
-}
-
+/**
+ * Returns whether Android currently allows this app to draw over other apps.
+ */
 export function canDrawOverlays(): boolean {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
   return ExpoDrawOverAppsModule.canDrawOverlays();
 }
 
+/**
+ * Opens the Android overlay permission screen when permission is missing.
+ */
 export async function requestPermission(): Promise<boolean> {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
   return await ExpoDrawOverAppsModule.requestPermission();
 }
 
+/**
+ * Enables or disables edge-hide behavior for one named bubble.
+ */
 export function setEdgeHideEnabled(
   enabled: boolean,
   bubbleId: string = DEFAULT_BUBBLE_ID
@@ -48,6 +58,9 @@ export function setEdgeHideEnabled(
     : ExpoDrawOverAppsModule.setEdgeHideEnabledForBubble(normalizedBubbleId, enabled);
 }
 
+/**
+ * Shows a named floating bubble and optionally applies display options first.
+ */
 export async function showBubble(
   bubbleId: string = DEFAULT_BUBBLE_ID,
   options?: BubbleDisplayOptions
@@ -67,6 +80,9 @@ export async function showBubble(
   return didShow;
 }
 
+/**
+ * Hides one named floating bubble.
+ */
 export function hideBubble(bubbleId: string = DEFAULT_BUBBLE_ID): boolean {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
@@ -80,6 +96,9 @@ export function hideBubble(bubbleId: string = DEFAULT_BUBBLE_ID): boolean {
   return didHide;
 }
 
+/**
+ * Hides every floating bubble known to the native overlay service.
+ */
 export function hideAllBubbles(): boolean {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
@@ -88,11 +107,17 @@ export function hideAllBubbles(): boolean {
   return didHide;
 }
 
+/**
+ * Returns the latest known visibility state for one named bubble.
+ */
 export function isBubbleVisible(bubbleId: string = DEFAULT_BUBBLE_ID): boolean {
   const normalizedBubbleId = normalizeBubbleId(bubbleId);
   return refreshBubbleState(normalizedBubbleId).isVisible;
 }
 
+/**
+ * Brings the host app to the foreground from a bubble action.
+ */
 export async function openApp(): Promise<boolean> {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
@@ -100,6 +125,9 @@ export async function openApp(): Promise<boolean> {
 }
 
 export {
+  createFloatingWindowPreviewState,
+  FloatingWindowPreview,
+  getNextFloatingWindowPreviewState,
   getAllBubbleStates,
   decrementBubbleCount,
   ExpoDrawOverAppsComposeBubbleRenderer,
@@ -114,6 +142,7 @@ export {
   useBubbleState,
 };
 
+export type { FloatingWindowPreviewProps, FloatingWindowPreviewRenderProps } from './FloatingWindowPreview';
 export type { BubbleRenderer, BubbleRendererProps } from './bubbleRenderer';
-export { DEFAULT_BUBBLE_ID } from './bubbleTypes';
+export { DEFAULT_BUBBLE_ID, MAX_BUBBLE_ID_LENGTH, normalizeBubbleId } from './bubbleTypes';
 export type { BubbleChangeSource, BubbleDisplayOptions, BubbleState } from './bubbleTypes';

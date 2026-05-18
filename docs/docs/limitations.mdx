@@ -1,0 +1,31 @@
+---
+title: Limitations
+sidebar_position: 6
+description: Android, Expo Go, overlay permission, NativeWind, and Compose renderer limitations for expo-draw-over-apps.
+---
+
+# Limitations
+
+## Android only
+
+The module targets Android overlays. It does not provide iOS overlay behavior.
+
+## Expo Go
+
+Expo Go is not supported because the package includes native Android code. Use a development build, custom client, or standalone Android build.
+
+## User-controlled permission
+
+Android requires the user to grant draw-over-apps permission in system settings. Your app can open the settings screen, but it cannot approve the permission for the user.
+
+## Native overlay service
+
+The real floating bubble is hosted by an Android service. Preview components run inside your app and do not create native overlay windows.
+
+## Compose renderer status
+
+`@expo/ui` is optional, and `setComposeBubbleRenderer()` is available. Current Android overlay builds use a React Native fallback for the packaged Compose-flavored renderer to avoid unstable overlay mounting.
+
+## Bubble ID safety
+
+Bubble IDs cross the JavaScript and native boundary. Keep them static and non-sensitive. The module normalizes free-form IDs, but normalization is not a privacy boundary.

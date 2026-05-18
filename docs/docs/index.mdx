@@ -1,0 +1,110 @@
+---
+id: index
+title: Getting started
+slug: /
+sidebar_position: 1
+description: Install expo-draw-over-apps and start Android overlay bubbles with React Native, NativeWind, or expo-ui renderer paths.
+---
+
+# Expo Draw Over Apps
+
+`expo-draw-over-apps` is an Expo module for Android overlays. It lets an app check the draw-over-apps permission, open the Android permission screen, show named floating bubbles, edge-hide a bubble, keep bubble state in sync, preview bubble UI inside the app, and use React Native or NativeWind renderers.
+
+The package is Android only. It does not run in Expo Go because it includes native Android code.
+
+## Install
+
+```bash
+npm install expo-draw-over-apps
+```
+
+If you want to use the packaged Compose-flavored renderer API, install `@expo/ui` too:
+
+```bash
+npm install @expo/ui
+```
+
+`@expo/ui` is optional. Apps that use only React Native renderers do not need it.
+
+## Expo app requirements
+
+Use a development build, a custom client, or a standalone Android build.
+
+If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:
+
+[Install Expo modules in a React Native project](https://docs.expo.dev/bare/installing-expo-modules/)
+
+## Android setup
+
+The module ships with the Android pieces it needs:
+
+- `android.permission.SYSTEM_ALERT_WINDOW`
+- the internal overlay service
+
+Autolinking handles the native module. You should not need to edit `AndroidManifest.xml` by hand for the default setup.
+
+## Quick start
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import {
+  canDrawOverlays,
+  hideBubble,
+  incrementBubbleCount,
+  requestPermission,
+  showBubble,
+  useBubbleState,
+} from 'expo-draw-over-apps';
+
+export default function App() {
+  const [granted, setGranted] = useState(false);
+  const bubbleState = useBubbleState();
+
+  useEffect(() => {
+    setGranted(canDrawOverlays());
+  }, []);
+
+  async function handlePermission() {
+    await requestPermission();
+    setGranted(canDrawOverlays());
+  }
+
+  async function handleToggleBubble() {
+    if (bubbleState.isVisible) {
+      hideBubble();
+      return;
+    }
+
+    await showBubble('default', { edgeHideEnabled: true });
+  }
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <Text>Overlay permission: {granted ? 'granted' : 'missing'}</Text>
+      <Text>Bubble visible: {bubbleState.isVisible ? 'yes' : 'no'}</Text>
+      <Text>Counter: {bubbleState.count}</Text>
+
+      <Pressable onPress={() => void handlePermission()}>
+        <Text>Request permission</Text>
+      </Pressable>
+
+      <Pressable onPress={() => void handleToggleBubble()}>
+        <Text>{bubbleState.isVisible ? 'Hide bubble' : 'Show bubble'}</Text>
+      </Pressable>
+
+      <Pressable onPress={() => incrementBubbleCount('app')}>
+        <Text>+1 in app</Text>
+      </Pressable>
+    </View>
+  );
+}
+```
+
+## What to read next
+
+- [Permission flow](/docs/tutorial/permission-flow) covers the Android settings handoff.
+- [Floating window preview](/docs/tutorial/floating-window-preview) shows how to design a renderer before starting the overlay service.
+- [NativeWind support](/docs/tutorial/nativewind) covers `className` renderers in apps that already use NativeWind.
+- [Fixtures](/docs/fixtures/) lists the example bubbles shipped with the repo.
+- [Public API](/docs/public-api/) is generated from the TypeScript exports.

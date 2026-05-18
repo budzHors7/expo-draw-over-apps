@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
+import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.View
 import android.view.View.MeasureSpec
@@ -15,6 +16,17 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.FrameLayout
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.facebook.react.ReactApplication
 import com.facebook.react.interfaces.fabric.ReactSurface
 import java.lang.ref.WeakReference
@@ -22,9 +34,21 @@ import java.util.LinkedHashMap
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-class ExpoDrawOverAppsOverlayService : Service() {
+class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
   private lateinit var windowManager: WindowManager
+  private val lifecycleRegistry = LifecycleRegistry(this)
+  private val savedStateRegistryController = SavedStateRegistryController.create(this)
+  private val overlayViewModelStore = ViewModelStore()
   private val overlayInstances = LinkedHashMap<String, OverlayInstance>()
+
+  override val lifecycle: Lifecycle
+    get() = lifecycleRegistry
+
+  override val savedStateRegistry: SavedStateRegistry
+    get() = savedStateRegistryController.savedStateRegistry
+
+  override val viewModelStore: ViewModelStore
+    get() = overlayViewModelStore
 
   private enum class DockEdge {
     LEFT,
@@ -52,6 +76,11 @@ class ExpoDrawOverAppsOverlayService : Service() {
   override fun onCreate() {
     super.onCreate()
     windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+    savedStateRegistryController.performAttach()
+    savedStateRegistryController.performRestore(null)
+    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     serviceReference = WeakReference(this)
   }
 
@@ -77,6 +106,10 @@ class ExpoDrawOverAppsOverlayService : Service() {
     if (serviceReference.get() === this) {
       serviceReference.clear()
     }
+    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+    lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    overlayViewModelStore.clear()
     super.onDestroy()
   }
 
@@ -101,10 +134,16 @@ class ExpoDrawOverAppsOverlayService : Service() {
       return
     }
 
+    val overlayContext =
+      applicationInfo.theme
+        .takeIf { it != 0 }
+        ?.let { theme -> ContextThemeWrapper(this, theme) }
+        ?: this
+
     val initialProps = Bundle().apply {
       putString("bubbleId", bubbleId)
     }
-    val surface = reactHost.createSurface(this, BUBBLE_COMPONENT_NAME, initialProps)
+    val surface = reactHost.createSurface(overlayContext, BUBBLE_COMPONENT_NAME, initialProps)
     val surfaceView = surface.view ?: run {
       ExpoDrawOverAppsModule.setBubbleVisibilityInternal(false, bubbleId, SOURCE_APP)
       stopSelfIfIdle()
@@ -114,7 +153,7 @@ class ExpoDrawOverAppsOverlayService : Service() {
     val windowLayoutParams = createLayoutParams(bubbleId)
     val container =
       DraggableOverlayLayout(
-        this,
+        overlayContext,
         onDrag = { dx, dy ->
           overlayInstances[bubbleId]?.let { currentOverlay ->
             windowLayoutParams.x += dx
@@ -137,6 +176,8 @@ class ExpoDrawOverAppsOverlayService : Service() {
           restoreDockedBubble(bubbleId)
         }
       ).apply {
+        attachOverlayViewTreeOwners()
+        surfaceView.attachOverlayViewTreeOwners()
         layoutParams = FrameLayout.LayoutParams(
           ViewGroup.LayoutParams.WRAP_CONTENT,
           ViewGroup.LayoutParams.WRAP_CONTENT
@@ -165,6 +206,12 @@ class ExpoDrawOverAppsOverlayService : Service() {
       dockBubbleIfNeeded(bubbleId)
       requestOverlayRedraw(bubbleId)
     }
+  }
+
+  private fun View.attachOverlayViewTreeOwners() {
+    setViewTreeLifecycleOwner(this@ExpoDrawOverAppsOverlayService)
+    setViewTreeSavedStateRegistryOwner(this@ExpoDrawOverAppsOverlayService)
+    setViewTreeViewModelStoreOwner(this@ExpoDrawOverAppsOverlayService)
   }
 
   private fun hideBubble(bubbleId: String, source: String) {
@@ -473,6 +520,7 @@ class ExpoDrawOverAppsOverlayService : Service() {
     const val EXTRA_BUBBLE_ID = "expo.modules.drawoverapps.extra.BUBBLE_ID"
     const val BUBBLE_COMPONENT_NAME = "ExpoDrawOverAppsBubble"
     private const val DEFAULT_BUBBLE_ID = "default"
+    private const val MAX_BUBBLE_ID_LENGTH = 80
     private const val SOURCE_APP = "app"
     private const val SOURCE_BUBBLE = "bubble"
     private const val BASE_POSITION_X = 48
@@ -491,6 +539,8 @@ class ExpoDrawOverAppsOverlayService : Service() {
     private var serviceReference = WeakReference<ExpoDrawOverAppsOverlayService?>(null)
     private val bubblePositions = LinkedHashMap<String, Pair<Int, Int>>()
     private val edgeHideEnabledStates = LinkedHashMap<String, Boolean>()
+    private val unsafeBubbleIdPattern = Regex("[^A-Za-z0-9._:-]+")
+    private val repeatedDashPattern = Regex("-+")
 
     internal fun requestOverlayRedraw(bubbleId: String? = null) {
       val service = serviceReference.get() ?: return
@@ -527,7 +577,16 @@ class ExpoDrawOverAppsOverlayService : Service() {
     }
 
     private fun normalizeBubbleId(bubbleId: String?): String {
-      return bubbleId?.takeIf { it.isNotBlank() } ?: DEFAULT_BUBBLE_ID
+      val normalizedBubbleId = bubbleId
+        ?.trim()
+        ?.replace(unsafeBubbleIdPattern, "-")
+        ?.replace(repeatedDashPattern, "-")
+        ?.trim('-')
+        ?.take(MAX_BUBBLE_ID_LENGTH)
+        ?.trimEnd('-')
+        .orEmpty()
+
+      return normalizedBubbleId.ifEmpty { DEFAULT_BUBBLE_ID }
     }
 
     private fun getOrCreateBubblePosition(bubbleId: String): Pair<Int, Int> {

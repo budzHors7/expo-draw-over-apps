@@ -34,7 +34,12 @@ function ComposeUnavailableFallback({
       </View>
 
       <View style={fallbackStyles.actions}>
-        <Pressable onPress={() => void openApp()} style={[fallbackStyles.actionButton, fallbackStyles.secondaryButton]}>
+        <Pressable
+          onPress={() => {
+            openApp().catch(() => {});
+          }}
+          style={[fallbackStyles.actionButton, fallbackStyles.secondaryButton]}
+        >
           <Text style={fallbackStyles.secondaryText}>Open</Text>
         </Pressable>
 
@@ -50,6 +55,11 @@ function ComposeUnavailableFallback({
   );
 }
 
+/**
+ * Packaged Compose-flavored bubble renderer.
+ *
+ * Current Android overlay builds render a React Native fallback for stability.
+ */
 export function ExpoDrawOverAppsComposeBubbleRenderer(props: BubbleRendererProps) {
   if (Platform.OS !== 'android') {
     return <ComposeUnavailableFallback {...props} />;
@@ -63,6 +73,9 @@ export function ExpoDrawOverAppsComposeBubbleRenderer(props: BubbleRendererProps
   );
 }
 
+/**
+ * Registers the packaged Compose-flavored renderer globally or for one named bubble.
+ */
 export function setComposeBubbleRenderer(bubbleId?: string) {
   if (bubbleId) {
     setBubbleRendererForBubble(bubbleId, ExpoDrawOverAppsComposeBubbleRenderer);

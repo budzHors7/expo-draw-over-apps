@@ -28,7 +28,6 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.extraNodeModules = {
-  'expo-draw-over-apps': path.resolve(__dirname, '..'),
   expo: path.join(exampleNodeModules, 'expo'),
   'expo-modules-core': path.join(exampleNodeModules, 'expo-modules-core'),
   react: path.join(exampleNodeModules, 'react'),

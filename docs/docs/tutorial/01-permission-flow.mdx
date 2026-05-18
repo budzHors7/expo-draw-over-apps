@@ -1,0 +1,52 @@
+---
+title: Permission flow
+sidebar_position: 1
+---
+
+# Permission flow
+
+Android requires the user to grant draw-over-apps permission before your app can show an overlay window. The module exposes a small flow for that.
+
+1. Call `canDrawOverlays()`.
+2. If it returns `false`, call `requestPermission()`.
+3. Wait for the user to return from Android settings.
+4. Call `canDrawOverlays()` again.
+5. Show a bubble only after permission is granted.
+
+```tsx
+import { useEffect, useState } from 'react';
+import { AppState, Pressable, Text, View } from 'react-native';
+import { canDrawOverlays, requestPermission } from 'expo-draw-over-apps';
+
+export function OverlayPermissionGate() {
+  const [granted, setGranted] = useState(false);
+
+  useEffect(() => {
+    setGranted(canDrawOverlays());
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        setGranted(canDrawOverlays());
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  async function openSettings() {
+    await requestPermission();
+    setGranted(canDrawOverlays());
+  }
+
+  return (
+    <View style={{ gap: 12 }}>
+      <Text>Overlay permission: {granted ? 'granted' : 'missing'}</Text>
+      <Pressable onPress={() => void openSettings()}>
+        <Text>Open Android overlay settings</Text>
+      </Pressable>
+    </View>
+  );
+}
+```
+
+`requestPermission()` returns `true` when permission is already granted. When Android opens settings, users still need to approve the permission themselves.

@@ -1,0 +1,155 @@
+---
+title: Renderers
+sidebar_position: 4
+description: Register custom React Native, NativeWind, and Compose-flavored bubble renderers for expo-draw-over-apps.
+---
+
+# Renderers
+
+The default bubble is a React Native renderer. You can replace it globally or per bubble.
+
+## React Native renderer
+
+```tsx
+import { useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  type BubbleRendererProps,
+  setBubbleRendererForBubble,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'chat-head';
+
+function ChatHeadBubble({ state, increment, decrement, hide, openApp }: BubbleRendererProps) {
+  return (
+    <View style={styles.bubble}>
+      <Text style={styles.label}>Counter</Text>
+      <Text style={styles.count}>{state.count}</Text>
+
+      <View style={styles.row}>
+        <Pressable onPress={decrement} style={styles.button}>
+          <Text style={styles.buttonText}>-</Text>
+        </Pressable>
+        <Pressable onPress={increment} style={styles.button}>
+          <Text style={styles.buttonText}>+</Text>
+        </Pressable>
+      </View>
+
+      <Pressable onPress={() => void openApp()} style={styles.secondaryButton}>
+        <Text style={styles.secondaryText}>Open app</Text>
+      </Pressable>
+      <Pressable onPress={hide} style={styles.secondaryButton}>
+        <Text style={styles.secondaryText}>Hide</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+export function RegisterChatHeadBubble() {
+  useEffect(() => {
+    setBubbleRendererForBubble(bubbleId, ChatHeadBubble);
+    return () => setBubbleRendererForBubble(bubbleId, null);
+  }, []);
+
+  return null;
+}
+
+const styles = StyleSheet.create({
+  bubble: {
+    width: 200,
+    borderRadius: 24,
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#111827',
+  },
+  label: {
+    color: '#86efac',
+    textAlign: 'center',
+  },
+  count: {
+    color: '#ffffff',
+    fontSize: 32,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  button: {
+    flex: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: '#2563eb',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  secondaryButton: {
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#e5e7eb',
+  },
+  secondaryText: {
+    color: '#111827',
+    fontWeight: '700',
+  },
+});
+```
+
+## NativeWind renderer
+
+If your app already has NativeWind configured, a renderer can use `className`. The dedicated [NativeWind support](./nativewind) page covers setup details.
+
+```tsx
+import { Pressable, Text, View } from 'react-native';
+import type { BubbleRendererProps } from 'expo-draw-over-apps';
+
+export function TailwindBubble({ state, increment, decrement }: BubbleRendererProps) {
+  return (
+    <View className="w-48 rounded-3xl bg-slate-900 p-4">
+      <Text className="text-center text-xs font-bold uppercase tracking-wider text-emerald-300">
+        Counter
+      </Text>
+      <Text className="text-center text-4xl font-black text-white">{state.count}</Text>
+      <View className="mt-3 flex-row gap-2">
+        <Pressable className="flex-1 items-center rounded-2xl bg-orange-500 py-3" onPress={decrement}>
+          <Text className="text-xl font-black text-white">-</Text>
+        </Pressable>
+        <Pressable className="flex-1 items-center rounded-2xl bg-blue-600 py-3" onPress={increment}>
+          <Text className="text-xl font-black text-white">+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+```
+
+## Compose-flavored renderer
+
+`setComposeBubbleRenderer()` registers the packaged `@expo/ui` entry point.
+
+```tsx
+import { useEffect } from 'react';
+import {
+  setBubbleRendererForBubble,
+  setComposeBubbleRenderer,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'jetpack-compose-counter';
+
+export function RegisterComposeBubble() {
+  useEffect(() => {
+    setComposeBubbleRenderer(bubbleId);
+    return () => setBubbleRendererForBubble(bubbleId, null);
+  }, []);
+
+  return null;
+}
+```
+
+Current Android overlay builds use a React Native fallback for this packaged renderer. The API is present, but the live overlay surface does not mount a Compose view yet.

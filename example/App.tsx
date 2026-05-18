@@ -15,13 +15,21 @@ import {
   useAllBubbleStates,
   useBubbleState,
 } from 'expo-draw-over-apps';
-import {
-  CountdownTimerBubbleRenderer,
-  JetpackComposeBubbleRenderer,
-  ReactNativeBubbleRenderer,
-  TIMER_DURATION_SECONDS,
-} from './components';
 import { hideAsync, preventAutoHideAsync, setOptions } from 'expo-splash-screen';
+import {
+  BUBBLE_EXAMPLE_IDS,
+  BUBBLE_PLAYGROUND_TEMPLATES,
+  type BubbleExampleId,
+  type BubbleTemplateTone,
+  createTemplateBubbleState,
+  getBubbleTemplate,
+} from './templates/bubblePlaygroundTemplate';
+import {
+  RESIZE_BUBBLE_INITIAL_STEP,
+  RESIZE_BUBBLE_MAX_STEP,
+  RESIZE_BUBBLE_MIN_STEP,
+  getResizeBubbleStepConfig,
+} from './components';
 
 // Set the animation options. This is optional.
 setOptions({
@@ -32,24 +40,25 @@ setOptions({
 // Keep the splash screen visible while we fetch resources
 preventAutoHideAsync();
 
-type BubbleExampleId = 'react-native-counter' | 'jetpack-compose-counter' | 'countdown-timer';
+function getTemplateToneStyle(tone: BubbleTemplateTone) {
+  switch (tone) {
+    case 'compose':
+      return styles.composeExampleButton;
+    case 'timer':
+      return styles.timerExampleButton;
+    case 'resizeReactNative':
+      return styles.resizeReactNativeExampleButton;
+    case 'resizeExpoUi':
+      return styles.resizeExpoUiExampleButton;
+    case 'reactNative':
+    default:
+      return styles.reactNativeExampleButton;
+  }
+}
 
-const EXAMPLE_BUBBLE_IDS: BubbleExampleId[] = ['react-native-counter', 'jetpack-compose-counter', 'countdown-timer'];
-
-const BUBBLE_EXAMPLE_LABELS: Record<BubbleExampleId, { title: string; description: string }> = {
-  'react-native-counter': {
-    title: 'React Native Counter Bubble',
-    description: 'Counter bubble rendered with React Native views and Pressables.',
-  },
-  'jetpack-compose-counter': {
-    title: 'Jetpack Compose Counter Bubble',
-    description: 'Counter bubble rendered with native Android Compose UI via expo-ui.',
-  },
-  'countdown-timer': {
-    title: 'Countdown Timer Bubble',
-    description: 'A timer example that refreshes every second without moving the bubble.',
-  },
-};
+function isResizeBubbleExample(exampleId: BubbleExampleId) {
+  return exampleId === 'react-native-resize-bubble' || exampleId === 'expo-ui-resize-bubble';
+}
 
 export default function App() {
   const [granted, setGranted] = useState<boolean | null>(null);
@@ -61,15 +70,15 @@ export default function App() {
 
   const refreshState = useCallback(() => {
     setGranted(canDrawOverlays());
-    EXAMPLE_BUBBLE_IDS.forEach((bubbleId) => {
+    BUBBLE_EXAMPLE_IDS.forEach((bubbleId) => {
       isBubbleVisible(bubbleId);
     });
   }, []);
 
   useEffect(() => {
-    setBubbleRendererForBubble('react-native-counter', ReactNativeBubbleRenderer);
-    setBubbleRendererForBubble('jetpack-compose-counter', JetpackComposeBubbleRenderer);
-    setBubbleRendererForBubble('countdown-timer', CountdownTimerBubbleRenderer);
+    BUBBLE_PLAYGROUND_TEMPLATES.forEach((template) => {
+      setBubbleRendererForBubble(template.id, template.renderer);
+    });
     refreshState();
     void hideAsync().catch(() => {
       // Ignore splash hide races during fast refresh/dev reloads.
@@ -83,7 +92,7 @@ export default function App() {
 
     return () => {
       sub.remove();
-      EXAMPLE_BUBBLE_IDS.forEach((bubbleId) => {
+      BUBBLE_EXAMPLE_IDS.forEach((bubbleId) => {
         setBubbleRendererForBubble(bubbleId, null);
       });
       setBubbleRenderer(null);
@@ -92,19 +101,13 @@ export default function App() {
 
   const visibleStates = useMemo(
     () =>
-      EXAMPLE_BUBBLE_IDS.map((bubbleId) => {
-        const state = allBubbleStates.find((entry) => entry.bubbleId === bubbleId) ?? {
-          bubbleId,
-          count: bubbleId === 'countdown-timer' ? TIMER_DURATION_SECONDS : 0,
-          isVisible: false,
-          lastUpdatedAt: Date.now(),
-          lastChangeSource: 'app' as const,
-        };
+      BUBBLE_PLAYGROUND_TEMPLATES.map((template) => {
+        const state = allBubbleStates.find((entry) => entry.bubbleId === template.id) ?? createTemplateBubbleState(template);
 
         return {
-          bubbleId,
+          bubbleId: template.id,
           state,
-          meta: BUBBLE_EXAMPLE_LABELS[bubbleId],
+          template,
         };
       }),
     [allBubbleStates]
@@ -124,8 +127,9 @@ export default function App() {
     setLoading(true);
     try {
       setActiveExample(exampleId);
-      if (exampleId === 'countdown-timer') {
-        setBubbleCount(TIMER_DURATION_SECONDS, 'bubble', exampleId);
+      const template = getBubbleTemplate(exampleId);
+      if (template.initialCount > 0) {
+        setBubbleCount(template.initialCount, 'bubble', exampleId);
       }
       await showBubble(exampleId, { edgeHideEnabled });
     } finally {
@@ -138,14 +142,15 @@ export default function App() {
   };
 
   const isGranted = granted === true;
-  const activeExampleMeta = BUBBLE_EXAMPLE_LABELS[activeExample];
+  const activeTemplate = getBubbleTemplate(activeExample);
   const visibleBubbleCount = visibleStates.filter(({ state }) => state.isVisible).length;
+  const activeIsResizeBubble = isResizeBubbleExample(activeExample);
   const activeControls =
     activeExample === 'countdown-timer'
       ? [
           {
             label: 'Restart',
-            onPress: () => setBubbleCount(TIMER_DURATION_SECONDS, 'app', activeExample),
+            onPress: () => setBubbleCount(activeTemplate.initialCount, 'app', activeExample),
             style: styles.blueButton,
           },
           {
@@ -159,6 +164,24 @@ export default function App() {
             style: styles.slateButton,
           },
         ]
+      : activeIsResizeBubble
+        ? [
+            {
+              label: 'Small',
+              onPress: () => setBubbleCount(RESIZE_BUBBLE_MIN_STEP, 'app', activeExample),
+              style: styles.resizeExpoUiExampleButton,
+            },
+            {
+              label: 'Medium',
+              onPress: () => setBubbleCount(RESIZE_BUBBLE_INITIAL_STEP, 'app', activeExample),
+              style: styles.tealButton,
+            },
+            {
+              label: 'Big',
+              onPress: () => setBubbleCount(RESIZE_BUBBLE_MAX_STEP, 'app', activeExample),
+              style: styles.resizeReactNativeExampleButton,
+            },
+          ]
       : [
           {
             label: '+1 In App',
@@ -179,6 +202,8 @@ export default function App() {
 
   return (
     <View style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
           <View style={styles.heroHeader}>
@@ -235,14 +260,9 @@ export default function App() {
           </Text>
 
           <View style={styles.exampleGrid}>
-            {visibleStates.map(({ bubbleId, meta, state }) => {
+            {visibleStates.map(({ bubbleId, template, state }) => {
               const isActiveCard = bubbleId === activeExample;
-              const toneStyle =
-                bubbleId === 'react-native-counter'
-                  ? styles.reactNativeExampleButton
-                  : bubbleId === 'jetpack-compose-counter'
-                    ? styles.composeExampleButton
-                    : styles.timerExampleButton;
+              const toneStyle = getTemplateToneStyle(template.tone);
 
               return (
                 <Pressable
@@ -253,8 +273,8 @@ export default function App() {
                   <View style={styles.exampleCardHeader}>
                     <View style={[styles.exampleAccent, toneStyle]} />
                     <View style={styles.exampleCardCopy}>
-                      <Text style={styles.exampleCardTitle}>{meta.title}</Text>
-                      <Text style={styles.exampleCardDescription}>{meta.description}</Text>
+                      <Text style={styles.exampleCardTitle}>{template.title}</Text>
+                      <Text style={styles.exampleCardDescription}>{template.description}</Text>
                     </View>
                   </View>
 
@@ -263,7 +283,9 @@ export default function App() {
                       <Text style={styles.statusPillText}>{state.isVisible ? 'Visible' : 'Hidden'}</Text>
                     </View>
                     <View style={styles.statusPill}>
-                      <Text style={styles.statusPillText}>Value {state.count}</Text>
+                      <Text style={styles.statusPillText}>
+                        {isResizeBubbleExample(bubbleId) ? `Size ${getResizeBubbleStepConfig(state.count).label}` : `Value ${state.count}`}
+                      </Text>
                     </View>
                   </View>
 
@@ -282,8 +304,8 @@ export default function App() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Active Bubble</Text>
-          <Text style={styles.activeTitle}>{activeExampleMeta.title}</Text>
-          <Text style={styles.sectionText}>{activeExampleMeta.description}</Text>
+          <Text style={styles.activeTitle}>{activeTemplate.title}</Text>
+          <Text style={styles.sectionText}>{activeTemplate.description}</Text>
           <Text style={styles.helperText}>Hold any visible bubble to open the remove menu.</Text>
           <Text style={styles.helperText}>
             Edge hide is currently {edgeHideEnabled ? 'enabled' : 'disabled'} for newly shown bubbles.
@@ -332,8 +354,8 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#eef2ff',
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 18) : 18,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0,
+    backgroundColor: '#eef2f7',
   },
   scrollContent: {
     paddingHorizontal: 18,
@@ -614,5 +636,11 @@ const styles = StyleSheet.create({
   },
   timerExampleButton: {
     backgroundColor: '#b45309',
+  },
+  resizeReactNativeExampleButton: {
+    backgroundColor: '#be123c',
+  },
+  resizeExpoUiExampleButton: {
+    backgroundColor: '#0891b2',
   },
 });

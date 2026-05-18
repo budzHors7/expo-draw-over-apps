@@ -53,6 +53,9 @@ example/vendor/
 out/
 node_modules/
 docs/.next/
+docs/.docusaurus/
+docs/build/
+docs/docs/public-api/
 docs/out/
 docs/node_modules/
 docs/dev-stdout.log
