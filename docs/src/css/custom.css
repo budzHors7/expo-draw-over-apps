@@ -78,18 +78,23 @@ body {
   margin-right: auto !important;
 }
 
-.announcementBarLink {
+.announcementBarButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  padding: 0.18rem 0.65rem;
   color: #ffffff;
   font-weight: 800;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+  text-decoration: none;
   white-space: nowrap;
 }
 
-.announcementBarLink:hover {
-  color: #5eead4;
-  text-decoration: underline;
+.announcementBarButton:hover {
+  background: #ffffff;
+  color: #111827;
+  text-decoration: none;
 }
 
 .homeHero {

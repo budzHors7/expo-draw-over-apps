@@ -25,7 +25,16 @@
     "expo-draw-over-apps",
     "ExpoDrawOverApps"
   ],
-  "repository": "https://github.com/budzHors7/expo-draw-over-apps",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/budzHors7/expo-draw-over-apps.git"
+  },
+  "files": [
+    "android/build.gradle",
+    "android/src",
+    "build",
+    "expo-module.config.json"
+  ],
   "bugs": {
     "url": "https://github.com/budzHors7/expo-draw-over-apps/issues"
   },
