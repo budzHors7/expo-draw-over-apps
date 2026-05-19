@@ -176,7 +176,7 @@ const config: Config = {
     },
     announcementBar: {
       id: 'pre-release-v56',
-      content: `Pre-release v56 of expo-draw-over-apps is now available <a class="announcementBarLink" href="${baseUrl}versions/v56.0.0/sdk/draw-over-apps">v56 docs</a>`,
+      content: `Pre-release v56 of expo-draw-over-apps is now available <a class="announcementBarButton" href="${baseUrl}versions/v56.0.0/sdk/draw-over-apps">v56 docs</a>`,
       backgroundColor: '#111827',
       textColor: '#ffffff',
       isCloseable: false,
