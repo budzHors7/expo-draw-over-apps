@@ -14,7 +14,6 @@ export default function ExpoDrawOverAppsBubbleSurface({
 }: ExpoDrawOverAppsBubbleSurfaceProps) {
   const bubbleState = useBubbleState(bubbleId);
   const BubbleRenderer = useBubbleRenderer(bubbleId);
-  const renderKey = `${bubbleId}:${bubbleState.count}:${bubbleState.lastUpdatedAt}:${bubbleState.isVisible ? '1' : '0'}`;
 
   if (!bubbleState.isVisible) {
     return null;
@@ -23,7 +22,6 @@ export default function ExpoDrawOverAppsBubbleSurface({
   if (BubbleRenderer) {
     return (
       <BubbleRenderer
-        key={renderKey}
         bubbleId={bubbleId}
         state={bubbleState}
         increment={() => incrementBubbleCount('bubble', bubbleId)}
@@ -40,7 +38,7 @@ export default function ExpoDrawOverAppsBubbleSurface({
   }
 
   return (
-    <View key={renderKey} style={styles.bubble}>
+    <View style={styles.bubble}>
       <Text style={styles.caption}>Bubble Counter</Text>
       <View style={styles.debugBadge}>
         <Text style={styles.debugBadgeText}>ID: {bubbleId}</Text>
@@ -63,7 +61,12 @@ export default function ExpoDrawOverAppsBubbleSurface({
           <Text style={styles.counterActionText}>+</Text>
         </Pressable>
       </View>
-      <Pressable onPress={() => void getExpoDrawOverAppsModule()?.openApp()} style={styles.openAppButton}>
+      <Pressable
+        onPress={() => {
+          getExpoDrawOverAppsModule()?.openApp().catch(() => {});
+        }}
+        style={styles.openAppButton}
+      >
         <Text style={styles.openAppText}>Open app</Text>
       </Pressable>
       <Text style={styles.longPressHint}>Hold bubble for menu</Text>

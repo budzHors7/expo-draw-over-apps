@@ -9,16 +9,19 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@expo/ui": "~55.0.11",
-    "expo": "~55.0.15",
-    "expo-splash-screen": "~55.0.18",
-    "expo-system-ui": "~55.0.15",
-    "react": "19.2.0",
-    "react-native": "0.83.4"
+    "@expo/ui": "~56.0.8",
+    "expo": "^56.0.0-preview.12",
+    "expo-draw-over-apps": "file:..",
+    "expo-splash-screen": "~56.0.7",
+    "expo-system-ui": "~56.0.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-reanimated": "4.3.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.3"
   },
   "private": true,
   "expo": {

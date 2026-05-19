@@ -5,7 +5,14 @@ const path = require('path');
 const config = getDefaultConfig(__dirname);
 const exampleNodeModules = path.resolve(__dirname, 'node_modules');
 const parentNodeModules = path.resolve(__dirname, '..', 'node_modules');
-const pinnedModules = ['expo', 'expo-modules-core', 'react', 'react-native'];
+const pinnedModules = [
+  'expo',
+  'expo-modules-core',
+  'react',
+  'react-native',
+  'react-native-reanimated',
+  'react-native-worklets',
+];
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -28,11 +35,12 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.extraNodeModules = {
-  'expo-draw-over-apps': path.resolve(__dirname, '..'),
   expo: path.join(exampleNodeModules, 'expo'),
   'expo-modules-core': path.join(exampleNodeModules, 'expo-modules-core'),
   react: path.join(exampleNodeModules, 'react'),
   'react-native': path.join(exampleNodeModules, 'react-native'),
+  'react-native-reanimated': path.join(exampleNodeModules, 'react-native-reanimated'),
+  'react-native-worklets': path.join(exampleNodeModules, 'react-native-worklets'),
 };
 
 config.watchFolders = [path.resolve(__dirname, '..')];

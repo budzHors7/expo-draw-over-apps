@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
-import { DEFAULT_BUBBLE_ID, type BubbleChangeSource, type BubbleState } from './bubbleTypes';
+import { DEFAULT_BUBBLE_ID, normalizeBubbleId, type BubbleChangeSource, type BubbleState } from './bubbleTypes';
 
 type BubbleListener = () => void;
 
@@ -13,10 +13,6 @@ let bubbleStates: Record<string, BubbleState> = {
 let allBubbleStatesSnapshot = createAllBubbleStatesSnapshot(bubbleStates);
 
 let hasBoundNativeState = false;
-
-function normalizeBubbleId(bubbleId?: string): string {
-  return bubbleId && bubbleId.trim().length > 0 ? bubbleId : DEFAULT_BUBBLE_ID;
-}
 
 function createDefaultBubbleState(bubbleId: string): BubbleState {
   return {
@@ -61,12 +57,12 @@ function normalizeBubbleState(nextState: Partial<BubbleState>, bubbleId?: string
 }
 
 function updateBubbleStates(nextStates: Partial<BubbleState>[]) {
-  let hasChanges = false;
-  let nextBubbleStates = bubbleStates;
+  let nextBubbleStates: Record<string, BubbleState> | null = null;
 
   for (const nextState of nextStates) {
     const normalizedState = normalizeBubbleState(nextState);
-    const previousState = nextBubbleStates[normalizedState.bubbleId];
+    const currentStates = nextBubbleStates ?? bubbleStates;
+    const previousState = currentStates[normalizedState.bubbleId];
 
     if (
       !previousState ||
@@ -75,15 +71,12 @@ function updateBubbleStates(nextStates: Partial<BubbleState>[]) {
       previousState.lastUpdatedAt !== normalizedState.lastUpdatedAt ||
       previousState.lastChangeSource !== normalizedState.lastChangeSource
     ) {
-      nextBubbleStates = {
-        ...nextBubbleStates,
-        [normalizedState.bubbleId]: normalizedState,
-      };
-      hasChanges = true;
+      nextBubbleStates ??= { ...bubbleStates };
+      nextBubbleStates[normalizedState.bubbleId] = normalizedState;
     }
   }
 
-  if (hasChanges) {
+  if (nextBubbleStates) {
     commitBubbleStates(nextBubbleStates);
     emitBubbleState();
   }
@@ -138,11 +131,17 @@ export function getBubbleState(bubbleId: string = DEFAULT_BUBBLE_ID): BubbleStat
   return defaultState;
 }
 
+/**
+ * Returns the latest known state for every named bubble.
+ */
 export function getAllBubbleStates(): BubbleState[] {
   bindNativeBubbleState();
   return allBubbleStatesSnapshot;
 }
 
+/**
+ * Subscribes to bubble state changes and returns an unsubscribe function.
+ */
 export function subscribeToBubbleState(listener: BubbleListener): () => void {
   bindNativeBubbleState();
   listeners.add(listener);
@@ -151,6 +150,9 @@ export function subscribeToBubbleState(listener: BubbleListener): () => void {
   };
 }
 
+/**
+ * React hook for the latest state of one named bubble.
+ */
 export function useBubbleState(bubbleId: string = DEFAULT_BUBBLE_ID): BubbleState {
   return useSyncExternalStore(
     subscribeToBubbleState,
@@ -159,6 +161,9 @@ export function useBubbleState(bubbleId: string = DEFAULT_BUBBLE_ID): BubbleStat
   );
 }
 
+/**
+ * React hook for the latest state of all named bubbles.
+ */
 export function useAllBubbleStates(): BubbleState[] {
   return useSyncExternalStore(subscribeToBubbleState, getAllBubbleStates, getAllBubbleStates);
 }
@@ -179,6 +184,9 @@ export function setBubbleVisible(
   ]);
 }
 
+/**
+ * Sets the shared counter for a named bubble.
+ */
 export function setBubbleCount(
   count: number,
   source: BubbleChangeSource = 'app',
@@ -210,6 +218,9 @@ export function setBubbleCount(
   return nextCount;
 }
 
+/**
+ * Adds one to the shared counter for a named bubble.
+ */
 export function incrementBubbleCount(
   source: BubbleChangeSource = 'bubble',
   bubbleId: string = DEFAULT_BUBBLE_ID
@@ -233,6 +244,9 @@ export function incrementBubbleCount(
   return nextCount;
 }
 
+/**
+ * Subtracts one from the shared counter for a named bubble without going below zero.
+ */
 export function decrementBubbleCount(
   source: BubbleChangeSource = 'bubble',
   bubbleId: string = DEFAULT_BUBBLE_ID
@@ -256,6 +270,9 @@ export function decrementBubbleCount(
   return nextCount;
 }
 
+/**
+ * Reads native state and returns the latest state for one named bubble.
+ */
 export function refreshBubbleState(bubbleId: string = DEFAULT_BUBBLE_ID): BubbleState {
   bindNativeBubbleState();
   syncBubbleStatesFromNative();

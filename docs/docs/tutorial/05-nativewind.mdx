@@ -1,0 +1,86 @@
+---
+title: NativeWind support
+sidebar_position: 5
+description: Use NativeWind className styles in custom bubble renderers for expo-draw-over-apps.
+---
+
+# NativeWind support
+
+Custom bubble renderers are React Native components, so they can use NativeWind when the host app already has NativeWind configured.
+
+The module does not install or configure NativeWind for you. Make sure your app's NativeWind setup includes the files where your bubble renderers live.
+
+## Register a NativeWind bubble
+
+```tsx
+import { useEffect } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import {
+  type BubbleRendererProps,
+  setBubbleRendererForBubble,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'nativewind-counter';
+
+function NativeWindBubble({ state, increment, decrement, hide, openApp }: BubbleRendererProps) {
+  return (
+    <View className="w-52 rounded-[28px] bg-black px-4 py-4">
+      <Text className="text-center text-[11px] font-semibold uppercase tracking-[2px] text-zinc-400">
+        NativeWind bubble
+      </Text>
+      <Text className="mt-3 text-center text-4xl font-black text-white">{state.count}</Text>
+
+      <View className="mt-4 flex-row gap-3">
+        <Pressable onPress={decrement} className="flex-1 rounded-2xl border border-white/10 bg-zinc-900 py-3">
+          <Text className="text-center text-xl font-bold text-white">-</Text>
+        </Pressable>
+        <Pressable onPress={increment} className="flex-1 rounded-2xl bg-white py-3">
+          <Text className="text-center text-xl font-bold text-black">+</Text>
+        </Pressable>
+      </View>
+
+      <Pressable onPress={() => void openApp()} className="mt-3 rounded-2xl bg-zinc-100 py-3">
+        <Text className="text-center font-semibold text-black">Open app</Text>
+      </Pressable>
+      <Pressable onPress={hide} className="mt-2 rounded-2xl border border-white/10 py-3">
+        <Text className="text-center font-semibold text-white">Hide bubble</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+export function RegisterNativeWindBubble() {
+  useEffect(() => {
+    setBubbleRendererForBubble(bubbleId, NativeWindBubble);
+    return () => setBubbleRendererForBubble(bubbleId, null);
+  }, []);
+
+  return null;
+}
+```
+
+## Content paths
+
+If your renderer lives outside the normal app folders, add that path to your NativeWind or Tailwind content configuration.
+
+```ts
+export default {
+  content: [
+    './App.{js,jsx,ts,tsx}',
+    './src/**/*.{js,jsx,ts,tsx}',
+    './example/components/**/*.{js,jsx,ts,tsx}',
+  ],
+  presets: [require('nativewind/preset')],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+```
+
+## Notes
+
+- NativeWind classes run in JavaScript-rendered bubble surfaces and in the React Native children passed to the window containers.
+- `ReactNativeWindowContainer` and `NativeWindowContainer` accept `className` and `contentClassName`.
+- For smooth resizing, pass numeric `width`, `height`, and `borderRadius` props to a window container instead of swapping unrelated wrapper layouts.
+- The packaged Compose-flavored renderer does not read NativeWind classes.

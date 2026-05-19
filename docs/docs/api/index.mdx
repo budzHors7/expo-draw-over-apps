@@ -1,0 +1,60 @@
+---
+title: API guide
+sidebar_position: 1
+---
+
+# API guide
+
+The hand-written docs explain the common flow. The [Public API](/versions/latest/public-api/) page lists the current SDK track.
+
+## Main groups
+
+### Permission
+
+- `canDrawOverlays()`
+- `requestPermission()`
+
+### Bubble visibility
+
+- `showBubble(bubbleId?, options?)`
+- `hideBubble(bubbleId?)`
+- `hideAllBubbles()`
+- `isBubbleVisible(bubbleId?)`
+- `openApp()`
+
+### State
+
+- `useBubbleState(bubbleId?)`
+- `useAllBubbleStates()`
+- `getAllBubbleStates()`
+- `refreshBubbleState(bubbleId?)`
+- `incrementBubbleCount(source?, bubbleId?)`
+- `decrementBubbleCount(source?, bubbleId?)`
+- `setBubbleCount(count, source?, bubbleId?)`
+- `subscribeToBubbleState(listener)`
+
+### Renderer registration
+
+- `setBubbleRenderer(renderer)`
+- `setBubbleRendererForBubble(bubbleId, renderer)`
+- `setComposeBubbleRenderer(bubbleId?)`
+- `ExpoDrawOverAppsComposeBubbleRenderer`
+
+### Window containers
+
+- `ReactNativeWindowContainer`
+- `NativeWindowContainer`
+
+Both containers accept React Native children, `style`, `contentContainerStyle`, `className`, and `contentClassName`. Numeric `width`, `height`, and `borderRadius` changes animate with Reanimated by default.
+
+### Preview
+
+- `FloatingWindowPreview`
+- `createFloatingWindowPreviewState(bubbleId?, state?)`
+- `getNextFloatingWindowPreviewState(currentState, patch, source?)`
+
+## Bubble IDs
+
+Bubble IDs are normalized before they reach native Android code. Unsupported characters become `-`, repeated dashes collapse, and IDs are capped at 80 characters.
+
+Use IDs such as `chat-head`, `countdown-timer`, or `react-native-resize-bubble`. Do not use emails, tokens, or private user data.

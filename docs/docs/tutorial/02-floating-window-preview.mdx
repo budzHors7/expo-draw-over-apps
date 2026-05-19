@@ -1,0 +1,89 @@
+---
+title: Floating window preview
+sidebar_position: 2
+---
+
+# Floating window preview
+
+`FloatingWindowPreview` renders a bubble renderer inside your app. It uses the same `BubbleRendererProps` shape as the real overlay and adds a `preview` object with `width` and `height`.
+
+The preview is JavaScript only. Its `increment`, `decrement`, `setCount`, `hide`, and `openApp` handlers update preview state or call optional callbacks. They do not start the Android overlay service.
+
+```tsx
+import { FloatingWindowPreview, type BubbleRendererProps } from 'expo-draw-over-apps';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+function PreviewBubble({ state, increment, decrement }: BubbleRendererProps) {
+  return (
+    <View style={styles.bubble}>
+      <Text style={styles.label}>Preview bubble</Text>
+      <Text style={styles.count}>{state.count}</Text>
+      <View style={styles.row}>
+        <Pressable onPress={decrement} style={styles.button}>
+          <Text style={styles.buttonText}>-</Text>
+        </Pressable>
+        <Pressable onPress={increment} style={styles.button}>
+          <Text style={styles.buttonText}>+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+export function PreviewScreen() {
+  return (
+    <View style={styles.screen}>
+      <FloatingWindowPreview
+        width={260}
+        height={280}
+        initialState={{ count: 2 }}
+        renderBubble={(props) => <PreviewBubble {...props} />}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bubble: {
+    width: 210,
+    borderRadius: 24,
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#111827',
+  },
+  label: {
+    color: '#86efac',
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  count: {
+    color: '#ffffff',
+    fontSize: 34,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  button: {
+    flex: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: '#2563eb',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+});
+```
+
+Use `state` when your screen owns the preview state. Use `initialState` when the preview can manage local state itself.

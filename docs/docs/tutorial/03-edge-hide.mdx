@@ -1,0 +1,57 @@
+---
+title: Edge hide
+sidebar_position: 3
+---
+
+# Edge hide
+
+Edge hide lets a bubble tuck into the left or right side of the screen while leaving a reachable sliver. You can set it when showing a bubble or change it later.
+
+```tsx
+import { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import {
+  hideBubble,
+  setEdgeHideEnabled,
+  showBubble,
+  useBubbleState,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'chat-head';
+
+export function EdgeHideControls() {
+  const [edgeHideEnabled, setEdgeHide] = useState(true);
+  const bubbleState = useBubbleState(bubbleId);
+
+  async function showChatHead() {
+    await showBubble(bubbleId, { edgeHideEnabled });
+  }
+
+  function toggleEdgeHide() {
+    const nextValue = !edgeHideEnabled;
+    setEdgeHideEnabled(nextValue, bubbleId);
+    setEdgeHide(nextValue);
+  }
+
+  return (
+    <View style={{ gap: 12 }}>
+      <Text>Bubble visible: {bubbleState.isVisible ? 'yes' : 'no'}</Text>
+      <Text>Edge hide: {edgeHideEnabled ? 'enabled' : 'disabled'}</Text>
+
+      <Pressable onPress={() => void showChatHead()}>
+        <Text>Show chat head</Text>
+      </Pressable>
+
+      <Pressable onPress={toggleEdgeHide}>
+        <Text>{edgeHideEnabled ? 'Disable' : 'Enable'} edge hide</Text>
+      </Pressable>
+
+      <Pressable onPress={() => hideBubble(bubbleId)}>
+        <Text>Hide bubble</Text>
+      </Pressable>
+    </View>
+  );
+}
+```
+
+Use static, non-sensitive bubble IDs. IDs are normalized before they cross the JavaScript and native boundary.

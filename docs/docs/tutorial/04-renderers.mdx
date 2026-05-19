@@ -1,0 +1,199 @@
+---
+title: Renderers
+sidebar_position: 4
+description: Register custom React Native and Compose-flavored bubble renderers for expo-draw-over-apps.
+---
+
+# Renderers
+
+The default bubble is a React Native renderer. You can replace it globally or per bubble.
+
+## React Native renderer
+
+```tsx
+import { useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  type BubbleRendererProps,
+  setBubbleRendererForBubble,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'chat-head';
+
+function ChatHeadBubble({ state, increment, decrement, hide, openApp }: BubbleRendererProps) {
+  return (
+    <View style={styles.bubble}>
+      <Text style={styles.label}>Counter</Text>
+      <Text style={styles.count}>{state.count}</Text>
+
+      <View style={styles.row}>
+        <Pressable onPress={decrement} style={styles.button}>
+          <Text style={styles.buttonText}>-</Text>
+        </Pressable>
+        <Pressable onPress={increment} style={styles.button}>
+          <Text style={styles.buttonText}>+</Text>
+        </Pressable>
+      </View>
+
+      <Pressable onPress={() => void openApp()} style={styles.secondaryButton}>
+        <Text style={styles.secondaryText}>Open app</Text>
+      </Pressable>
+      <Pressable onPress={hide} style={styles.secondaryButton}>
+        <Text style={styles.secondaryText}>Hide</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+export function RegisterChatHeadBubble() {
+  useEffect(() => {
+    setBubbleRendererForBubble(bubbleId, ChatHeadBubble);
+    return () => setBubbleRendererForBubble(bubbleId, null);
+  }, []);
+
+  return null;
+}
+
+const styles = StyleSheet.create({
+  bubble: {
+    width: 200,
+    borderRadius: 24,
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#111827',
+  },
+  label: {
+    color: '#86efac',
+    textAlign: 'center',
+  },
+  count: {
+    color: '#ffffff',
+    fontSize: 32,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  button: {
+    flex: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: '#2563eb',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  secondaryButton: {
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#e5e7eb',
+  },
+  secondaryText: {
+    color: '#111827',
+    fontWeight: '700',
+  },
+});
+```
+
+## Reanimated window containers
+
+Use the built-in window containers when a renderer changes size. They keep resize animation inside Reanimated instead of repeatedly driving overlay layout through React state.
+
+```tsx
+import { Pressable, StyleSheet, Text } from 'react-native';
+import {
+  type BubbleRendererProps,
+  NativeWindowContainer,
+  ReactNativeWindowContainer,
+} from 'expo-draw-over-apps';
+
+export function SmoothReactNativeBubble({ state, increment }: BubbleRendererProps) {
+  const expanded = state.count % 2 === 1;
+
+  return (
+    <ReactNativeWindowContainer
+      width={expanded ? 238 : 154}
+      height={expanded ? 256 : 172}
+      borderRadius={expanded ? 44 : 28}
+      style={styles.reactNativeWindow}
+      contentContainerStyle={styles.centeredContent}
+    >
+      <Pressable onPress={increment}>
+        <Text style={{ color: 'white', fontWeight: '900' }}>Toggle size</Text>
+      </Pressable>
+    </ReactNativeWindowContainer>
+  );
+}
+
+export function SmoothExpoUiBubble({ state, increment }: BubbleRendererProps) {
+  const expanded = state.count % 2 === 1;
+
+  return (
+    <NativeWindowContainer
+      width={expanded ? 238 : 154}
+      height={expanded ? 256 : 172}
+      borderRadius={expanded ? 44 : 28}
+      backgroundColor="#f8fafc"
+      surfaceColor="#f8fafc"
+      style={styles.nativeWindow}
+      contentContainerStyle={styles.centeredContent}
+    >
+      <Pressable onPress={increment}>
+        <Text style={{ color: '#0f172a', fontWeight: '900' }}>Toggle size</Text>
+      </Pressable>
+    </NativeWindowContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  reactNativeWindow: {
+    borderWidth: 2,
+    borderColor: '#fb7185',
+    padding: 16,
+    backgroundColor: '#020617',
+  },
+  nativeWindow: {
+    borderWidth: 2,
+    borderColor: '#0891b2',
+    padding: 16,
+  },
+  centeredContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+```
+
+`NativeWindowContainer` uses Expo UI's Android Host/Surface when `@expo/ui` is installed and falls back to `ReactNativeWindowContainer` otherwise. Both paths accept React Native children.
+
+## Compose-flavored renderer
+
+`setComposeBubbleRenderer()` registers the packaged `@expo/ui` entry point.
+
+```tsx
+import { useEffect } from 'react';
+import {
+  setBubbleRendererForBubble,
+  setComposeBubbleRenderer,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'jetpack-compose-counter';
+
+export function RegisterComposeBubble() {
+  useEffect(() => {
+    setComposeBubbleRenderer(bubbleId);
+    return () => setBubbleRendererForBubble(bubbleId, null);
+  }, []);
+
+  return null;
+}
+```
+
+Current Android overlay builds use a React Native fallback for this packaged renderer. The API is present, but the live overlay surface does not mount a Compose view yet.

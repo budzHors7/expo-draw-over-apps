@@ -1,0 +1,64 @@
+---
+title: Fixtures
+sidebar_position: 1
+description: Example bubble fixtures for expo-draw-over-apps, including counter, timer, React Native resize, and Native Expo UI resize bubbles.
+---
+
+# Fixtures
+
+The example app registers five bubble fixtures from `example/templates/bubblePlaygroundTemplate.ts`. They use static IDs because those IDs cross the JavaScript and native overlay boundary.
+
+## React Native Counter Bubble
+
+- Bubble ID: `react-native-counter`
+- Renderer: `ReactNativeBubbleRenderer`
+- Initial count: `0`
+- Covers: basic React Native bubble UI with counter actions.
+
+## Jetpack Compose Counter Bubble
+
+- Bubble ID: `jetpack-compose-counter`
+- Renderer: `JetpackComposeBubbleRenderer`
+- Initial count: `0`
+- Covers: the packaged Compose-flavored renderer API.
+
+## Countdown Timer Bubble
+
+- Bubble ID: `countdown-timer`
+- Renderer: `CountdownTimerBubbleRenderer`
+- Initial count: `TIMER_DURATION_SECONDS`
+- Covers: timer state that changes without moving the bubble.
+
+## React Native Resize Bubble
+
+- Bubble ID: `react-native-resize-bubble`
+- Renderer: `ReactNativeResizeBubbleRenderer`
+- Initial count: `RESIZE_BUBBLE_INITIAL_STEP`
+- Covers: `ReactNativeWindowContainer` with Reanimated width, height, and radius transitions.
+
+## Native Expo UI Resize Bubble
+
+- Bubble ID: `expo-ui-resize-bubble`
+- Renderer: `NativeExpoUiResizeBubbleRenderer`
+- Initial count: `RESIZE_BUBBLE_INITIAL_STEP`
+- Covers: `NativeWindowContainer`, an Expo UI Host/Surface backdrop with React Native children layered inside the animated clipped window.
+
+## Resize fixtures
+
+Both resize fixtures use the same sizing helpers from `example/components/resizeBubbleSizing.ts`.
+
+```ts
+export const RESIZE_BUBBLE_STEPS = [
+  { label: 'Small', shortLabel: 'S', dimension: 154, height: 172 },
+  { label: 'Medium', shortLabel: 'M', dimension: 196, height: 214 },
+  { label: 'Big', shortLabel: 'B', dimension: 238, height: 256 },
+];
+```
+
+The count value maps to a size step. The helper rounds free-form values and clamps them between the smallest and largest supported step.
+
+## Preview use
+
+Use `FloatingWindowPreview` when designing a fixture UI in the app. Use `showBubble(template.id, { edgeHideEnabled })` when launching the native overlay.
+
+The preview path and native overlay path share the renderer props, so the same fixture can be used in both places.

@@ -3,7 +3,7 @@
     "name": "expo-draw-over-apps-example",
     "slug": "expo-draw-over-apps-example",
     "scheme": "drawoverapps",
-    "version": "55.0.0",
+    "version": "56.0.0-preview.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",

@@ -1,0 +1,31 @@
+---
+title: Demo
+sidebar_position: 5
+description: Run the expo-draw-over-apps example app and test overlay permission, edge hide, renderer fixtures, and shared state.
+---
+
+# Demo
+
+The repo includes a working Expo example app in `example/`.
+
+Run the example after installing dependencies and building the native app for Android:
+
+```bash
+cd example
+npm install
+npm run android
+```
+
+The app lets you:
+
+- check overlay permission
+- open the Android overlay settings screen
+- launch each registered bubble fixture
+- toggle edge hide for newly shown bubbles
+- hide the active bubble
+- clear all visible bubbles
+- change the shared counter from the app
+- open the app from a bubble
+- test the long-press remove menu
+
+The fixture cards come from `BUBBLE_PLAYGROUND_TEMPLATES`. When you add a new fixture, add it there first and then update the fixture docs.

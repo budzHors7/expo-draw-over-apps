@@ -1,0 +1,149 @@
+---
+id: index
+title: Getting started
+slug: /
+sidebar_position: 1
+description: Install expo-draw-over-apps and start Android overlay bubbles with React Native, NativeWind, or expo-ui renderer paths.
+---
+
+# Expo Draw Over Apps
+
+`expo-draw-over-apps` is an Expo module for Android overlays. It lets an app check the draw-over-apps permission, open the Android permission screen, show named floating bubbles, edge-hide a bubble, keep bubble state in sync, preview bubble UI inside the app, and use React Native, NativeWind, Reanimated, or Expo UI renderer paths.
+
+The package is Android only. It does not run in Expo Go because it includes native Android code.
+
+The versioned docs live under `/versions/latest` and `/versions/v55.0.0`. Use those pages when comparing SDK tracks.
+
+## Install
+
+```bash
+npm install expo-draw-over-apps
+```
+
+For SDK 56 beta, install Reanimated as the window container animation engine:
+
+```bash
+npx expo install react-native-reanimated
+```
+
+If you want to use the packaged Expo UI native window path, install `@expo/ui` too:
+
+```bash
+npx expo install @expo/ui
+```
+
+`@expo/ui` is optional. Apps that use only React Native window containers do not need it.
+
+## Expo app requirements
+
+Use a development build, a custom client, or a standalone Android build.
+
+If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:
+
+[Install Expo modules in a React Native project](https://docs.expo.dev/bare/installing-expo-modules/)
+
+## Android setup
+
+The module ships with the Android pieces it needs:
+
+- `android.permission.SYSTEM_ALERT_WINDOW`
+- the internal overlay service
+
+Autolinking handles the native module. You should not need to edit `AndroidManifest.xml` by hand for the default setup.
+
+## Quick start
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import {
+  canDrawOverlays,
+  hideBubble,
+  incrementBubbleCount,
+  requestPermission,
+  showBubble,
+  useBubbleState,
+} from 'expo-draw-over-apps';
+
+export default function App() {
+  const [granted, setGranted] = useState(false);
+  const bubbleState = useBubbleState();
+
+  useEffect(() => {
+    setGranted(canDrawOverlays());
+  }, []);
+
+  async function handlePermission() {
+    await requestPermission();
+    setGranted(canDrawOverlays());
+  }
+
+  async function handleToggleBubble() {
+    if (bubbleState.isVisible) {
+      hideBubble();
+      return;
+    }
+
+    await showBubble('default', { edgeHideEnabled: true });
+  }
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <Text>Overlay permission: {granted ? 'granted' : 'missing'}</Text>
+      <Text>Bubble visible: {bubbleState.isVisible ? 'yes' : 'no'}</Text>
+      <Text>Counter: {bubbleState.count}</Text>
+
+      <Pressable onPress={() => void handlePermission()}>
+        <Text>Request permission</Text>
+      </Pressable>
+
+      <Pressable onPress={() => void handleToggleBubble()}>
+        <Text>{bubbleState.isVisible ? 'Hide bubble' : 'Show bubble'}</Text>
+      </Pressable>
+
+      <Pressable onPress={() => incrementBubbleCount('app')}>
+        <Text>+1 in app</Text>
+      </Pressable>
+    </View>
+  );
+}
+```
+
+## Reanimated window containers
+
+SDK 56 beta adds two window containers for custom bubble renderers:
+
+- `ReactNativeWindowContainer` renders a React Native window surface and animates numeric `width`, `height`, and `borderRadius` changes with Reanimated.
+- `NativeWindowContainer` uses an Expo UI native Host/Surface on Android for the clipped backdrop, then layers React Native children inside the same Reanimated window. It falls back to the React Native container when `@expo/ui` is not installed.
+
+Both containers accept normal React Native `style` props and `className` / `contentClassName` for apps that already use NativeWind.
+
+```tsx
+import { Text } from 'react-native';
+import { ReactNativeWindowContainer } from 'expo-draw-over-apps';
+
+export function ResizeBubble({ state }) {
+  const large = state.count > 0;
+
+  return (
+    <ReactNativeWindowContainer
+      width={large ? 238 : 154}
+      height={large ? 256 : 172}
+      borderRadius={large ? 44 : 28}
+      className="border-2 border-rose-400 bg-slate-950 px-4 py-4"
+      contentClassName="flex-1 items-center justify-center"
+    >
+      <Text style={{ color: 'white', fontWeight: '900' }}>
+        Smooth resize
+      </Text>
+    </ReactNativeWindowContainer>
+  );
+}
+```
+
+## What to read next
+
+- [Tutorial](/versions/latest/tutorial) covers the Android settings handoff, floating window preview, edge hide, and renderer registration.
+- [NativeWind support](/versions/latest/nativewind) covers `className` renderers in apps that already use NativeWind.
+- [Fixtures](/versions/latest/fixtures/) lists the example bubbles shipped with the repo.
+- [Public API](/versions/latest/public-api/) lists the current SDK track.

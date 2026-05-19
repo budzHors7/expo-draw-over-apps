@@ -211,8 +211,11 @@ class ExpoDrawOverAppsModule : Module() {
     private const val EVENT_BUBBLE_STATE_CHANGED = "onBubbleStateChanged"
     private const val EVENT_BUBBLE_STATES_CHANGED = "onBubbleStatesChanged"
     private const val DEFAULT_BUBBLE_ID = "default"
+    private const val MAX_BUBBLE_ID_LENGTH = 80
     private const val SOURCE_APP = "app"
     private const val SOURCE_BUBBLE = "bubble"
+    private val unsafeBubbleIdPattern = Regex("[^A-Za-z0-9._:-]+")
+    private val repeatedDashPattern = Regex("-+")
 
     private data class BubbleStateRecord(
       var count: Int = 0,
@@ -322,7 +325,16 @@ class ExpoDrawOverAppsModule : Module() {
     }
 
     private fun normalizeBubbleId(bubbleId: String?): String {
-      return bubbleId?.takeIf { it.isNotBlank() } ?: DEFAULT_BUBBLE_ID
+      val normalizedBubbleId = bubbleId
+        ?.trim()
+        ?.replace(unsafeBubbleIdPattern, "-")
+        ?.replace(repeatedDashPattern, "-")
+        ?.trim('-')
+        ?.take(MAX_BUBBLE_ID_LENGTH)
+        ?.trimEnd('-')
+        .orEmpty()
+
+      return normalizedBubbleId.ifEmpty { DEFAULT_BUBBLE_ID }
     }
 
     private fun normalizeChangeSource(source: String?): String {
