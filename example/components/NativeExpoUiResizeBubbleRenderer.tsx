@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ExpoDrawOverAppsNativeWindowContainer, type BubbleRendererProps } from 'expo-draw-over-apps';
+import { NativeWindowContainer, type BubbleRendererProps } from 'expo-draw-over-apps';
 import {
   RESIZE_BUBBLE_MAX_STEP,
   RESIZE_BUBBLE_MIN_STEP,
@@ -13,7 +13,7 @@ export function NativeExpoUiResizeBubbleRenderer({ state, setCount, hide }: Bubb
   const activeConfig = getResizeBubbleStepConfig(state.count);
 
   return (
-    <ExpoDrawOverAppsNativeWindowContainer
+    <NativeWindowContainer
       width={activeConfig.dimension}
       height={activeConfig.height}
       borderRadius={activeConfig.radius}
@@ -70,7 +70,7 @@ export function NativeExpoUiResizeBubbleRenderer({ state, setCount, hide }: Bubb
           </Text>
         </Pressable>
       </View>
-    </ExpoDrawOverAppsNativeWindowContainer>
+    </NativeWindowContainer>
   );
 }
 

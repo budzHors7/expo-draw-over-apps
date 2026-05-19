@@ -6,15 +6,13 @@ sidebar_position: 1
 description: Install expo-draw-over-apps and start Android overlay bubbles with React Native, NativeWind, or expo-ui renderer paths.
 ---
 
-import VersionInstallSelector from '@site/src/components/VersionInstallSelector';
-
 # Expo Draw Over Apps
 
 `expo-draw-over-apps` is an Expo module for Android overlays. It lets an app check the draw-over-apps permission, open the Android permission screen, show named floating bubbles, edge-hide a bubble, keep bubble state in sync, preview bubble UI inside the app, and use React Native, NativeWind, Reanimated, or Expo UI renderer paths.
 
 The package is Android only. It does not run in Expo Go because it includes native Android code.
 
-<VersionInstallSelector />
+The versioned docs live under `/versions/latest` and `/versions/v55.0.0`. Use those pages when comparing SDK tracks.
 
 ## Install
 
@@ -115,20 +113,20 @@ export default function App() {
 
 SDK 56 beta adds two window containers for custom bubble renderers:
 
-- `ExpoDrawOverAppsReactNativeWindowContainer` renders a React Native window surface and animates numeric `width`, `height`, and `borderRadius` changes with Reanimated.
-- `ExpoDrawOverAppsNativeWindowContainer` uses an Expo UI native Host/Surface on Android for the clipped backdrop, then layers React Native children inside the same Reanimated window. It falls back to the React Native container when `@expo/ui` is not installed.
+- `ReactNativeWindowContainer` renders a React Native window surface and animates numeric `width`, `height`, and `borderRadius` changes with Reanimated.
+- `NativeWindowContainer` uses an Expo UI native Host/Surface on Android for the clipped backdrop, then layers React Native children inside the same Reanimated window. It falls back to the React Native container when `@expo/ui` is not installed.
 
 Both containers accept normal React Native `style` props and `className` / `contentClassName` for apps that already use NativeWind.
 
 ```tsx
 import { Text } from 'react-native';
-import { ExpoDrawOverAppsReactNativeWindowContainer } from 'expo-draw-over-apps';
+import { ReactNativeWindowContainer } from 'expo-draw-over-apps';
 
 export function ResizeBubble({ state }) {
   const large = state.count > 0;
 
   return (
-    <ExpoDrawOverAppsReactNativeWindowContainer
+    <ReactNativeWindowContainer
       width={large ? 238 : 154}
       height={large ? 256 : 172}
       borderRadius={large ? 44 : 28}
@@ -138,15 +136,14 @@ export function ResizeBubble({ state }) {
       <Text style={{ color: 'white', fontWeight: '900' }}>
         Smooth resize
       </Text>
-    </ExpoDrawOverAppsReactNativeWindowContainer>
+    </ReactNativeWindowContainer>
   );
 }
 ```
 
 ## What to read next
 
-- [Permission flow](/docs/tutorial/permission-flow) covers the Android settings handoff.
-- [Floating window preview](/docs/tutorial/floating-window-preview) shows how to design a renderer before starting the overlay service.
-- [NativeWind support](/docs/tutorial/nativewind) covers `className` renderers in apps that already use NativeWind.
-- [Fixtures](/docs/fixtures/) lists the example bubbles shipped with the repo.
-- [Public API](/docs/public-api/) is generated from the TypeScript exports.
+- [Tutorial](/versions/latest/tutorial) covers the Android settings handoff, floating window preview, edge hide, and renderer registration.
+- [NativeWind support](/versions/latest/nativewind) covers `className` renderers in apps that already use NativeWind.
+- [Fixtures](/versions/latest/fixtures/) lists the example bubbles shipped with the repo.
+- [Public API](/versions/latest/public-api/) lists the current SDK track.

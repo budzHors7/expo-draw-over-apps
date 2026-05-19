@@ -78,6 +78,20 @@ body {
   margin-right: auto !important;
 }
 
+.announcementBarLink {
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.announcementBarLink:hover {
+  color: #5eead4;
+  text-decoration: underline;
+}
+
 .homeHero {
   border-bottom: 1px solid var(--ifm-color-emphasis-200);
   background:
@@ -361,6 +375,239 @@ body {
   background: var(--ifm-code-background);
 }
 
+.sdkReference {
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+  min-height: calc(100vh - var(--ifm-navbar-height));
+  min-width: 0;
+  background: var(--ifm-background-color);
+}
+
+.sdkReferenceSidebar {
+  position: sticky;
+  top: var(--ifm-navbar-height);
+  align-self: start;
+  display: grid;
+  gap: 1rem;
+  height: calc(100vh - var(--ifm-navbar-height));
+  min-width: 0;
+  border-right: 1px solid var(--ifm-color-emphasis-200);
+  padding: 1rem;
+  background: var(--ifm-background-surface-color);
+  overflow-y: auto;
+}
+
+.sdkReferenceVersionControl {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.sdkReferenceVersionControl span {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sdkReferenceVersionControl select {
+  min-height: 2.45rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  font: inherit;
+  font-weight: 800;
+}
+
+.sdkReferenceVersionControl select:focus {
+  border-color: var(--ifm-color-primary);
+  outline: 2px solid color-mix(in srgb, var(--ifm-color-primary) 30%, transparent);
+  outline-offset: 2px;
+}
+
+.sdkReferenceSidebarSummary {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 0.5rem;
+  padding: 0.8rem;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.86rem;
+}
+
+.sdkReferenceSidebarSummary strong {
+  color: var(--ifm-heading-color);
+  font-size: 1rem;
+}
+
+.sdkReferenceSidebarLinks {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sdkReferenceSidebarLinks--secondary {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  padding-top: 0.8rem;
+}
+
+.sdkReferenceSidebarLinks a {
+  border-radius: 0.35rem;
+  padding: 0.45rem 0.55rem;
+  color: var(--ifm-color-emphasis-800);
+  font-weight: 700;
+}
+
+.sdkReferenceSidebarLinks a:hover {
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+.sdkReferenceSidebarLink--active {
+  background: color-mix(in srgb, var(--ifm-color-primary) 14%, transparent);
+  color: var(--ifm-color-primary) !important;
+}
+
+.sdkReferenceContent {
+  width: min(100%, 66rem);
+  min-width: 0;
+  margin-right: auto;
+  padding: 2.5rem 3rem 4rem;
+}
+
+.sdkReferenceBreadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.5rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.86rem;
+}
+
+.sdkReferenceHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.45fr);
+  gap: 2rem;
+  align-items: start;
+  min-width: 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  padding-bottom: 2rem;
+}
+
+.sdkReferenceHeader h1 {
+  margin: 0.6rem 0 1rem;
+  font-size: clamp(2.35rem, 5vw, 3.5rem);
+  line-height: 1.02;
+}
+
+.sdkReferenceHeader p {
+  max-width: 44rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.sdkReferenceHeader dl {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.sdkReferenceHeader dt {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sdkReferenceHeader dd {
+  margin: 0.2rem 0 0;
+  color: var(--ifm-heading-color);
+  font-weight: 800;
+}
+
+.sdkReferenceBadge {
+  display: inline-flex;
+  border: 1px solid var(--ifm-color-primary);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  color: var(--ifm-color-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.sdkReferenceSection {
+  min-width: 0;
+  padding-top: 2rem;
+}
+
+.sdkReferenceSection h2 {
+  margin-bottom: 1rem;
+}
+
+.sdkReferenceSection pre {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.sdkReferenceSection code {
+  overflow-wrap: anywhere;
+}
+
+.sdkReferenceSubsection {
+  min-width: 0;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  padding-top: 1.25rem;
+}
+
+.sdkReferenceSubsection h3 {
+  margin-bottom: 0.65rem;
+  font-size: 1.1rem;
+}
+
+.sdkReferenceFeatureGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.sdkReferenceFeatureGroup {
+  min-width: 0;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 0.5rem;
+  padding: 1.1rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.sdkReferenceFeatureGroup h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.sdkReferenceFeatureGroup ul,
+.sdkReferenceSection ul {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 0;
+}
+
+.sdkReferencePagination {
+  min-width: 0;
+  margin-top: 3rem;
+}
+
+.sdkReferencePagination .pagination-nav__link {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 996px) {
   .main-wrapper,
   .container,
@@ -371,14 +618,7 @@ body {
   }
 
   .theme-doc-markdown {
-    width: calc(100vw - 4rem) !important;
-    max-width: calc(100vw - 4rem) !important;
-  }
-
-  article {
-    width: calc(100vw - 4rem) !important;
-    max-width: calc(100vw - 4rem) !important;
-    overflow-x: hidden;
+    max-width: 100%;
   }
 
   .theme-doc-markdown > * {
@@ -410,7 +650,7 @@ body {
 
   .theme-code-block,
   .theme-doc-markdown pre {
-    max-width: calc(100vw - 4rem);
+    max-width: 100%;
     overflow-x: auto;
   }
 
@@ -460,102 +700,33 @@ body {
     left: 1rem;
     width: auto;
   }
-}
-/*
- * Version chooser used on the getting-started page.
- */
-.versionInstallSelector {
-  border: 1px solid var(--ifm-color-emphasis-200);
-  border-radius: 12px;
-  padding: 1rem;
-  margin: 1.5rem 0;
-  background: var(--ifm-background-surface-color);
-}
 
-.versionInstallSelector__header,
-.versionInstallSelector__body {
-  display: grid;
-  gap: 1rem;
-}
+  .sdkReference {
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
 
-.versionInstallSelector__header {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-}
+  .sdkReferenceSidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  }
 
-.versionInstallSelector__eyebrow {
-  margin: 0 0 0.25rem;
-  color: var(--ifm-color-primary);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
+  .sdkReferenceContent {
+    width: 100%;
+    max-width: 100%;
+    padding: 2rem 1rem 3rem;
+  }
 
-.versionInstallSelector__title {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.versionInstallSelector__control {
-  display: grid;
-  gap: 0.35rem;
-  color: var(--ifm-color-emphasis-700);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.versionInstallSelector__control select {
-  min-width: 10rem;
-  border: 1px solid var(--ifm-color-emphasis-300);
-  border-radius: 8px;
-  padding: 0.45rem 0.65rem;
-  color: var(--ifm-font-color-base);
-  background: var(--ifm-background-color);
-}
-
-.versionInstallSelector__body {
-  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.9fr);
-  align-items: start;
-}
-
-.versionInstallSelector__badge {
-  display: inline-flex;
-  border-radius: 999px;
-  padding: 0.25rem 0.6rem;
-  color: var(--ifm-color-primary-darkest);
-  background: var(--ifm-color-primary-lightest);
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.versionInstallSelector__body h3 {
-  margin: 0.65rem 0 0.5rem;
-}
-
-.versionInstallSelector__body ul {
-  margin-bottom: 0.75rem;
-}
-
-.versionInstallSelector__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  font-weight: 700;
-}
-
-.versionInstallSelector__command {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-@media (max-width: 720px) {
-  .versionInstallSelector__header,
-  .versionInstallSelector__body {
+  .sdkReferenceHeader {
     grid-template-columns: 1fr;
   }
 
-  .versionInstallSelector__control select {
-    width: 100%;
+  .sdkReferencePagination {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 }

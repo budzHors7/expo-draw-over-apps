@@ -56,7 +56,7 @@ npx expo install @expo/ui
 
 ## Version tracks
 
-- SDK 56 beta: current repo implementation. Adds Reanimated-backed `ExpoDrawOverAppsReactNativeWindowContainer` and `ExpoDrawOverAppsNativeWindowContainer`.
+- SDK 56 beta: current repo implementation. Adds Reanimated-backed `ReactNativeWindowContainer` and `NativeWindowContainer`.
 - SDK 55: latest npm release is `55.0.2`. It supports Android overlay permission and floating React Native or Jetpack Compose bubbles. Install with `npm install expo-draw-over-apps@55`.
 
 If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:
@@ -127,13 +127,13 @@ Use the window containers when a bubble changes size. Both accept React Native c
 
 ```tsx
 import { Text } from 'react-native';
-import { ExpoDrawOverAppsReactNativeWindowContainer } from 'expo-draw-over-apps';
+import { ReactNativeWindowContainer } from 'expo-draw-over-apps';
 
 export function SmoothBubble({ state }) {
   const expanded = state.count > 0;
 
   return (
-    <ExpoDrawOverAppsReactNativeWindowContainer
+    <ReactNativeWindowContainer
       width={expanded ? 238 : 154}
       height={expanded ? 256 : 172}
       borderRadius={expanded ? 44 : 28}
@@ -141,7 +141,7 @@ export function SmoothBubble({ state }) {
       contentClassName="flex-1 items-center justify-center"
     >
       <Text style={{ color: 'white', fontWeight: '900' }}>Smooth resize</Text>
-    </ExpoDrawOverAppsReactNativeWindowContainer>
+    </ReactNativeWindowContainer>
   );
 }
 ```

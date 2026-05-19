@@ -9,8 +9,8 @@ import {
   setComposeBubbleRenderer,
 } from './ExpoDrawOverAppsComposeBubbleRenderer';
 import {
-  ExpoDrawOverAppsNativeWindowContainer,
-  ExpoDrawOverAppsReactNativeWindowContainer,
+  NativeWindowContainer,
+  ReactNativeWindowContainer,
 } from './ExpoDrawOverAppsWindowContainers';
 import {
   getAllBubbleStates,
@@ -134,10 +134,10 @@ export {
   getNextFloatingWindowPreviewState,
   getAllBubbleStates,
   decrementBubbleCount,
-  ExpoDrawOverAppsNativeWindowContainer,
   ExpoDrawOverAppsComposeBubbleRenderer,
-  ExpoDrawOverAppsReactNativeWindowContainer,
   incrementBubbleCount,
+  NativeWindowContainer,
+  ReactNativeWindowContainer,
   refreshBubbleState,
   setComposeBubbleRenderer,
   setBubbleCount,
@@ -151,9 +151,9 @@ export {
 export type { FloatingWindowPreviewProps, FloatingWindowPreviewRenderProps } from './FloatingWindowPreview';
 export type { BubbleRenderer, BubbleRendererProps } from './bubbleRenderer';
 export type {
-  ExpoDrawOverAppsNativeWindowContainerProps,
-  ExpoDrawOverAppsWindowAnimationConfig,
-  ExpoDrawOverAppsWindowContainerProps,
+  NativeWindowContainerProps,
+  WindowAnimationConfig,
+  WindowContainerProps,
 } from './ExpoDrawOverAppsWindowContainers';
 export { DEFAULT_BUBBLE_ID, MAX_BUBBLE_ID_LENGTH, normalizeBubbleId } from './bubbleTypes';
 export type { BubbleChangeSource, BubbleDisplayOptions, BubbleState } from './bubbleTypes';

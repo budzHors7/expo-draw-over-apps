@@ -33,14 +33,14 @@ type ExpoUiModifiersRuntime = {
   size?: (width: number, height: number) => unknown;
 };
 
-export type ExpoDrawOverAppsWindowAnimationConfig = Partial<WithTimingConfig> & {
+export type WindowAnimationConfig = Partial<WithTimingConfig> & {
   /**
    * Duration used for size and radius changes. Defaults to 220ms.
    */
   duration?: number;
 };
 
-export type ExpoDrawOverAppsWindowContainerProps = ViewProps &
+export type WindowContainerProps = ViewProps &
   NativeWindProps & {
     children?: React.ReactNode;
     /**
@@ -75,10 +75,10 @@ export type ExpoDrawOverAppsWindowContainerProps = ViewProps &
     /**
      * Reanimated timing config. Pass `duration: 0` to disable smooth resizing.
      */
-    animationConfig?: ExpoDrawOverAppsWindowAnimationConfig;
+    animationConfig?: WindowAnimationConfig;
   };
 
-export type ExpoDrawOverAppsNativeWindowContainerProps = ExpoDrawOverAppsWindowContainerProps & {
+export type NativeWindowContainerProps = WindowContainerProps & {
   /**
    * Expo UI Host color scheme. Android only.
    */
@@ -147,7 +147,7 @@ function getFiniteNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-function getTimingConfig(animationConfig?: ExpoDrawOverAppsWindowAnimationConfig): WithTimingConfig {
+function getTimingConfig(animationConfig?: WindowAnimationConfig): WithTimingConfig {
   return {
     duration: animationConfig?.duration ?? DEFAULT_ANIMATION_DURATION,
     easing: animationConfig?.easing ?? Easing.out(Easing.cubic),
@@ -155,7 +155,7 @@ function getTimingConfig(animationConfig?: ExpoDrawOverAppsWindowAnimationConfig
   };
 }
 
-function useTimingValue(target: number | undefined, animationConfig?: ExpoDrawOverAppsWindowAnimationConfig) {
+function useTimingValue(target: number | undefined, animationConfig?: WindowAnimationConfig) {
   const value = useSharedValue(target ?? -1);
 
   useEffect(() => {
@@ -171,7 +171,7 @@ function useWindowAnimatedStyle(
   width: number | undefined,
   height: number | undefined,
   borderRadius: number | undefined,
-  animationConfig?: ExpoDrawOverAppsWindowAnimationConfig
+  animationConfig?: WindowAnimationConfig
 ) {
   const flattenedStyle = StyleSheet.flatten(style) ?? {};
   const targetWidth = width ?? getFiniteNumber(flattenedStyle.width);
@@ -211,12 +211,12 @@ function getNativeWindProps(className: string | undefined): NativeWindProps {
 }
 
 /**
- * Reanimated React Native floating-window container.
+ * SDK 56 React Native floating-window container.
  *
  * Use this inside a bubble renderer to get smooth default resize/radius
  * transitions while keeping normal React Native styles and NativeWind classes.
  */
-export function ExpoDrawOverAppsReactNativeWindowContainer({
+export function ReactNativeWindowContainer({
   children,
   width,
   height,
@@ -228,7 +228,7 @@ export function ExpoDrawOverAppsReactNativeWindowContainer({
   contentClassName,
   animationConfig,
   ...viewProps
-}: ExpoDrawOverAppsWindowContainerProps) {
+}: WindowContainerProps) {
   const surfaceColor = getSurfaceColor(backgroundColor, style);
   const animatedStyle = useWindowAnimatedStyle(style, width, height, borderRadius, animationConfig);
 
@@ -252,14 +252,14 @@ export function ExpoDrawOverAppsReactNativeWindowContainer({
 }
 
 /**
- * Expo UI native floating-window container with React Native children.
+ * SDK 56 native floating-window container with React Native children.
  *
  * On Android with `@expo/ui` installed, this renders an Expo UI Host/Surface
  * as the native backdrop and layers React Native children inside the same
  * clipped Reanimated window. On other platforms, or without `@expo/ui`, it
  * falls back to the Reanimated React Native container.
  */
-export function ExpoDrawOverAppsNativeWindowContainer({
+export function NativeWindowContainer({
   children,
   colorScheme,
   seedColor,
@@ -275,7 +275,7 @@ export function ExpoDrawOverAppsNativeWindowContainer({
   backgroundColor,
   style,
   ...containerProps
-}: ExpoDrawOverAppsNativeWindowContainerProps) {
+}: NativeWindowContainerProps) {
   const expoUi = getExpoUiRuntime();
   const modifiers = getExpoUiModifiersRuntime();
   const outerBackground = getSurfaceColor(backgroundColor, style);
@@ -302,7 +302,7 @@ export function ExpoDrawOverAppsNativeWindowContainer({
 
   if (Platform.OS !== 'android' || !expoUi?.Host || !expoUi.Surface || !expoUi.Shape) {
     return (
-      <ExpoDrawOverAppsReactNativeWindowContainer
+      <ReactNativeWindowContainer
         {...containerProps}
         width={width}
         height={height}
@@ -313,7 +313,7 @@ export function ExpoDrawOverAppsNativeWindowContainer({
         contentClassName={contentClassName}
       >
         {children}
-      </ExpoDrawOverAppsReactNativeWindowContainer>
+      </ReactNativeWindowContainer>
     );
   }
 
@@ -322,7 +322,7 @@ export function ExpoDrawOverAppsNativeWindowContainer({
   const Shape = expoUi.Shape;
 
   return (
-    <ExpoDrawOverAppsReactNativeWindowContainer
+    <ReactNativeWindowContainer
       {...containerProps}
       width={width}
       height={height}
@@ -356,9 +356,23 @@ export function ExpoDrawOverAppsNativeWindowContainer({
         </Host>
       </View>
       {nativeChildren}
-    </ExpoDrawOverAppsReactNativeWindowContainer>
+    </ReactNativeWindowContainer>
   );
 }
+
+export type ExpoDrawOverAppsWindowAnimationConfig = WindowAnimationConfig;
+export type ExpoDrawOverAppsWindowContainerProps = WindowContainerProps;
+export type ExpoDrawOverAppsNativeWindowContainerProps = NativeWindowContainerProps;
+
+/**
+ * @deprecated Use `ReactNativeWindowContainer`.
+ */
+export const ExpoDrawOverAppsReactNativeWindowContainer = ReactNativeWindowContainer;
+
+/**
+ * @deprecated Use `NativeWindowContainer`.
+ */
+export const ExpoDrawOverAppsNativeWindowContainer = NativeWindowContainer;
 
 const styles = StyleSheet.create({
   windowSurface: {

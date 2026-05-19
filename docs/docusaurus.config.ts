@@ -12,7 +12,7 @@ const siteUrl = isGithubPagesBuild ? `https://${repositoryOwnerSlug}.github.io` 
 const baseUrl = isGithubPagesBuild ? `/${repositoryName}/` : '/';
 const siteTitle = 'Expo Draw Over Apps';
 const siteDescription =
-  'Expo module for Android overlay permission, floating bubbles, edge hide, fixture previews, NativeWind renderers, and expo-ui renderer registration.';
+  'Versioned docs for expo-draw-over-apps, an Android overlay permission and floating bubble Expo module.';
 const siteBaseUrl = `${siteUrl}${baseUrl}`;
 const socialImageUrl = `${siteBaseUrl}img/og-preview.png`;
 
@@ -107,6 +107,7 @@ const config: Config = {
       'classic',
       {
         docs: {
+          routeBasePath: 'generated',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/budzHors7/expo-draw-over-apps/tree/main/docs/',
         },
@@ -133,8 +134,9 @@ const config: Config = {
           'expo floating bubble',
           'android draw over other apps',
           'expo module',
+          'expo sdk module',
+          'expo sdk versioned docs',
           'react native overlay permission',
-          'edge hide bubble',
           'expo ui bubble renderer',
           'nativewind bubble renderer',
           'react native android overlay service',
@@ -150,13 +152,12 @@ const config: Config = {
       },
       items: [
         {
-          type: 'doc',
-          docId: 'index',
+          to: '/versions/v55.0.0/sdk/draw-over-apps/',
           position: 'left',
           label: 'Docs',
         },
         {
-          to: '/docs/public-api/',
+          to: '/versions/v55.0.0/public-api/',
           position: 'left',
           label: 'Public API',
         },
@@ -168,19 +169,14 @@ const config: Config = {
         },
       ],
     },
-    footer: {
-      style: 'dark',
-      links: [],
-      copyright: `Copyright © ${new Date().getFullYear()} Anda Hanise. Built with Docusaurus.`,
-    },
     docs: {
       sidebar: {
         hideable: true,
       },
     },
     announcementBar: {
-      id: 'github-pages-ready',
-      content: 'Android overlay permission, floating bubbles, and in-app previews.',
+      id: 'pre-release-v56',
+      content: `Pre-release v56 of expo-draw-over-apps is now available <a class="announcementBarLink" href="${baseUrl}versions/v56.0.0/sdk/draw-over-apps">v56 docs</a>`,
       backgroundColor: '#111827',
       textColor: '#ffffff',
       isCloseable: false,

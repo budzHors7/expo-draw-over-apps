@@ -94,7 +94,7 @@ export default function Home(): JSX.Element {
   return (
     <Layout
       title="Expo Draw Over Apps"
-      description="Expo module for Android overlay permission, floating bubbles, NativeWind renderers, expo-ui registration, and in-app bubble previews."
+      description="Expo module docs for Android overlay permission, floating bubbles, NativeWind renderers, and SDK-specific APIs."
     >
       <main>
         <section className="homeHero">
@@ -106,10 +106,10 @@ export default function Home(): JSX.Element {
                 fixture previews for Expo apps.
               </p>
               <div className="homeHeroActions">
-                <Link className="button button--primary button--lg" to="/docs/">
+                <Link className="button button--primary button--lg" to="/versions/v55.0.0/sdk/draw-over-apps/">
                   Read the docs
                 </Link>
-                <Link className="button button--secondary button--lg" to="/docs/fixtures/">
+                <Link className="button button--secondary button--lg" to="/versions/v55.0.0/fixtures/">
                   View fixtures
                 </Link>
               </div>
