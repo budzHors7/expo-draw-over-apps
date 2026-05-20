@@ -1,5 +1,8 @@
 name: Publish package to npm
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 on:
   release:
     types:
@@ -7,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 concurrency:
@@ -19,17 +22,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
+
+      - name: Fix Expo module script permissions
+        run: chmod +x node_modules/expo-module-scripts/bin/*
+
+      - name: Prepare package
+        run: npm run prepare
 
       - name: Run tests
         run: npm test -- --runInBand
@@ -61,6 +70,42 @@ jobs:
             echo "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }} is already published."
             exit 1
           fi
+
+      - name: Verify release tag matches package version
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          EXPECTED_TAG="v${{ steps.package.outputs.version }}"
+          if [[ "${{ github.event.release.tag_name }}" != "$EXPECTED_TAG" ]]; then
+            echo "Release tag ${{ github.event.release.tag_name }} does not match package version tag $EXPECTED_TAG."
+            exit 1
+          fi
+
+      - name: Create GitHub release
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+          TAG_NAME: v${{ steps.package.outputs.version }}
+        run: |
+          RELEASE_FLAGS=()
+
+          if [[ "$PACKAGE_VERSION" == *-* ]]; then
+            RELEASE_FLAGS+=(--prerelease)
+          fi
+
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists."
+            exit 0
+          fi
+
+          gh release create "$TAG_NAME" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG_NAME" \
+            --notes "$PACKAGE_NAME@$PACKAGE_VERSION" \
+            "${RELEASE_FLAGS[@]}"
 
       - name: Publish to npm
         run: npm publish --provenance --access public --tag "${{ steps.package.outputs.tag }}"
