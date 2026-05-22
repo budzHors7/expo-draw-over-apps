@@ -1,4 +1,5 @@
 import React from 'react';
+import CodeBlock from '@theme/CodeBlock';
 import Heading from '@theme/Heading';
 import {
   VersionedDocsLayout,
@@ -74,9 +75,7 @@ function GettingStarted({ versionKey }: { versionKey: VersionKey }) {
 
       <section id="installation" className="sdkReferenceSection">
         <Heading as="h2">Installation</Heading>
-        <pre>
-          <code>{installCommands[versionKey]}</code>
-        </pre>
+        <CodeBlock language="bash">{installCommands[versionKey]}</CodeBlock>
       </section>
 
       <section id="requirements" className="sdkReferenceSection">
@@ -144,8 +143,7 @@ function Tutorial({ versionKey }: { versionKey: VersionKey }) {
             <p>
               Render the same bubble renderer inside your app while you tune layout and state. This does not ask for overlay permission or start the Android overlay service.
             </p>
-            <pre>
-              <code>{`import { FloatingWindowPreview } from 'expo-draw-over-apps';
+            <CodeBlock language="tsx">{`import { FloatingWindowPreview } from 'expo-draw-over-apps';
 import { CounterBubble } from './CounterBubble';
 
 export function BubblePreviewCard() {
@@ -158,8 +156,7 @@ export function BubblePreviewCard() {
       renderBubble={(props) => <CounterBubble {...props} />}
     />
   );
-}`}</code>
-            </pre>
+}`}</CodeBlock>
           </section>
 
           <section id="edge-hide-controls" className="sdkReferenceSubsection">
@@ -167,8 +164,7 @@ export function BubblePreviewCard() {
             <p>
               Pass <code>edgeHideEnabled</code> when the bubble is shown, or change it later for the same named bubble.
             </p>
-            <pre>
-              <code>{`import { setEdgeHideEnabled, showBubble } from 'expo-draw-over-apps';
+            <CodeBlock language="tsx">{`import { setEdgeHideEnabled, showBubble } from 'expo-draw-over-apps';
 
 const bubbleId = 'counter';
 
@@ -176,8 +172,7 @@ await showBubble(bubbleId, { edgeHideEnabled: true });
 
 function toggleEdgeHide(nextEnabled: boolean) {
   setEdgeHideEnabled(nextEnabled, bubbleId);
-}`}</code>
-            </pre>
+}`}</CodeBlock>
           </section>
 
           <section id="react-native-window-container" className="sdkReferenceSubsection">
@@ -185,8 +180,7 @@ function toggleEdgeHide(nextEnabled: boolean) {
             <p>
               Wrap React Native renderer content when the bubble size or corner radius changes. Numeric <code>width</code>, <code>height</code>, and <code>borderRadius</code> values animate with Reanimated.
             </p>
-            <pre>
-              <code>{`import { Text } from 'react-native';
+            <CodeBlock language="tsx">{`import { Text } from 'react-native';
 import {
   ReactNativeWindowContainer,
   type BubbleRendererProps,
@@ -207,8 +201,7 @@ export function ResizeBubble({ state }: BubbleRendererProps) {
       </Text>
     </ReactNativeWindowContainer>
   );
-}`}</code>
-            </pre>
+}`}</CodeBlock>
           </section>
 
           <section id="native-window-container" className="sdkReferenceSubsection">
@@ -216,8 +209,7 @@ export function ResizeBubble({ state }: BubbleRendererProps) {
             <p>
               Use the native container when the app has <code>@expo/ui</code> installed and you want the Android Host/Surface backdrop. It still renders React Native children inside the window and falls back to the React Native container when Expo UI is unavailable.
             </p>
-            <pre>
-              <code>{`import { Text } from 'react-native';
+            <CodeBlock language="tsx">{`import { Text } from 'react-native';
 import {
   NativeWindowContainer,
   type BubbleRendererProps,
@@ -239,8 +231,7 @@ export function NativeSurfaceBubble({ state }: BubbleRendererProps) {
       </Text>
     </NativeWindowContainer>
   );
-}`}</code>
-            </pre>
+}`}</CodeBlock>
           </section>
         </section>
       ) : null}
@@ -293,8 +284,7 @@ function NativeWind({ versionKey }: { versionKey: VersionKey }) {
 
       <section id="renderer" className="sdkReferenceSection">
         <Heading as="h2">Renderer</Heading>
-        <pre>
-          <code>{`function CounterBubble() {
+        <CodeBlock language="tsx">{`function CounterBubble() {
   return (
     <View className="rounded-2xl bg-zinc-950 px-4 py-3">
       <Text className="text-sm font-semibold text-white">Counter</Text>
@@ -302,8 +292,7 @@ function NativeWind({ versionKey }: { versionKey: VersionKey }) {
   );
 }
 
-setBubbleRenderer(CounterBubble);`}</code>
-        </pre>
+setBubbleRenderer(CounterBubble);`}</CodeBlock>
       </section>
     </>
   );
@@ -353,9 +342,8 @@ function Demo({ versionKey }: { versionKey: VersionKey }) {
 
       <section id="run-demo" className="sdkReferenceSection">
         <Heading as="h2">Run the demo</Heading>
-        <pre>
-          <code>cd example{'\n'}npm run android</code>
-        </pre>
+        <CodeBlock language="bash">{`cd example
+npm run android`}</CodeBlock>
       </section>
 
       <section id="demo-controls" className="sdkReferenceSection">

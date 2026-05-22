@@ -1,4 +1,5 @@
 import React from 'react';
+import CodeBlock from '@theme/CodeBlock';
 import Heading from '@theme/Heading';
 import {
   VersionedDocsLayout,
@@ -143,9 +144,7 @@ export default function SdkReferencePage({ routeSegment, versionKey }: SdkRefere
 
       <section id="installation" className="sdkReferenceSection">
         <Heading as="h2">Installation</Heading>
-        <pre>
-          <code>{version.installCommand}</code>
-        </pre>
+        <CodeBlock language="bash">{version.installCommand}</CodeBlock>
       </section>
 
       <section id="features" className="sdkReferenceSection">

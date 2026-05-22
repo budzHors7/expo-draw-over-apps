@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React, { useEffect, useRef, useState, type ReactNode } from 'react';
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
@@ -97,6 +97,7 @@ const pageLinks: PageLink[] = [
 
 const primaryPageLinks = pageLinks.slice(0, 2);
 const featurePageLinks = pageLinks.slice(2);
+const mobileSidebarMediaQuery = '(max-width: 996px)';
 
 function getVersionRoot(versionKey: VersionKey, routeSegment?: VersionRouteSegment) {
   if (routeSegment) {
@@ -187,11 +188,13 @@ function useActiveSectionHref(sectionLinks: Array<{ href: string; label: string 
 
 function VersionPageLinks({
   links,
+  onNavigate,
   pageKey,
   routeSegment,
   selectedVersion,
 }: {
   links: PageLink[];
+  onNavigate?: () => void;
   pageKey: VersionedPageKey;
   routeSegment?: VersionRouteSegment;
   selectedVersion: VersionKey;
@@ -202,6 +205,7 @@ function VersionPageLinks({
         <Link
           className={getSidebarLinkClass(link.pageKey === pageKey)}
           key={link.pageKey}
+          onClick={onNavigate}
           to={getVersionedPageRoute(selectedVersion, link.pageKey, routeSegment)}
         >
           {link.label}
@@ -242,11 +246,13 @@ function VersionSelect({
 }
 
 function VersionSidebar({
+  onNavigate,
   pageKey,
   routeSegment,
   sectionLinks,
   selectedVersion,
 }: {
+  onNavigate?: () => void;
   pageKey: VersionedPageKey;
   routeSegment?: VersionRouteSegment;
   sectionLinks: Array<{ href: string; label: string }>;
@@ -267,6 +273,7 @@ function VersionSidebar({
       <nav aria-label="Core documentation" className="sdkReferenceSidebarLinks">
         <VersionPageLinks
           links={primaryPageLinks}
+          onNavigate={onNavigate}
           pageKey={pageKey}
           routeSegment={routeSegment}
           selectedVersion={selectedVersion}
@@ -276,6 +283,7 @@ function VersionSidebar({
       <nav aria-label="Feature documentation" className="sdkReferenceSidebarLinks sdkReferenceSidebarLinks--secondary">
         <VersionPageLinks
           links={featurePageLinks}
+          onNavigate={onNavigate}
           pageKey={pageKey}
           routeSegment={routeSegment}
           selectedVersion={selectedVersion}
@@ -289,7 +297,10 @@ function VersionSidebar({
               className={getSidebarLinkClass(activeSectionHref === link.href)}
               href={link.href}
               key={link.href}
-              onClick={() => setActiveSectionHref(link.href)}
+              onClick={() => {
+                setActiveSectionHref(link.href);
+                onNavigate?.();
+              }}
             >
               {link.label}
             </a>
@@ -356,6 +367,116 @@ export function VersionedDocsLayout({
   const displayedRouteSegment = routeSegment ?? (versionKey === '55' ? 'v55.0.0' : 'latest');
   const version = versionSummaries[versionKey];
   const pageTitle = `${title} | ${version.label}`;
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const mobileSidebarScrollY = useRef(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    let frameId = 0;
+    let navbarToggle: HTMLButtonElement | null = null;
+    const mediaQuery = window.matchMedia(mobileSidebarMediaQuery);
+
+    function toggleMobileSidebar(event: Event) {
+      if (!mediaQuery.matches) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      setIsMobileSidebarOpen((isOpen) => {
+        if (!isOpen) {
+          mobileSidebarScrollY.current = window.scrollY;
+        }
+
+        return !isOpen;
+      });
+    }
+
+    function syncToggleAttributes() {
+      if (!navbarToggle) {
+        return;
+      }
+
+      if (!mediaQuery.matches) {
+        navbarToggle.removeAttribute('aria-controls');
+        navbarToggle.removeAttribute('aria-expanded');
+        navbarToggle.removeAttribute('aria-label');
+        return;
+      }
+
+      navbarToggle.setAttribute('aria-controls', 'sdkReferenceMobileSidebar');
+      navbarToggle.setAttribute('aria-expanded', String(isMobileSidebarOpen));
+      navbarToggle.setAttribute('aria-label', isMobileSidebarOpen ? 'Close docs menu' : 'Open docs menu');
+    }
+
+    function attachToNavbarToggle() {
+      navbarToggle = document.querySelector<HTMLButtonElement>('.navbar__toggle');
+
+      if (!navbarToggle) {
+        frameId = window.requestAnimationFrame(attachToNavbarToggle);
+        return;
+      }
+
+      navbarToggle.addEventListener('click', toggleMobileSidebar, { capture: true });
+      mediaQuery.addEventListener('change', syncToggleAttributes);
+      syncToggleAttributes();
+    }
+
+    attachToNavbarToggle();
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      if (navbarToggle) {
+        navbarToggle.removeEventListener('click', toggleMobileSidebar, { capture: true });
+        navbarToggle.removeAttribute('aria-controls');
+        navbarToggle.removeAttribute('aria-expanded');
+        navbarToggle.removeAttribute('aria-label');
+      }
+
+      mediaQuery.removeEventListener('change', syncToggleAttributes);
+    };
+  }, [isMobileSidebarOpen]);
+
+  useEffect(() => {
+    if (!isMobileSidebarOpen || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const scrollY = mobileSidebarScrollY.current;
+    const previousOverflow = document.body.style.overflow;
+    const previousPosition = document.body.style.position;
+    const previousTop = document.body.style.top;
+    const previousWidth = document.body.style.width;
+
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsMobileSidebarOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.top = previousTop;
+      document.body.style.width = previousWidth;
+      window.scrollTo(0, scrollY);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isMobileSidebarOpen]);
 
   return (
     <Layout title={pageTitle} description={description}>
@@ -371,6 +492,44 @@ export function VersionedDocsLayout({
           sectionLinks={sectionLinks}
           selectedVersion={versionKey}
         />
+        <div
+          aria-hidden={!isMobileSidebarOpen}
+          className={`sdkReferenceMobileDrawer${isMobileSidebarOpen ? ' sdkReferenceMobileDrawer--open' : ''}`}
+          id="sdkReferenceMobileSidebar"
+        >
+          <button
+            aria-label="Close docs menu"
+            className="sdkReferenceMobileDrawerBackdrop"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            tabIndex={isMobileSidebarOpen ? 0 : -1}
+            type="button"
+          />
+          <div
+            aria-label="Versioned docs menu"
+            aria-modal={isMobileSidebarOpen}
+            className="sdkReferenceMobileDrawerPanel"
+            role="dialog"
+          >
+            <div className="sdkReferenceMobileDrawerHeader">
+              <strong>Docs</strong>
+              <button
+                aria-label="Close docs menu"
+                className="sdkReferenceMobileDrawerClose"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                type="button"
+              >
+                <span aria-hidden="true" />
+              </button>
+            </div>
+            <VersionSidebar
+              onNavigate={() => setIsMobileSidebarOpen(false)}
+              pageKey={pageKey}
+              routeSegment={routeSegment}
+              sectionLinks={sectionLinks}
+              selectedVersion={versionKey}
+            />
+          </div>
+        </div>
         <article className="sdkReferenceContent">
           <div className="sdkReferenceBreadcrumb">
             <Link to="/">Home</Link>
