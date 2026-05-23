@@ -2,12 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, AppStateStatus, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import {
   canDrawOverlays,
-  decrementBubbleCount,
-  hideBubble,
-  incrementBubbleCount,
+  closeBubble,
   isBubbleVisible,
   requestPermission,
-  setBubbleCount,
   setEdgeHideEnabled as setBubbleEdgeHideEnabled,
   setBubbleRenderer,
   setBubbleRendererForBubble,
@@ -21,9 +18,17 @@ import {
   BUBBLE_PLAYGROUND_TEMPLATES,
   type BubbleExampleId,
   type BubbleTemplateTone,
-  createTemplateBubbleState,
   getBubbleTemplate,
 } from './templates/bubblePlaygroundTemplate';
+import {
+  decrementExampleBubbleCount,
+  getExampleBubbleState,
+  incrementExampleBubbleCount,
+  refreshAllExampleBubbleStates,
+  setExampleBubbleCount,
+  useAllExampleBubbleStates,
+  useExampleBubbleState,
+} from './state/bubbleExampleState';
 import {
   RESIZE_BUBBLE_INITIAL_STEP,
   RESIZE_BUBBLE_MAX_STEP,
@@ -65,14 +70,17 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [activeExample, setActiveExample] = useState<BubbleExampleId>('react-native-counter');
   const [edgeHideEnabled, setEdgeHideEnabledState] = useState(true);
-  const activeBubbleState = useBubbleState(activeExample);
+  const activeOverlayState = useBubbleState(activeExample);
+  const activeExampleState = useExampleBubbleState(activeExample);
   const allBubbleStates = useAllBubbleStates();
+  const allExampleBubbleStates = useAllExampleBubbleStates();
 
   const refreshState = useCallback(() => {
     setGranted(canDrawOverlays());
     BUBBLE_EXAMPLE_IDS.forEach((bubbleId) => {
       isBubbleVisible(bubbleId);
     });
+    refreshAllExampleBubbleStates();
   }, []);
 
   useEffect(() => {
@@ -102,15 +110,17 @@ export default function App() {
   const visibleStates = useMemo(
     () =>
       BUBBLE_PLAYGROUND_TEMPLATES.map((template) => {
-        const state = allBubbleStates.find((entry) => entry.bubbleId === template.id) ?? createTemplateBubbleState(template);
+        const overlayState = allBubbleStates.find((entry) => entry.bubbleId === template.id);
+        const exampleState = allExampleBubbleStates.find((entry) => entry.bubbleId === template.id) ?? getExampleBubbleState(template.id);
 
         return {
           bubbleId: template.id,
-          state,
+          isVisible: overlayState?.isVisible ?? false,
+          exampleState,
           template,
         };
       }),
-    [allBubbleStates]
+    [allBubbleStates, allExampleBubbleStates]
   );
 
   const handleRequestPermission = async () => {
@@ -128,8 +138,12 @@ export default function App() {
     try {
       setActiveExample(exampleId);
       const template = getBubbleTemplate(exampleId);
-      if (template.initialCount > 0) {
-        setBubbleCount(template.initialCount, 'bubble', exampleId);
+      const currentExampleState = getExampleBubbleState(exampleId);
+      if (
+        template.initialCount > 0 &&
+        (exampleId === 'countdown-timer' || currentExampleState.count === 0)
+      ) {
+        setExampleBubbleCount(template.initialCount, 'bubble', exampleId);
       }
       await showBubble(exampleId, { edgeHideEnabled });
     } finally {
@@ -137,30 +151,30 @@ export default function App() {
     }
   };
 
-  const handleHideBubble = () => {
-    hideBubble(activeExample);
+  const handleCloseBubble = () => {
+    closeBubble(activeExample);
   };
 
   const isGranted = granted === true;
   const activeTemplate = getBubbleTemplate(activeExample);
-  const visibleBubbleCount = visibleStates.filter(({ state }) => state.isVisible).length;
+  const visibleBubbleCount = visibleStates.filter(({ isVisible }) => isVisible).length;
   const activeIsResizeBubble = isResizeBubbleExample(activeExample);
   const activeControls =
     activeExample === 'countdown-timer'
       ? [
           {
             label: 'Restart',
-            onPress: () => setBubbleCount(activeTemplate.initialCount, 'app', activeExample),
+            onPress: () => setExampleBubbleCount(activeTemplate.initialCount, 'app', activeExample),
             style: styles.blueButton,
           },
           {
             label: '10 Seconds',
-            onPress: () => setBubbleCount(10, 'app', activeExample),
+            onPress: () => setExampleBubbleCount(10, 'app', activeExample),
             style: styles.amberButton,
           },
           {
             label: 'Stop',
-            onPress: () => setBubbleCount(0, 'app', activeExample),
+            onPress: () => setExampleBubbleCount(0, 'app', activeExample),
             style: styles.slateButton,
           },
         ]
@@ -168,34 +182,34 @@ export default function App() {
         ? [
             {
               label: 'Small',
-              onPress: () => setBubbleCount(RESIZE_BUBBLE_MIN_STEP, 'app', activeExample),
+              onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_MIN_STEP, 'app', activeExample),
               style: styles.resizeExpoUiExampleButton,
             },
             {
               label: 'Medium',
-              onPress: () => setBubbleCount(RESIZE_BUBBLE_INITIAL_STEP, 'app', activeExample),
+              onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_INITIAL_STEP, 'app', activeExample),
               style: styles.tealButton,
             },
             {
               label: 'Big',
-              onPress: () => setBubbleCount(RESIZE_BUBBLE_MAX_STEP, 'app', activeExample),
+              onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_MAX_STEP, 'app', activeExample),
               style: styles.resizeReactNativeExampleButton,
             },
           ]
       : [
           {
             label: '+1 In App',
-            onPress: () => incrementBubbleCount('app', activeExample),
+            onPress: () => incrementExampleBubbleCount('app', activeExample),
             style: styles.blueButton,
           },
           {
             label: '-1 In App',
-            onPress: () => decrementBubbleCount('app', activeExample),
+            onPress: () => decrementExampleBubbleCount('app', activeExample),
             style: styles.amberButton,
           },
           {
             label: 'Reset',
-            onPress: () => setBubbleCount(0, 'app', activeExample),
+            onPress: () => setExampleBubbleCount(0, 'app', activeExample),
             style: styles.slateButton,
           },
         ];
@@ -245,11 +259,11 @@ export default function App() {
           </View>
           <View style={styles.metricCard}>
             <Text style={styles.metricLabel}>Active bubble</Text>
-            <Text style={styles.metricValueSmall}>{activeBubbleState.isVisible ? 'Visible' : 'Hidden'}</Text>
+            <Text style={styles.metricValueSmall}>{activeOverlayState.isVisible ? 'Visible' : 'Hidden'}</Text>
           </View>
           <View style={styles.metricCard}>
             <Text style={styles.metricLabel}>Active value</Text>
-            <Text style={styles.metricValue}>{activeBubbleState.count}</Text>
+            <Text style={styles.metricValue}>{activeExampleState.count}</Text>
           </View>
         </View>
 
@@ -260,7 +274,7 @@ export default function App() {
           </Text>
 
           <View style={styles.exampleGrid}>
-            {visibleStates.map(({ bubbleId, template, state }) => {
+            {visibleStates.map(({ bubbleId, template, isVisible, exampleState }) => {
               const isActiveCard = bubbleId === activeExample;
               const toneStyle = getTemplateToneStyle(template.tone);
 
@@ -279,12 +293,12 @@ export default function App() {
                   </View>
 
                   <View style={styles.statusPillsRow}>
-                    <View style={[styles.statusPill, state.isVisible ? styles.statusPillVisible : styles.statusPillHidden]}>
-                      <Text style={styles.statusPillText}>{state.isVisible ? 'Visible' : 'Hidden'}</Text>
+                    <View style={[styles.statusPill, isVisible ? styles.statusPillVisible : styles.statusPillHidden]}>
+                      <Text style={styles.statusPillText}>{isVisible ? 'Visible' : 'Hidden'}</Text>
                     </View>
                     <View style={styles.statusPill}>
                       <Text style={styles.statusPillText}>
-                        {isResizeBubbleExample(bubbleId) ? `Size ${getResizeBubbleStepConfig(state.count).label}` : `Value ${state.count}`}
+                        {isResizeBubbleExample(bubbleId) ? `Size ${getResizeBubbleStepConfig(exampleState.count).label}` : `Value ${exampleState.count}`}
                       </Text>
                     </View>
                   </View>
@@ -306,26 +320,28 @@ export default function App() {
           <Text style={styles.sectionTitle}>Active Bubble</Text>
           <Text style={styles.activeTitle}>{activeTemplate.title}</Text>
           <Text style={styles.sectionText}>{activeTemplate.description}</Text>
-          <Text style={styles.helperText}>Hold any visible bubble to open the remove menu.</Text>
+          <Text style={styles.helperText}>
+            Close buttons release the overlay surface. Hold any visible bubble to open the remove menu.
+          </Text>
           <Text style={styles.helperText}>
             Edge hide is currently {edgeHideEnabled ? 'enabled' : 'disabled'} for newly shown bubbles.
           </Text>
 
           <View style={styles.activeSummaryCard}>
             <Text style={styles.activeSummaryLabel}>Bubble ID</Text>
-            <Text style={styles.activeSummaryValue}>{activeBubbleState.bubbleId}</Text>
+            <Text style={styles.activeSummaryValue}>{activeOverlayState.bubbleId}</Text>
             <Text style={styles.activeSummaryMeta}>
-              {activeBubbleState.isVisible ? 'Visible on screen' : 'Currently hidden'} | Last source:{' '}
-              {activeBubbleState.lastChangeSource}
+              {activeOverlayState.isVisible ? 'Visible on screen' : 'Currently hidden'} | Value source:{' '}
+              {activeExampleState.lastChangeSource}
             </Text>
           </View>
 
           <Pressable
-            disabled={!activeBubbleState.isVisible || loading}
-            onPress={handleHideBubble}
-            style={[styles.primaryButton, styles.hideBubbleButton, (!activeBubbleState.isVisible || loading) && styles.disabledButton]}
+            disabled={!activeOverlayState.isVisible || loading}
+            onPress={handleCloseBubble}
+            style={[styles.primaryButton, styles.hideBubbleButton, (!activeOverlayState.isVisible || loading) && styles.disabledButton]}
           >
-            <Text style={styles.primaryButtonText}>Hide Active Bubble</Text>
+            <Text style={styles.primaryButtonText}>Close Active Bubble</Text>
           </Pressable>
 
           <View style={styles.controlsWrap}>

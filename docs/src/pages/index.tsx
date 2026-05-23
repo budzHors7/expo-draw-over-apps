@@ -12,6 +12,10 @@ const featureCards = [
     body: 'Use stable bubble IDs for separate overlay surfaces, including counters, timers, and resize examples from the fixture app.',
   },
   {
+    title: 'Share overlay values',
+    body: 'Store small numeric values in native state so app controls and bubble controls can update the same counter or window step.',
+  },
+  {
     title: 'Preview before overlay',
     body: 'Render a bubble fixture inside the app with FloatingWindowPreview before asking for permission or starting the Android service.',
   },
@@ -25,8 +29,8 @@ const flowNodes = [
   {
     eyebrow: 'Expo app',
     title: 'Call the module',
-    body: 'Ask for overlay permission, register a bubble, and update shared state from React Native.',
-    lines: ['permission', 'showBubble', 'bubble state'],
+    body: 'Ask for overlay permission, register a bubble, and update overlay visibility from React Native.',
+    lines: ['permission', 'showBubble', 'overlay state'],
   },
   {
     eyebrow: 'Module bridge',
@@ -37,12 +41,12 @@ const flowNodes = [
   {
     eyebrow: 'Android service',
     title: 'Draw over apps',
-    body: 'Attach the floating view, keep it interactive, and let users move or hide it at the screen edge.',
+    body: 'Attach the floating view, keep it interactive, and let users move, close, or tuck it at the screen edge.',
     lines: ['overlay view', 'drag + resize', 'fallback view'],
   },
 ];
 
-const rendererOptions = ['React Native', 'NativeWind', 'Jetpack Compose', 'expo-ui fallback'];
+const rendererOptions = ['React Native', 'NativeWind', 'Jetpack Compose', 'Native shared values'];
 
 function ModuleFunctionDiagram(): JSX.Element {
   return (
@@ -102,14 +106,14 @@ export default function Home(): JSX.Element {
             <div className="homeHeroCopy">
               <Heading as="h1">Expo Draw Over Apps</Heading>
               <p>
-                Android overlay permission, floating bubbles, edge hide, shared bubble state, NativeWind renderers, and
+                Android overlay permission, floating bubbles, edge hide, native shared values, NativeWind renderers, and
                 fixture previews for Expo apps.
               </p>
               <div className="homeHeroActions">
-                <Link className="button button--primary button--lg" to="/versions/v55.0.0/sdk/draw-over-apps/">
+                <Link className="button button--primary button--lg" to="/versions/latest/sdk/draw-over-apps/">
                   Read the docs
                 </Link>
-                <Link className="button button--secondary button--lg" to="/versions/v55.0.0/fixtures/">
+                <Link className="button button--secondary button--lg" to="/versions/latest/fixtures/">
                   View fixtures
                 </Link>
               </div>

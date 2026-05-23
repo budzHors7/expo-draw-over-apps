@@ -3,7 +3,7 @@
     "name": "expo-draw-over-apps-example",
     "slug": "expo-draw-over-apps-example",
     "scheme": "drawoverapps",
-    "version": "56.0.0-preview.0",
+    "version": "56.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
@@ -18,6 +18,18 @@
       "package": "expo.modules.drawoverapps.example"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0",
+            "usePrecompiledHeaders": true
+          }
+        }
+      ],
+      "./plugins/with-short-cmake-build-paths",
       [
         "expo-splash-screen",
         {

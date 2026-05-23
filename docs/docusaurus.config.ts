@@ -12,7 +12,7 @@ const siteUrl = isGithubPagesBuild ? `https://${repositoryOwnerSlug}.github.io` 
 const baseUrl = isGithubPagesBuild ? `/${repositoryName}/` : '/';
 const siteTitle = 'Expo Draw Over Apps';
 const siteDescription =
-  'Versioned docs for expo-draw-over-apps, an Android overlay permission and floating bubble Expo module.';
+  'Versioned docs for expo-draw-over-apps, an Android overlay permission, floating bubble, and native shared-value Expo module.';
 const siteBaseUrl = `${siteUrl}${baseUrl}`;
 const socialImageUrl = `${siteBaseUrl}img/og-preview.png`;
 
@@ -139,6 +139,8 @@ const config: Config = {
           'react native overlay permission',
           'expo ui bubble renderer',
           'nativewind bubble renderer',
+          'expo overlay shared values',
+          'react native worklets overlay',
           'react native android overlay service',
         ].join(','),
       },
@@ -152,12 +154,12 @@ const config: Config = {
       },
       items: [
         {
-          to: '/versions/v55.0.0/sdk/draw-over-apps/',
+          to: '/versions/latest/sdk/draw-over-apps/',
           position: 'left',
           label: 'Docs',
         },
         {
-          to: '/versions/v55.0.0/public-api/',
+          to: '/versions/latest/public-api/',
           position: 'left',
           label: 'Public API',
         },
@@ -173,13 +175,6 @@ const config: Config = {
       sidebar: {
         hideable: true,
       },
-    },
-    announcementBar: {
-      id: 'pre-release-v56',
-      content: `Pre-release v56 of expo-draw-over-apps is now available <a class="announcementBarButton" href="${baseUrl}versions/v56.0.0/sdk/draw-over-apps">v56 docs</a>`,
-      backgroundColor: '#111827',
-      textColor: '#ffffff',
-      isCloseable: false,
     },
     colorMode: {
       respectPrefersColorScheme: true,

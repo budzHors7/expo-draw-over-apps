@@ -30,8 +30,6 @@ export type BubbleChangeSource = 'app' | 'bubble';
 export type BubbleState = {
   /** Normalized bubble ID used by JavaScript and native Android code. */
   bubbleId: string;
-  /** Non-negative counter value shared by the app and bubble renderer. */
-  count: number;
   /** Whether the native overlay service currently reports the bubble as visible. */
   isVisible: boolean;
   /** Epoch timestamp for the last state change. */

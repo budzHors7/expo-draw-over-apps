@@ -7,12 +7,12 @@ import {
   useExampleBubbleState,
 } from '../state/bubbleExampleState';
 
-export function ReactNativeBubbleRenderer({ bubbleId, close, openApp }: BubbleRendererProps) {
+export function JetpackComposeBubbleRenderer({ bubbleId, close, openApp }: BubbleRendererProps) {
   const state = useExampleBubbleState(bubbleId);
 
   return (
     <View style={styles.shell}>
-      <Text style={styles.eyebrow}>React Native Bubble</Text>
+      <Text style={styles.eyebrow}>Expo UI Bubble</Text>
       <View style={styles.debugBadge}>
         <Text style={styles.debugBadgeText}>ID: {bubbleId}</Text>
       </View>
@@ -34,13 +34,15 @@ export function ReactNativeBubbleRenderer({ bubbleId, close, openApp }: BubbleRe
         </Pressable>
       </View>
 
-      <Pressable onPress={() => void openApp()} style={styles.openButton}>
-        <Text style={styles.openText}>Open app</Text>
-      </Pressable>
+      <View style={styles.actions}>
+        <Pressable onPress={() => void openApp()} style={[styles.actionButton, styles.secondaryButton]}>
+          <Text style={styles.secondaryText}>Open</Text>
+        </Pressable>
 
-      <Pressable onPress={close} style={styles.hideButton}>
-        <Text style={styles.hideText}>Close bubble</Text>
-      </Pressable>
+        <Pressable onPress={close} style={[styles.actionButton, styles.tertiaryButton]}>
+          <Text style={styles.secondaryText}>Close</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -48,25 +50,25 @@ export function ReactNativeBubbleRenderer({ bubbleId, close, openApp }: BubbleRe
 const styles = StyleSheet.create({
   shell: {
     width: 196,
-    minHeight: 182,
+    minHeight: 190,
     borderRadius: 28,
     paddingHorizontal: 16,
     paddingVertical: 18,
     gap: 12,
-    backgroundColor: '#111827',
-    borderWidth: 2,
-    borderColor: '#22c55e',
-    shadowColor: '#030712',
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#22d3ee',
+    shadowColor: '#020617',
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.28,
     shadowRadius: 24,
     elevation: 18,
   },
   eyebrow: {
-    color: '#86efac',
+    color: '#67e8f9',
     fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 1,
     textAlign: 'center',
     textTransform: 'uppercase',
   },
@@ -85,7 +87,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   count: {
-    color: '#f9fafb',
+    color: '#f8fafc',
     fontSize: 34,
     fontWeight: '900',
     textAlign: 'center',
@@ -96,44 +98,33 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    minHeight: 46,
+    minHeight: 44,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  negativeButton: {
+    backgroundColor: '#334155',
+  },
   positiveButton: {
     backgroundColor: '#2563eb',
   },
-  negativeButton: {
-    backgroundColor: '#f97316',
+  secondaryButton: {
+    backgroundColor: '#0f766e',
+  },
+  tertiaryButton: {
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#475569',
   },
   actionText: {
     color: '#ffffff',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
   },
-  openButton: {
-    borderRadius: 16,
-    paddingVertical: 11,
-    backgroundColor: '#e5e7eb',
-    alignItems: 'center',
-  },
-  openText: {
-    color: '#111827',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  hideButton: {
-    borderRadius: 16,
-    paddingVertical: 10,
-    backgroundColor: '#1f2937',
-    borderWidth: 1,
-    borderColor: '#4b5563',
-    alignItems: 'center',
-  },
-  hideText: {
-    color: '#f9fafb',
+  secondaryText: {
+    color: '#f8fafc',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

@@ -88,11 +88,13 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     val bubbleId = normalizeBubbleId(intent?.getStringExtra(EXTRA_BUBBLE_ID))
 
     when (intent?.action) {
-      ACTION_HIDE_ALL_BUBBLES -> {
+      ACTION_HIDE_ALL_BUBBLES,
+      ACTION_CLOSE_ALL_BUBBLES -> {
         hideAllBubbles(SOURCE_APP)
         stopSelfIfIdle()
       }
-      ACTION_HIDE_BUBBLE -> {
+      ACTION_HIDE_BUBBLE,
+      ACTION_CLOSE_BUBBLE -> {
         hideBubble(bubbleId, SOURCE_APP)
         stopSelfIfIdle()
       }
@@ -517,6 +519,8 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     const val ACTION_SHOW_BUBBLE = "expo.modules.drawoverapps.action.SHOW_BUBBLE"
     const val ACTION_HIDE_BUBBLE = "expo.modules.drawoverapps.action.HIDE_BUBBLE"
     const val ACTION_HIDE_ALL_BUBBLES = "expo.modules.drawoverapps.action.HIDE_ALL_BUBBLES"
+    const val ACTION_CLOSE_BUBBLE = "expo.modules.drawoverapps.action.CLOSE_BUBBLE"
+    const val ACTION_CLOSE_ALL_BUBBLES = "expo.modules.drawoverapps.action.CLOSE_ALL_BUBBLES"
     const val EXTRA_BUBBLE_ID = "expo.modules.drawoverapps.extra.BUBBLE_ID"
     const val BUBBLE_COMPONENT_NAME = "ExpoDrawOverAppsBubble"
     private const val DEFAULT_BUBBLE_ID = "default"

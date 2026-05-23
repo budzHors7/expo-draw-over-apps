@@ -6,8 +6,10 @@ It can:
 
 - check and request the `draw over other apps` permission
 - show named floating bubbles from an Android overlay service
+- close bubbles and release their overlay surfaces
 - edge-hide a bubble on the left or right side of the screen
-- keep app and bubble state in sync
+- keep overlay visibility state in sync
+- share numeric overlay values through native state, including foreground refreshes after background overlay updates
 - open the app from a bubble
 - preview bubble UI inside the app before showing a native overlay
 - register custom React Native renderers
@@ -40,10 +42,10 @@ Docusaurus writes the static output to `docs/build`. The repo also includes a Gi
 npm install expo-draw-over-apps
 ```
 
-For the SDK 56 beta window containers, install Reanimated with Expo's installer:
+For SDK 56 window containers, install Reanimated with Expo's installer:
 
 ```bash
-npx expo install react-native-reanimated
+npx expo install react-native-reanimated react-native-worklets
 ```
 
 Install `@expo/ui` only if you want the packaged Compose-flavored renderer API or the native Expo UI window container:
@@ -56,7 +58,7 @@ npx expo install @expo/ui
 
 ## Version tracks
 
-- SDK 56 beta: current repo implementation. Adds Reanimated-backed `ReactNativeWindowContainer` and `NativeWindowContainer`.
+- SDK 56: current stable implementation, published as `56.0.4`. Adds native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
 - SDK 55: latest npm release is `55.0.2`. It supports Android overlay permission and floating React Native or Jetpack Compose bubbles. Install with `npm install expo-draw-over-apps@55`.
 
 If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:
@@ -70,16 +72,20 @@ import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import {
   canDrawOverlays,
-  hideBubble,
-  incrementBubbleCount,
+  closeBubble,
   requestPermission,
+  setOverlaySharedValue,
   showBubble,
   useBubbleState,
+  useOverlaySharedValueState,
 } from 'expo-draw-over-apps';
+
+const counterKey = 'quick-start-counter';
 
 export default function App() {
   const [granted, setGranted] = useState(false);
   const bubbleState = useBubbleState();
+  const counterState = useOverlaySharedValueState(counterKey);
 
   useEffect(() => {
     setGranted(canDrawOverlays());
@@ -92,7 +98,7 @@ export default function App() {
 
   async function handleToggleBubble() {
     if (bubbleState.isVisible) {
-      hideBubble();
+      closeBubble();
       return;
     }
 
@@ -103,17 +109,19 @@ export default function App() {
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
       <Text>Overlay permission: {granted ? 'granted' : 'missing'}</Text>
       <Text>Bubble visible: {bubbleState.isVisible ? 'yes' : 'no'}</Text>
-      <Text>Counter: {bubbleState.count}</Text>
+      <Text>Shared counter: {counterState.value}</Text>
 
       <Pressable onPress={() => void handlePermission()}>
         <Text>Request permission</Text>
       </Pressable>
 
       <Pressable onPress={() => void handleToggleBubble()}>
-        <Text>{bubbleState.isVisible ? 'Hide bubble' : 'Show bubble'}</Text>
+        <Text>{bubbleState.isVisible ? 'Close bubble' : 'Show bubble'}</Text>
       </Pressable>
 
-      <Pressable onPress={() => incrementBubbleCount('app')}>
+      <Pressable
+        onPress={() => setOverlaySharedValue(counterKey, counterState.value + 1, 'app')}
+      >
         <Text>+1 in app</Text>
       </Pressable>
     </View>
@@ -123,14 +131,21 @@ export default function App() {
 
 ## Smooth window containers
 
-Use the window containers when a bubble changes size. Both accept React Native children, React Native `style`, and NativeWind `className` / `contentClassName`.
+Use the window containers when a bubble changes size. Both accept React Native children, React Native `style`, and NativeWind `className` / `contentClassName`. When no background is declared, both containers follow the system light/dark scheme; pass `backgroundColor`, a style background, or `colorScheme` to force a look.
 
 ```tsx
-import { Text } from 'react-native';
-import { ReactNativeWindowContainer } from 'expo-draw-over-apps';
+import { Pressable, Text } from 'react-native';
+import {
+  ReactNativeWindowContainer,
+  setOverlaySharedValue,
+  useOverlaySharedValueState,
+} from 'expo-draw-over-apps';
 
-export function SmoothBubble({ state }) {
-  const expanded = state.count > 0;
+const resizeKey = 'window-container-counter';
+
+export function SmoothBubble() {
+  const sharedStep = useOverlaySharedValueState(resizeKey);
+  const expanded = sharedStep.value >= 1;
 
   return (
     <ReactNativeWindowContainer
@@ -141,6 +156,11 @@ export function SmoothBubble({ state }) {
       contentClassName="flex-1 items-center justify-center"
     >
       <Text style={{ color: 'white', fontWeight: '900' }}>Smooth resize</Text>
+      <Pressable
+        onPress={() => setOverlaySharedValue(resizeKey, expanded ? 0 : 1, 'bubble')}
+      >
+        <Text style={{ color: 'white' }}>Resize</Text>
+      </Pressable>
     </ReactNativeWindowContainer>
   );
 }
@@ -148,7 +168,7 @@ export function SmoothBubble({ state }) {
 
 ## Example app
 
-The example app in `example/` shows permission handling, edge hide, named bubbles, shared state, fixture previews, and renderer switching.
+The example app in `example/` shows permission handling, edge hide, named bubbles, example-owned counter/timer helpers backed by native shared values, fixture previews, and renderer switching.
 
 Current fixtures:
 

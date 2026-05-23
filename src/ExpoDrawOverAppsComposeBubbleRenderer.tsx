@@ -9,9 +9,7 @@ type ComposeFallbackProps = BubbleRendererProps & {
 
 function ComposeUnavailableFallback({
   state,
-  decrement,
-  increment,
-  hide,
+  close,
   openApp,
   hint,
 }: ComposeFallbackProps) {
@@ -21,17 +19,8 @@ function ComposeUnavailableFallback({
       <View style={fallbackStyles.debugBadge}>
         <Text style={fallbackStyles.debugBadgeText}>ID: {state.bubbleId}</Text>
       </View>
-      <Text style={fallbackStyles.count}>{state.count}</Text>
-
-      <View style={fallbackStyles.actions}>
-        <Pressable onPress={decrement} style={[fallbackStyles.actionButton, fallbackStyles.negativeButton]}>
-          <Text style={fallbackStyles.actionText}>-</Text>
-        </Pressable>
-
-        <Pressable onPress={increment} style={[fallbackStyles.actionButton, fallbackStyles.positiveButton]}>
-          <Text style={fallbackStyles.actionText}>+</Text>
-        </Pressable>
-      </View>
+      <Text style={fallbackStyles.title}>Native UI slot</Text>
+      <Text style={fallbackStyles.bodyText}>Use a custom renderer to wire your own actions and state.</Text>
 
       <View style={fallbackStyles.actions}>
         <Pressable
@@ -43,8 +32,8 @@ function ComposeUnavailableFallback({
           <Text style={fallbackStyles.secondaryText}>Open</Text>
         </Pressable>
 
-        <Pressable onPress={hide} style={[fallbackStyles.actionButton, fallbackStyles.tertiaryButton]}>
-          <Text style={fallbackStyles.secondaryText}>Hide</Text>
+        <Pressable onPress={close} style={[fallbackStyles.actionButton, fallbackStyles.tertiaryButton]}>
+          <Text style={fallbackStyles.secondaryText}>Close</Text>
         </Pressable>
       </View>
 
@@ -124,10 +113,17 @@ const fallbackStyles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  count: {
+  title: {
     color: '#f8fafc',
-    fontSize: 34,
+    fontSize: 18,
     fontWeight: '900',
+    textAlign: 'center',
+  },
+  bodyText: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 17,
     textAlign: 'center',
   },
   actions: {
@@ -141,12 +137,6 @@ const fallbackStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  negativeButton: {
-    backgroundColor: '#334155',
-  },
-  positiveButton: {
-    backgroundColor: '#2563eb',
-  },
   secondaryButton: {
     backgroundColor: '#0f766e',
   },
@@ -154,11 +144,6 @@ const fallbackStyles = StyleSheet.create({
     backgroundColor: '#1e293b',
     borderWidth: 1,
     borderColor: '#475569',
-  },
-  actionText: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '900',
   },
   secondaryText: {
     color: '#f8fafc',

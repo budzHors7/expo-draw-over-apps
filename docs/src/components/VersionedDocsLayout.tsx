@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
-export type VersionKey = '56-beta' | '55';
+export type VersionKey = '56' | '55';
 export type VersionRouteSegment = 'latest' | 'v55.0.0' | 'v56.0.0';
 export type VersionedPageKey =
   | 'reference'
@@ -40,10 +40,10 @@ type VersionedDocsLayoutProps = {
 };
 
 export const versionSummaries: Record<VersionKey, VersionSummary> = {
-  '56-beta': {
-    label: 'SDK 56 beta',
-    status: 'Latest docs track',
-    bundledVersion: '56.0.2-beta.1',
+  '56': {
+    label: 'SDK 56',
+    status: 'Latest stable docs',
+    bundledVersion: '56.0.4',
   },
   '55': {
     label: 'SDK 55',
@@ -120,7 +120,7 @@ function getVersionSelectRoute(targetVersion: VersionKey, pageKey: VersionedPage
   return getVersionedPageRoute(
     targetVersion,
     pageKey,
-    targetVersion === '56-beta' ? 'v56.0.0' : undefined
+    targetVersion === '56' ? 'v56.0.0' : undefined
   );
 }
 
@@ -222,10 +222,10 @@ function VersionSelect({
   pageKey: VersionedPageKey;
   selectedVersion: VersionKey;
 }) {
-  const sdk56Route = useBaseUrl(getVersionSelectRoute('56-beta', pageKey));
+  const sdk56Route = useBaseUrl(getVersionSelectRoute('56', pageKey));
   const sdk55Route = useBaseUrl(getVersionSelectRoute('55', pageKey));
   const routeByVersion: Record<VersionKey, string> = {
-    '56-beta': sdk56Route,
+    '56': sdk56Route,
     '55': sdk55Route,
   };
 
@@ -238,8 +238,8 @@ function VersionSelect({
           window.location.href = routeByVersion[event.target.value as VersionKey];
         }}
       >
+        <option value="56">SDK 56</option>
         <option value="55">SDK 55</option>
-        <option value="56-beta">SDK 56 beta</option>
       </select>
     </label>
   );

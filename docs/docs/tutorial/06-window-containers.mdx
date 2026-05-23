@@ -1,24 +1,24 @@
 ---
-title: SDK 56 beta window containers
+title: SDK 56 window containers
 sidebar_position: 6
-description: Use the SDK 56 beta ReactNativeWindowContainer and NativeWindowContainer APIs for animated overlay bubble surfaces.
+description: Use the SDK 56 ReactNativeWindowContainer and NativeWindowContainer APIs for animated overlay bubble surfaces.
 ---
 
-# SDK 56 beta window containers
+# SDK 56 window containers
 
-SDK 56 beta adds two container components for custom bubble renderers that resize while the overlay is visible.
+SDK 56 adds two container components for custom bubble renderers that resize while the overlay is visible.
 
 - `ReactNativeWindowContainer` wraps React Native children in a Reanimated surface.
 - `NativeWindowContainer` uses an Expo UI Host/Surface for the Android backdrop when `@expo/ui` is installed, then renders React Native children inside the same clipped window.
 
-Use these names in SDK 56 beta docs and examples. The longer preview names were shortened before the SDK 56 beta API reference.
+Use these names in SDK 56 docs and examples.
 
 ## Install
 
 `ReactNativeWindowContainer` uses Reanimated:
 
 ```bash
-npx expo install react-native-reanimated
+npx expo install react-native-reanimated react-native-worklets
 ```
 
 `NativeWindowContainer` can use Expo UI for the native backdrop:
@@ -33,10 +33,18 @@ npx expo install @expo/ui
 
 ```tsx
 import { Pressable, Text } from 'react-native';
-import { ReactNativeWindowContainer, type BubbleRendererProps } from 'expo-draw-over-apps';
+import {
+  ReactNativeWindowContainer,
+  setOverlaySharedValue,
+  useOverlaySharedValueState,
+  type BubbleRendererProps,
+} from 'expo-draw-over-apps';
 
-export function ResizeBubble({ state, increment }: BubbleRendererProps) {
-  const large = state.count % 2 === 1;
+const resizeKey = 'window-container-counter';
+
+export function ResizeBubble(_: BubbleRendererProps) {
+  const sharedStep = useOverlaySharedValueState(resizeKey);
+  const large = sharedStep.value >= 1;
 
   return (
     <ReactNativeWindowContainer
@@ -46,7 +54,9 @@ export function ResizeBubble({ state, increment }: BubbleRendererProps) {
       className="border-2 border-rose-400 bg-slate-950 px-4 py-4"
       contentClassName="flex-1 items-center justify-center"
     >
-      <Pressable onPress={increment}>
+      <Pressable
+        onPress={() => setOverlaySharedValue(resizeKey, large ? 0 : 1, 'bubble')}
+      >
         <Text style={{ color: 'white', fontWeight: '900' }}>Toggle size</Text>
       </Pressable>
     </ReactNativeWindowContainer>
@@ -58,24 +68,31 @@ export function ResizeBubble({ state, increment }: BubbleRendererProps) {
 
 ```tsx
 import { Pressable, Text } from 'react-native';
-import { NativeWindowContainer, type BubbleRendererProps } from 'expo-draw-over-apps';
+import {
+  NativeWindowContainer,
+  setOverlaySharedValue,
+  useOverlaySharedValueState,
+  type BubbleRendererProps,
+} from 'expo-draw-over-apps';
 
-export function NativeResizeBubble({ state, increment }: BubbleRendererProps) {
-  const large = state.count % 2 === 1;
+const resizeKey = 'window-container-counter';
+
+export function NativeResizeBubble(_: BubbleRendererProps) {
+  const sharedStep = useOverlaySharedValueState(resizeKey);
+  const large = sharedStep.value >= 1;
 
   return (
     <NativeWindowContainer
       width={large ? 238 : 154}
       height={large ? 256 : 172}
       borderRadius={large ? 44 : 28}
-      backgroundColor="#f8fafc"
-      surfaceColor="#f8fafc"
-      colorScheme="light"
       seedColor="#0891b2"
       className="border-2 border-cyan-600 px-4 py-4"
       contentClassName="flex-1 items-center justify-center"
     >
-      <Pressable onPress={increment}>
+      <Pressable
+        onPress={() => setOverlaySharedValue(resizeKey, large ? 0 : 1, 'bubble')}
+      >
         <Text style={{ color: '#0f172a', fontWeight: '900' }}>Toggle size</Text>
       </Pressable>
     </NativeWindowContainer>
@@ -90,8 +107,11 @@ Both containers accept:
 - React Native `ViewProps`
 - `width`, `height`, and `borderRadius`
 - `backgroundColor`
+- `colorScheme` (`light`, `dark`, or omitted to follow the system)
 - `style` and `contentContainerStyle`
 - `className` and `contentClassName` for NativeWind apps
 - `animationConfig` for Reanimated timing
 
-Use numeric `width`, `height`, and `borderRadius` values when you want smooth transitions. Swapping unrelated wrapper layouts can still jump because Android is moving an overlay window outside the normal app tree.
+Use numeric `width`, `height`, and `borderRadius` values when you want smooth transitions. When you omit background props, the containers follow the device light/dark setting; pass `backgroundColor`, a style background, or `colorScheme` when you need a fixed look. Swapping unrelated wrapper layouts can still jump because Android is moving an overlay window outside the normal app tree.
+
+The example resize fixtures use one shared native value, `window-container-counter`, so the React Native and Native Expo UI resize bubbles show the same size step when you switch between them.

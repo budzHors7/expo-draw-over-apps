@@ -33,21 +33,21 @@ export type FloatingWindowPreviewProps = {
   state?: Partial<BubbleState>;
   /** Shows a dashed preview boundary when true. */
   showBorder?: boolean;
-  /** Shows a hidden-state placeholder after the preview renderer calls `hide()`. */
+  /** Shows a closed-state placeholder after the preview renderer calls `close()` or `hide()`. */
   showHiddenState?: boolean;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   /** Called after local preview state changes. */
   onStateChange?: (state: BubbleState) => void;
-  /** Called when the preview renderer asks to hide itself. */
+  /** Called when the preview renderer asks to close itself. */
+  onClose?: (state: BubbleState) => boolean | void;
+  /**
+   * @deprecated Use `onClose`.
+   */
   onHide?: (state: BubbleState) => boolean | void;
   /** Called when the preview renderer asks to open the app. */
   onOpenApp?: (state: BubbleState) => Promise<boolean> | boolean | void;
 };
-
-function normalizePreviewCount(count: number | undefined) {
-  return typeof count === 'number' && Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
-}
 
 function normalizePreviewChangeSource(source: BubbleState['lastChangeSource'] | string | undefined): BubbleChangeSource {
   return source === 'bubble' ? 'bubble' : 'app';
@@ -62,7 +62,6 @@ export function createFloatingWindowPreviewState(
 ): BubbleState {
   return {
     bubbleId: normalizeBubbleId(state.bubbleId ?? bubbleId),
-    count: normalizePreviewCount(state.count),
     isVisible: state.isVisible ?? true,
     lastUpdatedAt: Number.isFinite(state.lastUpdatedAt) ? Number(state.lastUpdatedAt) : Date.now(),
     lastChangeSource: normalizePreviewChangeSource(state.lastChangeSource),
@@ -70,7 +69,7 @@ export function createFloatingWindowPreviewState(
 }
 
 /**
- * Applies a state patch to preview state while keeping preview counts non-negative.
+ * Applies a state patch to preview state.
  */
 export function getNextFloatingWindowPreviewState(
   currentState: BubbleState,
@@ -100,6 +99,7 @@ export function FloatingWindowPreview({
   style,
   contentContainerStyle,
   onStateChange,
+  onClose,
   onHide,
   onOpenApp,
 }: FloatingWindowPreviewProps) {
@@ -112,38 +112,34 @@ export function FloatingWindowPreview({
   function commitPreviewState(nextState: BubbleState) {
     setLocalState(nextState);
     onStateChange?.(nextState);
-    return nextState.count;
+    return nextState;
   }
 
   const rendererProps = useMemo<FloatingWindowPreviewRenderProps>(
-    () => ({
-      bubbleId: previewState.bubbleId,
-      state: previewState,
-      increment: () =>
-        commitPreviewState(
-          getNextFloatingWindowPreviewState(previewState, { count: previewState.count + 1 }, 'bubble')
-        ),
-      decrement: () =>
-        commitPreviewState(
-          getNextFloatingWindowPreviewState(previewState, { count: previewState.count - 1 }, 'bubble')
-        ),
-      setCount: (count) => commitPreviewState(getNextFloatingWindowPreviewState(previewState, { count }, 'bubble')),
-      hide: () => {
+    () => {
+      const close = () => {
         const nextState = getNextFloatingWindowPreviewState(previewState, { isVisible: false }, 'bubble');
         commitPreviewState(nextState);
-        const didHide = onHide?.(nextState);
-        return typeof didHide === 'boolean' ? didHide : true;
-      },
-      openApp: async () => {
-        const didOpen = await onOpenApp?.(previewState);
-        return typeof didOpen === 'boolean' ? didOpen : false;
-      },
-      preview: {
-        width,
-        height,
-      },
-    }),
-    [height, onHide, onOpenApp, previewState, width]
+        const didClose = onClose?.(nextState) ?? onHide?.(nextState);
+        return typeof didClose === 'boolean' ? didClose : true;
+      };
+
+      return {
+        bubbleId: previewState.bubbleId,
+        state: previewState,
+        close,
+        hide: close,
+        openApp: async () => {
+          const didOpen = await onOpenApp?.(previewState);
+          return typeof didOpen === 'boolean' ? didOpen : false;
+        },
+        preview: {
+          width,
+          height,
+        },
+      };
+    },
+    [height, onClose, onHide, onOpenApp, previewState, width]
   );
 
   return (
@@ -153,7 +149,7 @@ export function FloatingWindowPreview({
           renderBubble(rendererProps)
         ) : (
           <View style={styles.hiddenState}>
-            <Text style={styles.hiddenStateText}>Floating window hidden</Text>
+            <Text style={styles.hiddenStateText}>Floating window closed</Text>
           </View>
         )}
       </View>

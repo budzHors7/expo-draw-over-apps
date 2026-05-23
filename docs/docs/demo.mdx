@@ -1,7 +1,7 @@
 ---
 title: Demo
 sidebar_position: 5
-description: Run the expo-draw-over-apps example app and test overlay permission, edge hide, renderer fixtures, and shared state.
+description: Run the expo-draw-over-apps example app and test overlay permission, edge hide, renderer fixtures, and example-owned state.
 ---
 
 # Demo
@@ -22,9 +22,11 @@ The app lets you:
 - open the Android overlay settings screen
 - launch each registered bubble fixture
 - toggle edge hide for newly shown bubbles
-- hide the active bubble
-- clear all visible bubbles
-- change the shared counter from the app
+- close the active bubble and release its overlay surface
+- close visible bubbles when each fixture is done
+- change example counters from the app or from the bubble
+- keep counter and resize values in native shared state
+- refresh shared values when the app returns to the foreground
 - open the app from a bubble
 - test the long-press remove menu
 

@@ -1,27 +1,31 @@
 import type { EventSubscription, NativeModule } from 'expo-modules-core';
 
-import type { BubbleChangeSource, BubbleState } from './bubbleTypes';
+import type { BubbleState } from './bubbleTypes';
+import type { OverlaySharedValueState } from './overlaySharedValue';
 
 type BubbleStateChangedEvent = BubbleState;
 type BubbleStatesChangedEvent = {
   states: BubbleState[];
 };
+type OverlaySharedValueChangedEvent = OverlaySharedValueState;
+type OverlaySharedValuesChangedEvent = {
+  values: OverlaySharedValueState[];
+};
 
 type ExpoDrawOverAppsNativeModule = NativeModule<{
   onBubbleStateChanged(event: BubbleStateChangedEvent): void;
   onBubbleStatesChanged(event: BubbleStatesChangedEvent): void;
+  onOverlaySharedValueChanged(event: OverlaySharedValueChangedEvent): void;
+  onOverlaySharedValuesChanged(event: OverlaySharedValuesChangedEvent): void;
 }> & {
   canDrawOverlays(): boolean;
   requestPermission(): Promise<boolean>;
   getBubbleState(): BubbleState;
   getBubbleStateById(bubbleId: string): BubbleState;
   getAllBubbleStates(): BubbleState[];
-  setBubbleCount(count: number, source?: BubbleChangeSource): number;
-  setBubbleCountForBubble(bubbleId: string, count: number, source?: BubbleChangeSource): number;
-  incrementBubbleCount(source?: BubbleChangeSource): number;
-  incrementBubbleCountForBubble(bubbleId: string, source?: BubbleChangeSource): number;
-  decrementBubbleCount(source?: BubbleChangeSource): number;
-  decrementBubbleCountForBubble(bubbleId: string, source?: BubbleChangeSource): number;
+  getOverlaySharedValue(valueKey: string): OverlaySharedValueState;
+  getAllOverlaySharedValues(): OverlaySharedValueState[];
+  setOverlaySharedValue(valueKey: string, value: number, source?: string): number;
   showBubble(): Promise<boolean>;
   showBubbleInstance(bubbleId: string): Promise<boolean>;
   setEdgeHideEnabled(enabled: boolean): boolean;
@@ -29,6 +33,9 @@ type ExpoDrawOverAppsNativeModule = NativeModule<{
   hideBubble(): boolean;
   hideBubbleInstance(bubbleId: string): boolean;
   hideAllBubbles(): boolean;
+  closeBubble(): boolean;
+  closeBubbleInstance(bubbleId: string): boolean;
+  closeAllBubbles(): boolean;
   isBubbleVisible(): boolean;
   isBubbleVisibleForBubble(bubbleId: string): boolean;
   openApp(): Promise<boolean>;
@@ -39,6 +46,14 @@ type ExpoDrawOverAppsNativeModule = NativeModule<{
   addListener(
     eventName: 'onBubbleStatesChanged',
     listener: (event: BubbleStatesChangedEvent) => void
+  ): EventSubscription;
+  addListener(
+    eventName: 'onOverlaySharedValueChanged',
+    listener: (event: OverlaySharedValueChangedEvent) => void
+  ): EventSubscription;
+  addListener(
+    eventName: 'onOverlaySharedValuesChanged',
+    listener: (event: OverlaySharedValuesChangedEvent) => void
   ): EventSubscription;
 };
 
