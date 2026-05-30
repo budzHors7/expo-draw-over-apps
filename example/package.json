@@ -7,9 +7,9 @@
     "android": "expo run:android --port 8082"
   },
   "dependencies": {
-    "@expo/ui": "~56.0.13",
-    "expo": "~56.0.4",
-    "expo-build-properties": "~56.0.14",
+    "@expo/ui": "~56.0.15",
+    "expo": "~56.0.8",
+    "expo-build-properties": "~56.0.16",
     "expo-draw-over-apps": "file:..",
     "expo-splash-screen": "~56.0.9",
     "expo-system-ui": "~56.0.5",

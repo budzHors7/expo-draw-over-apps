@@ -43,7 +43,7 @@ export const versionSummaries: Record<VersionKey, VersionSummary> = {
   '56': {
     label: 'SDK 56',
     status: 'Latest stable docs',
-    bundledVersion: '56.0.4',
+    bundledVersion: '56.0.6',
   },
   '55': {
     label: 'SDK 55',

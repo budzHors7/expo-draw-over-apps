@@ -24,7 +24,7 @@ The real floating bubble is hosted by an Android service. Preview components run
 
 ## Overlay shared values
 
-Overlay shared values store numbers only. Use them for counters, timer values, selected steps, and small renderer coordination values. Keep objects, private data, and larger app state in your own store.
+Overlay shared values store numbers only. Use them for counters, timer values, selected steps, and small renderer coordination values. Keep objects, private data, and larger app state in your own store. Shared-value keys cross the JavaScript and native boundary, so keep them static and non-sensitive.
 
 ## Compose renderer status
 

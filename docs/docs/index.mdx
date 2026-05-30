@@ -14,6 +14,8 @@ The package is Android only. It does not run in Expo Go because it includes nati
 
 The versioned docs live under `/versions/latest` and `/versions/v55.0.0`. Use those pages when comparing SDK tracks.
 
+SDK 56 is the current stable track. Install `expo-draw-over-apps@56.0.6` for the latest implementation.
+
 ## Install
 
 ```bash
@@ -125,6 +127,8 @@ SDK 56 adds two window containers for custom bubble renderers:
 Both containers accept normal React Native `style` props and `className` / `contentClassName` for apps that already use NativeWind. When no background is declared, the default surface follows the system light/dark scheme; pass `backgroundColor`, a style background, or `colorScheme` to override it.
 
 Use `setOverlaySharedValue()` and `useOverlaySharedValueState()` for small numeric values that should be shared between the app and overlay renderers. Call `refreshAllOverlaySharedValueStates()` when your app returns to the foreground if you need to force a native read after background updates.
+
+Use static, non-sensitive bubble IDs and overlay shared-value keys. IDs and keys cross the JavaScript/native boundary and are normalized for stability, not privacy. Keep secrets, personal data, objects, and larger app state in your own protected store.
 
 ```tsx
 import { Pressable, Text } from 'react-native';

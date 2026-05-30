@@ -58,7 +58,7 @@ npx expo install @expo/ui
 
 ## Version tracks
 
-- SDK 56: current stable implementation, published as `56.0.4`. Adds native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
+- SDK 56: current stable implementation, published as `56.0.6`. Adds native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
 - SDK 55: latest npm release is `55.0.2`. It supports Android overlay permission and floating React Native or Jetpack Compose bubbles. Install with `npm install expo-draw-over-apps@55`.
 
 If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:
@@ -166,6 +166,10 @@ export function SmoothBubble() {
 }
 ```
 
+## Data safety
+
+Use static, non-sensitive bubble IDs and overlay shared-value keys. IDs and keys cross the JavaScript/native boundary and are normalized for stability, not privacy. Overlay shared values store numbers only; keep secrets, personal data, objects, and larger app state in your own protected store.
+
 ## Example app
 
 The example app in `example/` shows permission handling, edge hide, named bubbles, example-owned counter/timer helpers backed by native shared values, fixture previews, and renderer switching.
@@ -185,19 +189,18 @@ npm run build
 npm test
 ```
 
-Build the Android example app:
+Install and build the Android example app:
 
 ```bash
-cd example/android
-./gradlew assembleDebug
+cd example
+npm install
+npx expo prebuild -p android
+npx expo run:android
 ```
 
-On Windows:
+The example keeps local `file:..` installs packed with `install-links=true`. This avoids duplicate native module discovery while still testing the publishable package shape. Its Expo config plugin also keeps Reanimated and Worklets CMake staging paths short enough for Windows Android builds.
 
-```powershell
-cd example\android
-.\gradlew.bat assembleDebug
-```
+Run `npx expo install --fix` inside `example/` when Expo reports dependency drift.
 
 ## Open source
 

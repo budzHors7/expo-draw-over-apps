@@ -13,8 +13,13 @@ Run the example after installing dependencies and building the native app for An
 ```bash
 cd example
 npm install
-npm run android
+npx expo prebuild -p android
+npx expo run:android
 ```
+
+The example uses `install-links=true` so its local `file:..` dependency is packed like a published package instead of linked into the repo root. Its Expo config plugin also shortens Reanimated and Worklets CMake staging paths for Windows Android builds.
+
+Run `npx expo install --fix` inside `example/` if Expo reports dependency drift.
 
 The app lets you:
 

@@ -34,8 +34,8 @@ const versions: Record<VersionKey, SdkVersionContent> = {
     key: '56',
     label: 'SDK 56',
     status: 'Latest stable docs',
-    bundledVersion: '56.0.4',
-    installCommand: `npm install expo-draw-over-apps@56.0.4
+    bundledVersion: '56.0.6',
+    installCommand: `npm install expo-draw-over-apps@56.0.6
 npx expo install react-native-reanimated react-native-worklets`,
     description:
       'SDK 56 keeps the Android overlay API and adds close helpers, native shared values, and animated window container APIs.',

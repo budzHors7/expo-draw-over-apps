@@ -16,7 +16,7 @@ type VersionedContentPageProps = {
 };
 
 const installCommands: Record<VersionKey, string> = {
-  '56': `npm install expo-draw-over-apps@56.0.4
+  '56': `npm install expo-draw-over-apps@56.0.6
 npx expo install react-native-reanimated react-native-worklets`,
   '55': 'npm install expo-draw-over-apps@55.0.2',
 };
@@ -411,7 +411,14 @@ function Demo({ versionKey }: { versionKey: VersionKey }) {
       <section id="run-demo" className="sdkReferenceSection">
         <Heading as="h2">Run the demo</Heading>
         <CodeBlock language="bash">{`cd example
-npm run android`}</CodeBlock>
+npm install
+npx expo prebuild -p android
+npx expo run:android`}</CodeBlock>
+        {versionKey === '56' ? (
+          <p>
+            The example uses packed local installs and a config plugin that keeps Reanimated and Worklets CMake staging paths short on Windows.
+          </p>
+        ) : null}
       </section>
 
       <section id="demo-controls" className="sdkReferenceSection">
@@ -444,6 +451,7 @@ function Limitations({ versionKey }: { versionKey: VersionKey }) {
           <li>The overlay permission screen is controlled by Android.</li>
           <li>The floating bubble is hosted by a native Android service.</li>
           {isSdk56 ? <li>Overlay shared values are numeric. Use your app store for objects, sensitive data, and larger renderer state.</li> : null}
+          {isSdk56 ? <li>Use static, non-sensitive bubble IDs and overlay shared-value keys. Normalization is not a privacy boundary.</li> : null}
         </ul>
       </section>
     </>
