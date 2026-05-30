@@ -11,7 +11,7 @@ Edge hide lets a bubble tuck into the left or right side of the screen while lea
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import {
-  hideBubble,
+  closeBubble,
   setEdgeHideEnabled,
   showBubble,
   useBubbleState,
@@ -46,8 +46,8 @@ export function EdgeHideControls() {
         <Text>{edgeHideEnabled ? 'Disable' : 'Enable'} edge hide</Text>
       </Pressable>
 
-      <Pressable onPress={() => hideBubble(bubbleId)}>
-        <Text>Hide bubble</Text>
+      <Pressable onPress={() => closeBubble(bubbleId)}>
+        <Text>Close bubble</Text>
       </Pressable>
     </View>
   );

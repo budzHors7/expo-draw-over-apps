@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { getExpoDrawOverAppsModule } from './ExpoDrawOverAppsModule';
-import { decrementBubbleCount, incrementBubbleCount, setBubbleCount, useBubbleState } from './bubbleState';
+import { useBubbleState } from './bubbleState';
 import { useBubbleRenderer } from './bubbleRenderer';
 import { DEFAULT_BUBBLE_ID } from './bubbleTypes';
 
@@ -20,18 +20,17 @@ export default function ExpoDrawOverAppsBubbleSurface({
   }
 
   if (BubbleRenderer) {
+    const close = () =>
+      (bubbleId === DEFAULT_BUBBLE_ID
+        ? getExpoDrawOverAppsModule()?.closeBubble()
+        : getExpoDrawOverAppsModule()?.closeBubbleInstance(bubbleId)) ?? false;
+
     return (
       <BubbleRenderer
         bubbleId={bubbleId}
         state={bubbleState}
-        increment={() => incrementBubbleCount('bubble', bubbleId)}
-        decrement={() => decrementBubbleCount('bubble', bubbleId)}
-        setCount={(count) => setBubbleCount(count, 'bubble', bubbleId)}
-        hide={() =>
-          (bubbleId === DEFAULT_BUBBLE_ID
-            ? getExpoDrawOverAppsModule()?.hideBubble()
-            : getExpoDrawOverAppsModule()?.hideBubbleInstance(bubbleId)) ?? false
-        }
+        close={close}
+        hide={close}
         openApp={() => getExpoDrawOverAppsModule()?.openApp() ?? Promise.resolve(false)}
       />
     );
@@ -39,28 +38,11 @@ export default function ExpoDrawOverAppsBubbleSurface({
 
   return (
     <View style={styles.bubble}>
-      <Text style={styles.caption}>Bubble Counter</Text>
+      <Text style={styles.caption}>Floating Bubble</Text>
       <View style={styles.debugBadge}>
         <Text style={styles.debugBadgeText}>ID: {bubbleId}</Text>
       </View>
-      <View style={styles.counterRow}>
-        <Pressable
-          onPress={() => decrementBubbleCount('bubble', bubbleId)}
-          style={[styles.counterAction, styles.counterActionDark]}
-        >
-          <Text style={styles.counterActionText}>-</Text>
-        </Pressable>
-        <Pressable onPress={() => incrementBubbleCount('bubble', bubbleId)} style={styles.counterButton}>
-          <Text style={styles.counterValue}>{bubbleState.count}</Text>
-          <Text style={styles.counterHint}>Tap + / -</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => incrementBubbleCount('bubble', bubbleId)}
-          style={[styles.counterAction, styles.counterActionBright]}
-        >
-          <Text style={styles.counterActionText}>+</Text>
-        </Pressable>
-      </View>
+      <Text style={styles.bodyText}>Register a custom renderer to add your own controls.</Text>
       <Pressable
         onPress={() => {
           getExpoDrawOverAppsModule()?.openApp().catch(() => {});
@@ -68,6 +50,18 @@ export default function ExpoDrawOverAppsBubbleSurface({
         style={styles.openAppButton}
       >
         <Text style={styles.openAppText}>Open app</Text>
+      </Pressable>
+      <Pressable
+        onPress={() => {
+          if (bubbleId === DEFAULT_BUBBLE_ID) {
+            getExpoDrawOverAppsModule()?.closeBubble();
+          } else {
+            getExpoDrawOverAppsModule()?.closeBubbleInstance(bubbleId);
+          }
+        }}
+        style={styles.closeButton}
+      >
+        <Text style={styles.closeText}>Close</Text>
       </Pressable>
       <Text style={styles.longPressHint}>Hold bubble for menu</Text>
     </View>
@@ -111,47 +105,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    gap: 8,
-  },
-  counterButton: {
-    flex: 1,
-    borderRadius: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#1d4ed8',
-    alignItems: 'center',
-    gap: 2,
-  },
-  counterValue: {
-    color: '#eff6ff',
-    fontSize: 26,
-    fontWeight: '800',
-  },
-  counterHint: {
-    color: '#dbeafe',
-    fontSize: 11,
+  bodyText: {
+    color: '#cbd5e1',
+    fontSize: 12,
     fontWeight: '600',
-  },
-  counterAction: {
-    width: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  counterActionDark: {
-    backgroundColor: '#334155',
-  },
-  counterActionBright: {
-    backgroundColor: '#2563eb',
-  },
-  counterActionText: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '800',
-    marginTop: -2,
+    lineHeight: 17,
+    textAlign: 'center',
   },
   openAppButton: {
     borderRadius: 16,
@@ -162,6 +121,20 @@ const styles = StyleSheet.create({
   },
   openAppText: {
     color: '#0f172a',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  closeButton: {
+    borderRadius: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    backgroundColor: '#1f2937',
+    borderWidth: 1,
+    borderColor: '#334155',
+    alignItems: 'center',
+  },
+  closeText: {
+    color: '#f8fafc',
     fontSize: 13,
     fontWeight: '700',
   },

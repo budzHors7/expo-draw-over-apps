@@ -14,15 +14,22 @@ import {
 } from './ExpoDrawOverAppsWindowContainers';
 import {
   getAllBubbleStates,
-  decrementBubbleCount,
-  incrementBubbleCount,
   refreshBubbleState,
-  setBubbleCount,
   subscribeToBubbleState,
   useAllBubbleStates,
   useBubbleState,
 } from './bubbleState';
 import { setBubbleRenderer, setBubbleRendererForBubble } from './bubbleRenderer';
+import {
+  getAllOverlaySharedValueStates,
+  getOverlaySharedValueState,
+  refreshAllOverlaySharedValueStates,
+  refreshOverlaySharedValueState,
+  setOverlaySharedValue,
+  subscribeToOverlaySharedValueState,
+  useAllOverlaySharedValueStates,
+  useOverlaySharedValueState,
+} from './overlaySharedValue';
 import { ensureBubbleSurfaceRegistered } from './registerBubbleSurface';
 import { DEFAULT_BUBBLE_ID, normalizeBubbleId, type BubbleDisplayOptions } from './bubbleTypes';
 
@@ -85,30 +92,46 @@ export async function showBubble(
 }
 
 /**
- * Hides one named floating bubble.
+ * @deprecated Use `closeBubble`. This compatibility alias closes the overlay
+ * surface and releases the React root.
  */
 export function hideBubble(bubbleId: string = DEFAULT_BUBBLE_ID): boolean {
+  return closeBubble(bubbleId);
+}
+
+/**
+ * Closes one named floating bubble and releases its overlay surface.
+ */
+export function closeBubble(bubbleId: string = DEFAULT_BUBBLE_ID): boolean {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
 
   const normalizedBubbleId = normalizeBubbleId(bubbleId);
-  const didHide =
+  const didClose =
     normalizedBubbleId === DEFAULT_BUBBLE_ID
-      ? ExpoDrawOverAppsModule.hideBubble()
-      : ExpoDrawOverAppsModule.hideBubbleInstance(normalizedBubbleId);
+      ? ExpoDrawOverAppsModule.closeBubble()
+      : ExpoDrawOverAppsModule.closeBubbleInstance(normalizedBubbleId);
   refreshBubbleState(normalizedBubbleId);
-  return didHide;
+  return didClose;
 }
 
 /**
- * Hides every floating bubble known to the native overlay service.
+ * @deprecated Use `closeAllBubbles`. This compatibility alias closes overlay
+ * surfaces and releases their React roots.
  */
 export function hideAllBubbles(): boolean {
+  return closeAllBubbles();
+}
+
+/**
+ * Closes every floating bubble known to the native overlay service.
+ */
+export function closeAllBubbles(): boolean {
   const ExpoDrawOverAppsModule = getExpoDrawOverAppsModule();
   if (!ExpoDrawOverAppsModule) return false;
-  const didHide = ExpoDrawOverAppsModule.hideAllBubbles();
+  const didClose = ExpoDrawOverAppsModule.closeAllBubbles();
   getAllBubbleStates();
-  return didHide;
+  return didClose;
 }
 
 /**
@@ -133,18 +156,23 @@ export {
   FloatingWindowPreview,
   getNextFloatingWindowPreviewState,
   getAllBubbleStates,
-  decrementBubbleCount,
+  getAllOverlaySharedValueStates,
+  getOverlaySharedValueState,
   ExpoDrawOverAppsComposeBubbleRenderer,
-  incrementBubbleCount,
   NativeWindowContainer,
   ReactNativeWindowContainer,
+  refreshAllOverlaySharedValueStates,
+  refreshOverlaySharedValueState,
   refreshBubbleState,
+  setOverlaySharedValue,
   setComposeBubbleRenderer,
-  setBubbleCount,
   setBubbleRenderer,
   setBubbleRendererForBubble,
+  subscribeToOverlaySharedValueState,
   subscribeToBubbleState,
+  useAllOverlaySharedValueStates,
   useAllBubbleStates,
+  useOverlaySharedValueState,
   useBubbleState,
 };
 
@@ -155,5 +183,11 @@ export type {
   WindowAnimationConfig,
   WindowContainerProps,
 } from './ExpoDrawOverAppsWindowContainers';
+export type { OverlaySharedValueState } from './overlaySharedValue';
+export {
+  DEFAULT_OVERLAY_SHARED_VALUE_KEY,
+  MAX_OVERLAY_SHARED_VALUE_KEY_LENGTH,
+  normalizeOverlaySharedValueKey,
+} from './overlaySharedValue';
 export { DEFAULT_BUBBLE_ID, MAX_BUBBLE_ID_LENGTH, normalizeBubbleId } from './bubbleTypes';
 export type { BubbleChangeSource, BubbleDisplayOptions, BubbleState } from './bubbleTypes';

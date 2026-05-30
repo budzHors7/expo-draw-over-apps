@@ -3,6 +3,7 @@ import {
   Platform,
   StyleSheet,
   View,
+  useColorScheme,
   type ColorValue,
   type StyleProp,
   type ViewProps,
@@ -19,6 +20,8 @@ import Animated, {
 type NativeWindProps = {
   className?: string;
 };
+
+type WindowColorScheme = 'light' | 'dark' | null;
 
 type ExpoUiRuntime = {
   Host: React.ComponentType<any>;
@@ -60,6 +63,10 @@ export type WindowContainerProps = ViewProps &
      */
     backgroundColor?: ColorValue;
     /**
+     * Force a light or dark surface. Omit or pass `null` to follow the system.
+     */
+    colorScheme?: WindowColorScheme;
+    /**
      * Styles for the outer floating window surface. Numeric width, height, and
      * borderRadius values are also used as animated targets.
      */
@@ -79,10 +86,6 @@ export type WindowContainerProps = ViewProps &
   };
 
 export type NativeWindowContainerProps = WindowContainerProps & {
-  /**
-   * Expo UI Host color scheme. Android only.
-   */
-  colorScheme?: 'light' | 'dark' | null;
   /**
    * Expo UI Material 3 seed color. Android only.
    */
@@ -107,7 +110,8 @@ export type NativeWindowContainerProps = WindowContainerProps & {
 };
 
 const DEFAULT_RADIUS = 24;
-const DEFAULT_BACKGROUND = '#ffffff';
+const DEFAULT_LIGHT_BACKGROUND = '#ffffff';
+const DEFAULT_DARK_BACKGROUND = '#111827';
 const DEFAULT_ANIMATION_DURATION = 220;
 
 let expoUiRuntime: ExpoUiRuntime | null | undefined;
@@ -201,9 +205,22 @@ function useWindowAnimatedStyle(
   });
 }
 
-function getSurfaceColor(backgroundColor: ColorValue | undefined, style: StyleProp<ViewStyle>) {
+function useResolvedColorScheme(colorScheme: WindowColorScheme | undefined) {
+  const systemColorScheme = useColorScheme();
+  return colorScheme ?? (systemColorScheme === 'dark' ? 'dark' : 'light');
+}
+
+function getDefaultSurfaceColor(colorScheme: 'light' | 'dark') {
+  return colorScheme === 'dark' ? DEFAULT_DARK_BACKGROUND : DEFAULT_LIGHT_BACKGROUND;
+}
+
+function getSurfaceColor(
+  backgroundColor: ColorValue | undefined,
+  style: StyleProp<ViewStyle>,
+  colorScheme: 'light' | 'dark'
+) {
   const flattenedStyle = StyleSheet.flatten(style) ?? {};
-  return backgroundColor ?? flattenedStyle.backgroundColor ?? DEFAULT_BACKGROUND;
+  return backgroundColor ?? flattenedStyle.backgroundColor ?? getDefaultSurfaceColor(colorScheme);
 }
 
 function getNativeWindProps(className: string | undefined): NativeWindProps {
@@ -222,6 +239,7 @@ export function ReactNativeWindowContainer({
   height,
   borderRadius,
   backgroundColor,
+  colorScheme,
   style,
   contentContainerStyle,
   className,
@@ -229,7 +247,8 @@ export function ReactNativeWindowContainer({
   animationConfig,
   ...viewProps
 }: WindowContainerProps) {
-  const surfaceColor = getSurfaceColor(backgroundColor, style);
+  const resolvedColorScheme = useResolvedColorScheme(colorScheme);
+  const surfaceColor = getSurfaceColor(backgroundColor, style, resolvedColorScheme);
   const animatedStyle = useWindowAnimatedStyle(style, width, height, borderRadius, animationConfig);
 
   return (
@@ -278,7 +297,8 @@ export function NativeWindowContainer({
 }: NativeWindowContainerProps) {
   const expoUi = getExpoUiRuntime();
   const modifiers = getExpoUiModifiersRuntime();
-  const outerBackground = getSurfaceColor(backgroundColor, style);
+  const resolvedColorScheme = useResolvedColorScheme(colorScheme);
+  const outerBackground = getSurfaceColor(backgroundColor, style, resolvedColorScheme);
   const radius =
     borderRadius ?? getFiniteNumber((StyleSheet.flatten(style) ?? {}).borderRadius) ?? DEFAULT_RADIUS;
   const fillModifiers = useMemo(() => {
@@ -308,6 +328,7 @@ export function NativeWindowContainer({
         height={height}
         borderRadius={borderRadius}
         backgroundColor={backgroundColor}
+        colorScheme={colorScheme}
         style={style}
         contentContainerStyle={contentContainerStyle}
         contentClassName={contentClassName}
@@ -328,6 +349,7 @@ export function NativeWindowContainer({
       height={height}
       borderRadius={borderRadius}
       backgroundColor={backgroundColor}
+      colorScheme={colorScheme}
       style={style}
       contentContainerStyle={styles.nativeHostWrapper}
     >
@@ -360,24 +382,10 @@ export function NativeWindowContainer({
   );
 }
 
-export type ExpoDrawOverAppsWindowAnimationConfig = WindowAnimationConfig;
-export type ExpoDrawOverAppsWindowContainerProps = WindowContainerProps;
-export type ExpoDrawOverAppsNativeWindowContainerProps = NativeWindowContainerProps;
-
-/**
- * @deprecated Use `ReactNativeWindowContainer`.
- */
-export const ExpoDrawOverAppsReactNativeWindowContainer = ReactNativeWindowContainer;
-
-/**
- * @deprecated Use `NativeWindowContainer`.
- */
-export const ExpoDrawOverAppsNativeWindowContainer = NativeWindowContainer;
-
 const styles = StyleSheet.create({
   windowSurface: {
     overflow: 'hidden',
-    backgroundColor: DEFAULT_BACKGROUND,
+    backgroundColor: DEFAULT_LIGHT_BACKGROUND,
   },
   contentContainer: {
     flexShrink: 1,

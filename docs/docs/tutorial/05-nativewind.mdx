@@ -13,7 +13,7 @@ The module does not install or configure NativeWind for you. Make sure your app'
 ## Register a NativeWind bubble
 
 ```tsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import {
   type BubbleRendererProps,
@@ -22,19 +22,24 @@ import {
 
 const bubbleId = 'nativewind-counter';
 
-function NativeWindBubble({ state, increment, decrement, hide, openApp }: BubbleRendererProps) {
+function NativeWindBubble({ close, openApp }: BubbleRendererProps) {
+  const [count, setCount] = useState(0);
+
   return (
     <View className="w-52 rounded-[28px] bg-black px-4 py-4">
       <Text className="text-center text-[11px] font-semibold uppercase tracking-[2px] text-zinc-400">
         NativeWind bubble
       </Text>
-      <Text className="mt-3 text-center text-4xl font-black text-white">{state.count}</Text>
+      <Text className="mt-3 text-center text-4xl font-black text-white">{count}</Text>
 
       <View className="mt-4 flex-row gap-3">
-        <Pressable onPress={decrement} className="flex-1 rounded-2xl border border-white/10 bg-zinc-900 py-3">
+        <Pressable
+          onPress={() => setCount((value) => Math.max(0, value - 1))}
+          className="flex-1 rounded-2xl border border-white/10 bg-zinc-900 py-3"
+        >
           <Text className="text-center text-xl font-bold text-white">-</Text>
         </Pressable>
-        <Pressable onPress={increment} className="flex-1 rounded-2xl bg-white py-3">
+        <Pressable onPress={() => setCount((value) => value + 1)} className="flex-1 rounded-2xl bg-white py-3">
           <Text className="text-center text-xl font-bold text-black">+</Text>
         </Pressable>
       </View>
@@ -42,8 +47,8 @@ function NativeWindBubble({ state, increment, decrement, hide, openApp }: Bubble
       <Pressable onPress={() => void openApp()} className="mt-3 rounded-2xl bg-zinc-100 py-3">
         <Text className="text-center font-semibold text-black">Open app</Text>
       </Pressable>
-      <Pressable onPress={hide} className="mt-2 rounded-2xl border border-white/10 py-3">
-        <Text className="text-center font-semibold text-white">Hide bubble</Text>
+      <Pressable onPress={close} className="mt-2 rounded-2xl border border-white/10 py-3">
+        <Text className="text-center font-semibold text-white">Close bubble</Text>
       </Pressable>
     </View>
   );

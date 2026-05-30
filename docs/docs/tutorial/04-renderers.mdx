@@ -15,22 +15,33 @@ import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   type BubbleRendererProps,
+  setOverlaySharedValue,
   setBubbleRendererForBubble,
+  useOverlaySharedValueState,
 } from 'expo-draw-over-apps';
 
 const bubbleId = 'chat-head';
+const counterKey = 'chat-head-counter';
 
-function ChatHeadBubble({ state, increment, decrement, hide, openApp }: BubbleRendererProps) {
+function ChatHeadBubble({ close, openApp }: BubbleRendererProps) {
+  const counterState = useOverlaySharedValueState(counterKey);
+
   return (
     <View style={styles.bubble}>
       <Text style={styles.label}>Counter</Text>
-      <Text style={styles.count}>{state.count}</Text>
+      <Text style={styles.count}>{counterState.value}</Text>
 
       <View style={styles.row}>
-        <Pressable onPress={decrement} style={styles.button}>
+        <Pressable
+          onPress={() => setOverlaySharedValue(counterKey, Math.max(0, counterState.value - 1), 'bubble')}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>-</Text>
         </Pressable>
-        <Pressable onPress={increment} style={styles.button}>
+        <Pressable
+          onPress={() => setOverlaySharedValue(counterKey, counterState.value + 1, 'bubble')}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>+</Text>
         </Pressable>
       </View>
@@ -38,8 +49,8 @@ function ChatHeadBubble({ state, increment, decrement, hide, openApp }: BubbleRe
       <Pressable onPress={() => void openApp()} style={styles.secondaryButton}>
         <Text style={styles.secondaryText}>Open app</Text>
       </Pressable>
-      <Pressable onPress={hide} style={styles.secondaryButton}>
-        <Text style={styles.secondaryText}>Hide</Text>
+      <Pressable onPress={close} style={styles.secondaryButton}>
+        <Text style={styles.secondaryText}>Close</Text>
       </Pressable>
     </View>
   );
@@ -111,10 +122,19 @@ import {
   type BubbleRendererProps,
   NativeWindowContainer,
   ReactNativeWindowContainer,
+  setOverlaySharedValue,
+  useOverlaySharedValueState,
 } from 'expo-draw-over-apps';
 
-export function SmoothReactNativeBubble({ state, increment }: BubbleRendererProps) {
-  const expanded = state.count % 2 === 1;
+const resizeKey = 'window-container-counter';
+
+export function SmoothReactNativeBubble(_: BubbleRendererProps) {
+  const sharedStep = useOverlaySharedValueState(resizeKey);
+  const expanded = sharedStep.value >= 1;
+
+  function toggleSize() {
+    setOverlaySharedValue(resizeKey, expanded ? 0 : 1, 'bubble');
+  }
 
   return (
     <ReactNativeWindowContainer
@@ -124,27 +144,30 @@ export function SmoothReactNativeBubble({ state, increment }: BubbleRendererProp
       style={styles.reactNativeWindow}
       contentContainerStyle={styles.centeredContent}
     >
-      <Pressable onPress={increment}>
+      <Pressable onPress={toggleSize}>
         <Text style={{ color: 'white', fontWeight: '900' }}>Toggle size</Text>
       </Pressable>
     </ReactNativeWindowContainer>
   );
 }
 
-export function SmoothExpoUiBubble({ state, increment }: BubbleRendererProps) {
-  const expanded = state.count % 2 === 1;
+export function SmoothExpoUiBubble(_: BubbleRendererProps) {
+  const sharedStep = useOverlaySharedValueState(resizeKey);
+  const expanded = sharedStep.value >= 1;
+
+  function toggleSize() {
+    setOverlaySharedValue(resizeKey, expanded ? 0 : 1, 'bubble');
+  }
 
   return (
     <NativeWindowContainer
       width={expanded ? 238 : 154}
       height={expanded ? 256 : 172}
       borderRadius={expanded ? 44 : 28}
-      backgroundColor="#f8fafc"
-      surfaceColor="#f8fafc"
       style={styles.nativeWindow}
       contentContainerStyle={styles.centeredContent}
     >
-      <Pressable onPress={increment}>
+      <Pressable onPress={toggleSize}>
         <Text style={{ color: '#0f172a', fontWeight: '900' }}>Toggle size</Text>
       </Pressable>
     </NativeWindowContainer>
@@ -171,7 +194,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-`NativeWindowContainer` uses Expo UI's Android Host/Surface when `@expo/ui` is installed and falls back to `ReactNativeWindowContainer` otherwise. Both paths accept React Native children.
+`NativeWindowContainer` uses Expo UI's Android Host/Surface when `@expo/ui` is installed and falls back to `ReactNativeWindowContainer` otherwise. Both paths accept React Native children. When no background or `colorScheme` is declared, the containers follow the device light/dark setting.
 
 ## Compose-flavored renderer
 

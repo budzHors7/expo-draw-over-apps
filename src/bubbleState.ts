@@ -17,7 +17,6 @@ let hasBoundNativeState = false;
 function createDefaultBubbleState(bubbleId: string): BubbleState {
   return {
     bubbleId,
-    count: 0,
     isVisible: false,
     lastUpdatedAt: Date.now(),
     lastChangeSource: 'app',
@@ -49,7 +48,6 @@ function normalizeBubbleState(nextState: Partial<BubbleState>, bubbleId?: string
 
   return {
     bubbleId: normalizedBubbleId,
-    count: Math.max(0, Math.floor(nextState.count ?? previousState.count)),
     isVisible: Boolean(nextState.isVisible ?? previousState.isVisible),
     lastUpdatedAt: Number(nextState.lastUpdatedAt ?? Date.now()),
     lastChangeSource: normalizeChangeSource(nextState.lastChangeSource ?? previousState.lastChangeSource),
@@ -66,7 +64,6 @@ function updateBubbleStates(nextStates: Partial<BubbleState>[]) {
 
     if (
       !previousState ||
-      previousState.count !== normalizedState.count ||
       previousState.isVisible !== normalizedState.isVisible ||
       previousState.lastUpdatedAt !== normalizedState.lastUpdatedAt ||
       previousState.lastChangeSource !== normalizedState.lastChangeSource
@@ -182,92 +179,6 @@ export function setBubbleVisible(
       lastUpdatedAt: Date.now(),
     },
   ]);
-}
-
-/**
- * Sets the shared counter for a named bubble.
- */
-export function setBubbleCount(
-  count: number,
-  source: BubbleChangeSource = 'app',
-  bubbleId: string = DEFAULT_BUBBLE_ID
-) {
-  bindNativeBubbleState();
-
-  const normalizedBubbleId = normalizeBubbleId(bubbleId);
-  const nativeModule = getExpoDrawOverAppsModule();
-  if (!nativeModule) {
-    updateBubbleStates([
-      {
-        ...getBubbleState(normalizedBubbleId),
-        bubbleId: normalizedBubbleId,
-        count,
-        lastChangeSource: source,
-        lastUpdatedAt: Date.now(),
-      },
-    ]);
-    return getBubbleState(normalizedBubbleId).count;
-  }
-
-  const nextCount =
-    normalizedBubbleId === DEFAULT_BUBBLE_ID
-      ? nativeModule.setBubbleCount(Math.max(0, Math.floor(count)), source)
-      : nativeModule.setBubbleCountForBubble(normalizedBubbleId, Math.max(0, Math.floor(count)), source);
-
-  syncBubbleStatesFromNative();
-  return nextCount;
-}
-
-/**
- * Adds one to the shared counter for a named bubble.
- */
-export function incrementBubbleCount(
-  source: BubbleChangeSource = 'bubble',
-  bubbleId: string = DEFAULT_BUBBLE_ID
-): number {
-  bindNativeBubbleState();
-
-  const normalizedBubbleId = normalizeBubbleId(bubbleId);
-  const nativeModule = getExpoDrawOverAppsModule();
-  if (!nativeModule) {
-    const nextCount = getBubbleState(normalizedBubbleId).count + 1;
-    setBubbleCount(nextCount, source, normalizedBubbleId);
-    return nextCount;
-  }
-
-  const nextCount =
-    normalizedBubbleId === DEFAULT_BUBBLE_ID
-      ? nativeModule.incrementBubbleCount(source)
-      : nativeModule.incrementBubbleCountForBubble(normalizedBubbleId, source);
-
-  syncBubbleStatesFromNative();
-  return nextCount;
-}
-
-/**
- * Subtracts one from the shared counter for a named bubble without going below zero.
- */
-export function decrementBubbleCount(
-  source: BubbleChangeSource = 'bubble',
-  bubbleId: string = DEFAULT_BUBBLE_ID
-): number {
-  bindNativeBubbleState();
-
-  const normalizedBubbleId = normalizeBubbleId(bubbleId);
-  const nativeModule = getExpoDrawOverAppsModule();
-  if (!nativeModule) {
-    const nextCount = Math.max(0, getBubbleState(normalizedBubbleId).count - 1);
-    setBubbleCount(nextCount, source, normalizedBubbleId);
-    return nextCount;
-  }
-
-  const nextCount =
-    normalizedBubbleId === DEFAULT_BUBBLE_ID
-      ? nativeModule.decrementBubbleCount(source)
-      : nativeModule.decrementBubbleCountForBubble(normalizedBubbleId, source);
-
-  syncBubbleStatesFromNative();
-  return nextCount;
 }
 
 /**

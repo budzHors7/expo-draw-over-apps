@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 import { NativeWindowContainer, type BubbleRendererProps } from 'expo-draw-over-apps';
+import { setExampleBubbleCount, useExampleBubbleState } from '../state/bubbleExampleState';
 import {
   RESIZE_BUBBLE_MAX_STEP,
   RESIZE_BUBBLE_MIN_STEP,
@@ -8,7 +9,9 @@ import {
   getResizeBubbleStepConfig,
 } from './resizeBubbleSizing';
 
-export function NativeExpoUiResizeBubbleRenderer({ state, setCount, hide }: BubbleRendererProps) {
+export function NativeExpoUiResizeBubbleRenderer({ bubbleId, close }: BubbleRendererProps) {
+  const state = useExampleBubbleState(bubbleId);
+  const isDark = useColorScheme() === 'dark';
   const activeStep = getResizeBubbleStep(state.count);
   const activeConfig = getResizeBubbleStepConfig(state.count);
 
@@ -17,9 +20,6 @@ export function NativeExpoUiResizeBubbleRenderer({ state, setCount, hide }: Bubb
       width={activeConfig.dimension}
       height={activeConfig.height}
       borderRadius={activeConfig.radius}
-      backgroundColor="#f8fafc"
-      surfaceColor="#f8fafc"
-      colorScheme="light"
       seedColor="#0891b2"
       animationConfig={{ duration: 220 }}
       style={styles.shell}
@@ -29,10 +29,10 @@ export function NativeExpoUiResizeBubbleRenderer({ state, setCount, hide }: Bubb
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.eyebrow}>Native Expo UI</Text>
-          <Text style={styles.title}>Resize</Text>
+          <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>Resize</Text>
         </View>
-        <Pressable onPress={hide} style={styles.hideButton}>
-          <Text style={styles.hideText}>Hide</Text>
+        <Pressable onPress={close} style={[styles.hideButton, isDark ? styles.hideButtonDark : styles.hideButtonLight]}>
+          <Text style={[styles.hideText, isDark ? styles.hideTextDark : styles.hideTextLight]}>Close</Text>
         </Pressable>
       </View>
 
@@ -49,23 +49,33 @@ export function NativeExpoUiResizeBubbleRenderer({ state, setCount, hide }: Bubb
         >
           <Text style={styles.orbLabel}>{activeConfig.shortLabel}</Text>
         </View>
-        <Text style={styles.sizeLabel}>{activeConfig.label}</Text>
+        <Text style={[styles.sizeLabel, isDark ? styles.sizeLabelDark : styles.sizeLabelLight]}>
+          {activeConfig.label}
+        </Text>
       </View>
 
       <View style={styles.actionRow}>
         <Pressable
-          onPress={() => setCount(RESIZE_BUBBLE_MIN_STEP)}
-          style={[styles.actionButton, activeStep === RESIZE_BUBBLE_MIN_STEP && styles.actionButtonActive]}
+          onPress={() => setExampleBubbleCount(RESIZE_BUBBLE_MIN_STEP, 'bubble', bubbleId)}
+          style={[
+            styles.actionButton,
+            isDark ? styles.actionButtonDark : styles.actionButtonLight,
+            activeStep === RESIZE_BUBBLE_MIN_STEP && styles.actionButtonActive,
+          ]}
         >
-          <Text style={[styles.actionText, activeStep === RESIZE_BUBBLE_MIN_STEP && styles.actionTextActive]}>
+          <Text style={[styles.actionText, isDark ? styles.actionTextDark : styles.actionTextLight, activeStep === RESIZE_BUBBLE_MIN_STEP && styles.actionTextActive]}>
             Small
           </Text>
         </Pressable>
         <Pressable
-          onPress={() => setCount(RESIZE_BUBBLE_MAX_STEP)}
-          style={[styles.actionButton, activeStep === RESIZE_BUBBLE_MAX_STEP && styles.actionButtonActive]}
+          onPress={() => setExampleBubbleCount(RESIZE_BUBBLE_MAX_STEP, 'bubble', bubbleId)}
+          style={[
+            styles.actionButton,
+            isDark ? styles.actionButtonDark : styles.actionButtonLight,
+            activeStep === RESIZE_BUBBLE_MAX_STEP && styles.actionButtonActive,
+          ]}
         >
-          <Text style={[styles.actionText, activeStep === RESIZE_BUBBLE_MAX_STEP && styles.actionTextActive]}>
+          <Text style={[styles.actionText, isDark ? styles.actionTextDark : styles.actionTextLight, activeStep === RESIZE_BUBBLE_MAX_STEP && styles.actionTextActive]}>
             Big
           </Text>
         </Pressable>
@@ -105,9 +115,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    color: '#0f172a',
     fontSize: 18,
     fontWeight: '900',
+  },
+  titleDark: {
+    color: '#f8fafc',
+  },
+  titleLight: {
+    color: '#0f172a',
   },
   hideButton: {
     minWidth: 44,
@@ -115,12 +130,22 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  hideButtonDark: {
+    backgroundColor: '#164e63',
+  },
+  hideButtonLight: {
     backgroundColor: '#e0f2fe',
   },
   hideText: {
-    color: '#0c4a6e',
     fontSize: 11,
     fontWeight: '900',
+  },
+  hideTextDark: {
+    color: '#ecfeff',
+  },
+  hideTextLight: {
+    color: '#0c4a6e',
   },
   stage: {
     flex: 1,
@@ -141,9 +166,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   sizeLabel: {
-    color: '#334155',
     fontSize: 12,
     fontWeight: '800',
+  },
+  sizeLabelDark: {
+    color: '#cbd5e1',
+  },
+  sizeLabelLight: {
+    color: '#334155',
   },
   actionRow: {
     flexDirection: 'row',
@@ -155,8 +185,14 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#e2e8f0',
     borderWidth: 1,
+  },
+  actionButtonDark: {
+    backgroundColor: '#1f2937',
+    borderColor: '#334155',
+  },
+  actionButtonLight: {
+    backgroundColor: '#e2e8f0',
     borderColor: '#cbd5e1',
   },
   actionButtonActive: {
@@ -164,9 +200,14 @@ const styles = StyleSheet.create({
     borderColor: '#22d3ee',
   },
   actionText: {
-    color: '#0f172a',
     fontSize: 12,
     fontWeight: '900',
+  },
+  actionTextDark: {
+    color: '#f8fafc',
+  },
+  actionTextLight: {
+    color: '#0f172a',
   },
   actionTextActive: {
     color: '#ecfeff',

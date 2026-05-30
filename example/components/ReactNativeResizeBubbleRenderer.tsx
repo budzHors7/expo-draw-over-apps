@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 import { ReactNativeWindowContainer, type BubbleRendererProps } from 'expo-draw-over-apps';
+import { setExampleBubbleCount, useExampleBubbleState } from '../state/bubbleExampleState';
 import {
   RESIZE_BUBBLE_MAX_STEP,
   RESIZE_BUBBLE_MIN_STEP,
@@ -8,7 +9,9 @@ import {
   getResizeBubbleStepConfig,
 } from './resizeBubbleSizing';
 
-export function ReactNativeResizeBubbleRenderer({ state, setCount, hide }: BubbleRendererProps) {
+export function ReactNativeResizeBubbleRenderer({ bubbleId, close }: BubbleRendererProps) {
+  const state = useExampleBubbleState(bubbleId);
+  const isDark = useColorScheme() === 'dark';
   const activeStep = getResizeBubbleStep(state.count);
   const activeConfig = getResizeBubbleStepConfig(state.count);
 
@@ -17,7 +20,6 @@ export function ReactNativeResizeBubbleRenderer({ state, setCount, hide }: Bubbl
       width={activeConfig.dimension}
       height={activeConfig.height}
       borderRadius={activeConfig.radius}
-      backgroundColor="#101820"
       animationConfig={{ duration: 220 }}
       style={styles.shell}
       contentContainerStyle={styles.content}
@@ -26,10 +28,10 @@ export function ReactNativeResizeBubbleRenderer({ state, setCount, hide }: Bubbl
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.eyebrow}>React Native</Text>
-          <Text style={styles.title}>Resize</Text>
+          <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>Resize</Text>
         </View>
-        <Pressable onPress={hide} style={styles.closeButton}>
-          <Text style={styles.closeText}>x</Text>
+        <Pressable onPress={close} style={[styles.closeButton, isDark ? styles.closeButtonDark : styles.closeButtonLight]}>
+          <Text style={[styles.closeText, isDark ? styles.closeTextDark : styles.closeTextLight]}>x</Text>
         </Pressable>
       </View>
 
@@ -46,21 +48,43 @@ export function ReactNativeResizeBubbleRenderer({ state, setCount, hide }: Bubbl
         >
           <Text style={styles.orbLabel}>{activeConfig.shortLabel}</Text>
         </View>
-        <Text style={styles.sizeLabel}>{activeConfig.label}</Text>
+        <Text style={[styles.sizeLabel, isDark ? styles.sizeLabelDark : styles.sizeLabelLight]}>
+          {activeConfig.label}
+        </Text>
       </View>
 
       <View style={styles.actionRow}>
         <Pressable
-          onPress={() => setCount(RESIZE_BUBBLE_MIN_STEP)}
-          style={[styles.sizeButton, activeStep === RESIZE_BUBBLE_MIN_STEP && styles.sizeButtonActive]}
+          onPress={() => setExampleBubbleCount(RESIZE_BUBBLE_MIN_STEP, 'bubble', bubbleId)}
+          style={[
+            styles.sizeButton,
+            isDark ? styles.sizeButtonDark : styles.sizeButtonLight,
+            activeStep === RESIZE_BUBBLE_MIN_STEP && styles.sizeButtonActive,
+          ]}
         >
-          <Text style={styles.sizeButtonText}>Small</Text>
+          <Text style={[
+            styles.sizeButtonText,
+            isDark ? styles.sizeButtonTextDark : styles.sizeButtonTextLight,
+            activeStep === RESIZE_BUBBLE_MIN_STEP && styles.sizeButtonTextActive,
+          ]}>
+            Small
+          </Text>
         </Pressable>
         <Pressable
-          onPress={() => setCount(RESIZE_BUBBLE_MAX_STEP)}
-          style={[styles.sizeButton, activeStep === RESIZE_BUBBLE_MAX_STEP && styles.sizeButtonActive]}
+          onPress={() => setExampleBubbleCount(RESIZE_BUBBLE_MAX_STEP, 'bubble', bubbleId)}
+          style={[
+            styles.sizeButton,
+            isDark ? styles.sizeButtonDark : styles.sizeButtonLight,
+            activeStep === RESIZE_BUBBLE_MAX_STEP && styles.sizeButtonActive,
+          ]}
         >
-          <Text style={styles.sizeButtonText}>Big</Text>
+          <Text style={[
+            styles.sizeButtonText,
+            isDark ? styles.sizeButtonTextDark : styles.sizeButtonTextLight,
+            activeStep === RESIZE_BUBBLE_MAX_STEP && styles.sizeButtonTextActive,
+          ]}>
+            Big
+          </Text>
         </Pressable>
       </View>
     </ReactNativeWindowContainer>
@@ -98,9 +122,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    color: '#fff1f2',
     fontSize: 18,
     fontWeight: '900',
+  },
+  titleDark: {
+    color: '#fff1f2',
+  },
+  titleLight: {
+    color: '#111827',
   },
   closeButton: {
     width: 28,
@@ -108,13 +137,23 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  closeButtonDark: {
     backgroundColor: '#24303a',
   },
+  closeButtonLight: {
+    backgroundColor: '#ffe4e6',
+  },
   closeText: {
-    color: '#fff1f2',
     fontSize: 14,
     fontWeight: '900',
     marginTop: -1,
+  },
+  closeTextDark: {
+    color: '#fff1f2',
+  },
+  closeTextLight: {
+    color: '#9f1239',
   },
   stage: {
     flex: 1,
@@ -135,9 +174,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   sizeLabel: {
-    color: '#cbd5e1',
     fontSize: 12,
     fontWeight: '800',
+  },
+  sizeLabelDark: {
+    color: '#cbd5e1',
+  },
+  sizeLabelLight: {
+    color: '#475569',
   },
   actionRow: {
     flexDirection: 'row',
@@ -149,17 +193,31 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1f2937',
     borderWidth: 1,
+  },
+  sizeButtonDark: {
+    backgroundColor: '#1f2937',
     borderColor: '#334155',
+  },
+  sizeButtonLight: {
+    backgroundColor: '#e2e8f0',
+    borderColor: '#cbd5e1',
   },
   sizeButtonActive: {
     backgroundColor: '#0f766e',
     borderColor: '#5eead4',
   },
   sizeButtonText: {
-    color: '#f8fafc',
     fontSize: 12,
     fontWeight: '900',
+  },
+  sizeButtonTextDark: {
+    color: '#f8fafc',
+  },
+  sizeButtonTextLight: {
+    color: '#111827',
+  },
+  sizeButtonTextActive: {
+    color: '#f8fafc',
   },
 });

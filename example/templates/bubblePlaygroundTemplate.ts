@@ -1,4 +1,4 @@
-import type { BubbleRenderer, BubbleState } from 'expo-draw-over-apps';
+import type { BubbleRenderer } from 'expo-draw-over-apps';
 
 import {
   CountdownTimerBubbleRenderer,
@@ -75,14 +75,4 @@ export const BUBBLE_EXAMPLE_IDS = BUBBLE_PLAYGROUND_TEMPLATES.map((template) => 
 
 export function getBubbleTemplate(id: BubbleExampleId): BubblePlaygroundTemplate {
   return BUBBLE_PLAYGROUND_TEMPLATES.find((template) => template.id === id) ?? BUBBLE_PLAYGROUND_TEMPLATES[0];
-}
-
-export function createTemplateBubbleState(template: BubblePlaygroundTemplate): BubbleState {
-  return {
-    bubbleId: template.id,
-    count: template.initialCount,
-    isVisible: false,
-    lastUpdatedAt: 0,
-    lastChangeSource: 'app',
-  };
 }

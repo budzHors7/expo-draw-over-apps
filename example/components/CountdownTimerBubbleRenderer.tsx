@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { BubbleRendererProps } from 'expo-draw-over-apps';
+import { setExampleBubbleCount, useExampleBubbleState } from '../state/bubbleExampleState';
 
 export const TIMER_DURATION_SECONDS = 15;
 
@@ -15,20 +16,22 @@ function formatCountdown(totalSeconds: number) {
   return `${minutes}:${seconds}`;
 }
 
-export function CountdownTimerBubbleRenderer({ bubbleId, state, setCount, hide }: BubbleRendererProps) {
+export function CountdownTimerBubbleRenderer({ bubbleId, close }: BubbleRendererProps) {
+  const state = useExampleBubbleState(bubbleId);
+
   useEffect(() => {
     if (state.count <= 0) {
       return;
     }
 
     const timer = setTimeout(() => {
-      setCount(state.count - 1);
+      setExampleBubbleCount(state.count - 1, 'bubble', bubbleId);
     }, 1000);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [setCount, state.count]);
+  }, [bubbleId, state.count]);
 
   return (
     <View style={styles.shell}>
@@ -45,12 +48,15 @@ export function CountdownTimerBubbleRenderer({ bubbleId, state, setCount, hide }
       </Text>
 
       <View style={styles.actions}>
-        <Pressable onPress={() => setCount(TIMER_DURATION_SECONDS)} style={styles.restartButton}>
+        <Pressable
+          onPress={() => setExampleBubbleCount(TIMER_DURATION_SECONDS, 'bubble', bubbleId)}
+          style={styles.restartButton}
+        >
           <Text style={styles.restartText}>Restart</Text>
         </Pressable>
 
-        <Pressable onPress={hide} style={styles.hideButton}>
-          <Text style={styles.hideText}>Hide bubble</Text>
+        <Pressable onPress={close} style={styles.hideButton}>
+          <Text style={styles.hideText}>Close bubble</Text>
         </Pressable>
       </View>
     </View>

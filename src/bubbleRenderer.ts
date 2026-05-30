@@ -9,15 +9,14 @@ import { DEFAULT_BUBBLE_ID, normalizeBubbleId, type BubbleState } from './bubble
 export type BubbleRendererProps = {
   /** Normalized ID for the bubble currently being rendered. */
   bubbleId: string;
-  /** Current shared state for this bubble. */
+  /** Current native overlay state for this bubble. */
   state: BubbleState;
-  /** Adds one to the shared counter and marks the bubble as the source. */
-  increment(): number;
-  /** Subtracts one from the shared counter without going below zero. */
-  decrement(): number;
-  /** Sets the shared counter to a non-negative integer. */
-  setCount(count: number): number;
-  /** Hides this bubble. */
+  /** Closes this bubble and releases its overlay surface. */
+  close(): boolean;
+  /**
+   * @deprecated Use `close`. The native implementation closes the overlay
+   * surface for backwards compatibility.
+   */
   hide(): boolean;
   /** Brings the host app to the foreground. */
   openApp(): Promise<boolean>;

@@ -17,10 +17,14 @@ The hand-written docs explain the common flow. The [Public API](/versions/latest
 ### Bubble visibility
 
 - `showBubble(bubbleId?, options?)`
+- `closeBubble(bubbleId?)`
+- `closeAllBubbles()`
 - `hideBubble(bubbleId?)`
 - `hideAllBubbles()`
 - `isBubbleVisible(bubbleId?)`
 - `openApp()`
+
+`hideBubble` and `hideAllBubbles` remain as compatibility aliases. In SDK 56, the close path releases the overlay surface and React root.
 
 ### State
 
@@ -28,10 +32,25 @@ The hand-written docs explain the common flow. The [Public API](/versions/latest
 - `useAllBubbleStates()`
 - `getAllBubbleStates()`
 - `refreshBubbleState(bubbleId?)`
-- `incrementBubbleCount(source?, bubbleId?)`
-- `decrementBubbleCount(source?, bubbleId?)`
-- `setBubbleCount(count, source?, bubbleId?)`
 - `subscribeToBubbleState(listener)`
+
+The module state tracks overlay visibility and metadata. App-specific values such as counters, timers, selected modes, or form data should live in your app or renderer state.
+
+### Native shared values
+
+- `setOverlaySharedValue(valueKey, value, source?)`
+- `useOverlaySharedValueState(valueKey?)`
+- `useAllOverlaySharedValueStates()`
+- `getOverlaySharedValueState(valueKey?)`
+- `getAllOverlaySharedValueStates()`
+- `refreshOverlaySharedValueState(valueKey?)`
+- `refreshAllOverlaySharedValueStates()`
+- `subscribeToOverlaySharedValueState(listener)`
+- `normalizeOverlaySharedValueKey(valueKey?)`
+- `DEFAULT_OVERLAY_SHARED_VALUE_KEY`
+- `MAX_OVERLAY_SHARED_VALUE_KEY_LENGTH`
+
+Shared values are native-backed numbers for renderer coordination, such as the example window counter shared by the React Native and Native window fixtures. Non-finite values are stored as `0`. Refresh the native snapshot when your app returns to the foreground if overlay controls can change a value while the app is backgrounded. Keys are normalized like bubble IDs and should not contain sensitive data.
 
 ### Renderer registration
 
@@ -45,7 +64,7 @@ The hand-written docs explain the common flow. The [Public API](/versions/latest
 - `ReactNativeWindowContainer`
 - `NativeWindowContainer`
 
-Both containers accept React Native children, `style`, `contentContainerStyle`, `className`, and `contentClassName`. Numeric `width`, `height`, and `borderRadius` changes animate with Reanimated by default.
+Both containers accept React Native children, `style`, `contentContainerStyle`, `className`, and `contentClassName`. Numeric `width`, `height`, and `borderRadius` changes animate with Reanimated by default. If no background is declared, containers follow the system light/dark scheme.
 
 ### Preview
 

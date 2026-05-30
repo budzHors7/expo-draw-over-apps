@@ -1,6 +1,6 @@
 {
   "name": "expo-draw-over-apps",
-  "version": "56.0.2-beta.1",
+  "version": "56.0.4",
   "description": "Expo module for Android overlay permissions and floating React Native or Jetpack Compose bubbles.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -43,13 +43,14 @@
   "homepage": "https://expo-draw-over-apps.vercel.app/",
   "devDependencies": {
     "@types/jest": "^29.5.14",
-    "@types/react": "~19.2.14",
-    "expo": "^56.0.0-preview.12",
+    "@types/react": "~19.2.15",
+    "expo": "~56.0.4",
     "expo-module-scripts": "^56.0.2",
     "jest": "^29.7.0",
-    "react": "19.2.3",
-    "react-native": "0.85.3",
-    "react-native-reanimated": "4.3.1",
+    "react": "^19.2.3",
+    "react-native": "^0.85.3",
+    "react-native-reanimated": "^4.3.1",
+    "react-native-worklets": "^0.8.3",
     "ts-jest": "~29.4.7"
   },
   "peerDependencies": {
@@ -57,7 +58,8 @@
     "expo": "*",
     "react": "*",
     "react-native": "*",
-    "react-native-reanimated": "*"
+    "react-native-reanimated": "*",
+    "react-native-worklets": "*"
   },
   "peerDependenciesMeta": {
     "@expo/ui": {

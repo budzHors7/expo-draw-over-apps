@@ -7,25 +7,31 @@ sidebar_position: 2
 
 `FloatingWindowPreview` renders a bubble renderer inside your app. It uses the same `BubbleRendererProps` shape as the real overlay and adds a `preview` object with `width` and `height`.
 
-The preview is JavaScript only. Its `increment`, `decrement`, `setCount`, `hide`, and `openApp` handlers update preview state or call optional callbacks. They do not start the Android overlay service.
+The preview is JavaScript only. Its `close` and `openApp` handlers update preview state or call optional callbacks. It does not start the Android overlay service.
 
 ```tsx
+import { useState } from 'react';
 import { FloatingWindowPreview, type BubbleRendererProps } from 'expo-draw-over-apps';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-function PreviewBubble({ state, increment, decrement }: BubbleRendererProps) {
+function PreviewBubble({ close }: BubbleRendererProps) {
+  const [count, setCount] = useState(2);
+
   return (
     <View style={styles.bubble}>
       <Text style={styles.label}>Preview bubble</Text>
-      <Text style={styles.count}>{state.count}</Text>
+      <Text style={styles.count}>{count}</Text>
       <View style={styles.row}>
-        <Pressable onPress={decrement} style={styles.button}>
+        <Pressable onPress={() => setCount((value) => Math.max(0, value - 1))} style={styles.button}>
           <Text style={styles.buttonText}>-</Text>
         </Pressable>
-        <Pressable onPress={increment} style={styles.button}>
+        <Pressable onPress={() => setCount((value) => value + 1)} style={styles.button}>
           <Text style={styles.buttonText}>+</Text>
         </Pressable>
       </View>
+      <Pressable onPress={close} style={styles.button}>
+        <Text style={styles.buttonText}>Close</Text>
+      </Pressable>
     </View>
   );
 }
@@ -36,7 +42,6 @@ export function PreviewScreen() {
       <FloatingWindowPreview
         width={260}
         height={280}
-        initialState={{ count: 2 }}
         renderBubble={(props) => <PreviewBubble {...props} />}
       />
     </View>

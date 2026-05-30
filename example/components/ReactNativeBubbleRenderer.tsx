@@ -1,8 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { BubbleRendererProps } from 'expo-draw-over-apps';
+import {
+  decrementExampleBubbleCount,
+  incrementExampleBubbleCount,
+  useExampleBubbleState,
+} from '../state/bubbleExampleState';
 
-export function ReactNativeBubbleRenderer({ bubbleId, state, decrement, increment, hide, openApp }: BubbleRendererProps) {
+export function ReactNativeBubbleRenderer({ bubbleId, close, openApp }: BubbleRendererProps) {
+  const state = useExampleBubbleState(bubbleId);
+
   return (
     <View style={styles.shell}>
       <Text style={styles.eyebrow}>React Native Bubble</Text>
@@ -12,11 +19,17 @@ export function ReactNativeBubbleRenderer({ bubbleId, state, decrement, incremen
       <Text style={styles.count}>{state.count}</Text>
 
       <View style={styles.actions}>
-        <Pressable onPress={decrement} style={[styles.actionButton, styles.negativeButton]}>
+        <Pressable
+          onPress={() => decrementExampleBubbleCount('bubble', bubbleId)}
+          style={[styles.actionButton, styles.negativeButton]}
+        >
           <Text style={styles.actionText}>-</Text>
         </Pressable>
 
-        <Pressable onPress={increment} style={[styles.actionButton, styles.positiveButton]}>
+        <Pressable
+          onPress={() => incrementExampleBubbleCount('bubble', bubbleId)}
+          style={[styles.actionButton, styles.positiveButton]}
+        >
           <Text style={styles.actionText}>+</Text>
         </Pressable>
       </View>
@@ -25,8 +38,8 @@ export function ReactNativeBubbleRenderer({ bubbleId, state, decrement, incremen
         <Text style={styles.openText}>Open app</Text>
       </Pressable>
 
-      <Pressable onPress={hide} style={styles.hideButton}>
-        <Text style={styles.hideText}>Hide bubble</Text>
+      <Pressable onPress={close} style={styles.hideButton}>
+        <Text style={styles.hideText}>Close bubble</Text>
       </Pressable>
     </View>
   );

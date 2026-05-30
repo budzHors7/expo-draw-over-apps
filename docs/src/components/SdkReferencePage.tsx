@@ -1,4 +1,5 @@
 import React from 'react';
+import CodeBlock from '@theme/CodeBlock';
 import Heading from '@theme/Heading';
 import {
   VersionedDocsLayout,
@@ -29,22 +30,25 @@ type SdkReferencePageProps = {
 };
 
 const versions: Record<VersionKey, SdkVersionContent> = {
-  '56-beta': {
-    key: '56-beta',
-    label: 'SDK 56 beta',
-    status: 'Latest docs track',
-    bundledVersion: '56.0.2-beta.1',
-    installCommand: 'npm install expo-draw-over-apps@56.0.2-beta.1 react-native-reanimated',
+  '56': {
+    key: '56',
+    label: 'SDK 56',
+    status: 'Latest stable docs',
+    bundledVersion: '56.0.4',
+    installCommand: `npm install expo-draw-over-apps@56.0.4
+npx expo install react-native-reanimated react-native-worklets`,
     description:
-      'SDK 56 beta keeps the Android overlay API and adds the current preview, edge hide, and animated window container APIs.',
+      'SDK 56 keeps the Android overlay API and adds close helpers, native shared values, and animated window container APIs.',
     seoDescription:
-      'SDK 56 beta reference for expo-draw-over-apps preview, edge hide, React Native and native window containers, and Android overlay bubbles.',
+      'SDK 56 reference for expo-draw-over-apps preview, edge hide, native shared values, React Native and native window containers, and Android overlay bubbles.',
     seoKeywords: [
-      'expo-draw-over-apps sdk 56 beta',
+      'expo-draw-over-apps sdk 56',
       'FloatingWindowPreview',
       'edge hide bubble',
       'ReactNativeWindowContainer',
       'NativeWindowContainer',
+      'overlay shared values',
+      'react-native-worklets',
       'expo android overlay',
     ],
     featureGroups: [
@@ -52,17 +56,19 @@ const versions: Record<VersionKey, SdkVersionContent> = {
         title: 'Core overlay API',
         items: [
           'Android draw-over-apps permission helpers.',
-          'Floating bubble overlay with shared state.',
+          'Floating bubble overlay with visibility state.',
           'React Native and Jetpack Compose renderer registration.',
         ],
       },
       {
-        title: 'New in SDK 56 beta',
+        title: 'New in SDK 56',
         items: [
           'FloatingWindowPreview for rendering a bubble fixture inside the app before starting the overlay service.',
           'Edge hide controls for tucking a bubble against the screen edge.',
+          'Close helpers that release overlay surfaces instead of leaving windows mounted.',
+          'Native-backed numeric shared values for counters and window state that need to survive app backgrounding.',
           'ReactNativeWindowContainer for Reanimated width, height, and radius transitions.',
-          'NativeWindowContainer for an Expo UI Android Host/Surface backdrop with React Native children.',
+          'NativeWindowContainer for an Expo UI Android Host/Surface backdrop with React Native children and system light/dark defaults.',
         ],
       },
     ],
@@ -143,9 +149,7 @@ export default function SdkReferencePage({ routeSegment, versionKey }: SdkRefere
 
       <section id="installation" className="sdkReferenceSection">
         <Heading as="h2">Installation</Heading>
-        <pre>
-          <code>{version.installCommand}</code>
-        </pre>
+        <CodeBlock language="bash">{version.installCommand}</CodeBlock>
       </section>
 
       <section id="features" className="sdkReferenceSection">
@@ -166,8 +170,26 @@ export default function SdkReferencePage({ routeSegment, versionKey }: SdkRefere
 
       <section id="api" className="sdkReferenceSection">
         <Heading as="h2">API surface</Heading>
-        {versionKey === '56-beta' ? (
+        {versionKey === '56' ? (
           <ul>
+            <li>
+              <code>canDrawOverlays</code> and <code>requestPermission</code>
+            </li>
+            <li>
+              <code>showBubble</code>, <code>closeBubble</code>, <code>closeAllBubbles</code>, and <code>isBubbleVisible</code>
+            </li>
+            <li>
+              <code>setBubbleRenderer</code>, <code>setBubbleRendererForBubble</code>, and <code>setComposeBubbleRenderer</code>
+            </li>
+            <li>
+              <code>useBubbleState</code>, <code>useAllBubbleStates</code>, and <code>subscribeToBubbleState</code>
+            </li>
+            <li>
+              <code>setOverlaySharedValue</code>, <code>useOverlaySharedValueState</code>, and <code>refreshAllOverlaySharedValueStates</code>
+            </li>
+            <li>
+              <code>getOverlaySharedValueState</code>, <code>useAllOverlaySharedValueStates</code>, and <code>normalizeOverlaySharedValueKey</code>
+            </li>
             <li>
               <code>FloatingWindowPreview</code>
             </li>
@@ -193,7 +215,7 @@ export default function SdkReferencePage({ routeSegment, versionKey }: SdkRefere
               <code>setBubbleRenderer</code> and <code>setComposeBubbleRenderer</code>
             </li>
             <li>
-              <code>useBubbleState</code> and shared counter helpers
+              <code>useBubbleState</code> for overlay visibility state
             </li>
           </ul>
         )}

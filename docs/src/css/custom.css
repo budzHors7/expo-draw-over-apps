@@ -388,6 +388,10 @@ body {
   background: var(--ifm-background-color);
 }
 
+.sdkReferenceMobileDrawer {
+  display: none;
+}
+
 .sdkReferenceSidebar {
   position: sticky;
   top: var(--ifm-navbar-height);
@@ -566,6 +570,30 @@ body {
   overflow-wrap: anywhere;
 }
 
+.theme-code-block {
+  position: relative;
+}
+
+.theme-code-block [class*='buttonGroup'] {
+  opacity: 1 !important;
+}
+
+.theme-code-block button[aria-label='Copy code to clipboard'] {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  border-radius: 0.45rem;
+  background: rgba(15, 23, 42, 0.78);
+  color: #ffffff;
+  opacity: 1 !important;
+}
+
+.theme-code-block button[aria-label='Copy code to clipboard']:hover,
+.theme-code-block button[aria-label='Copy code to clipboard']:focus-visible {
+  border-color: var(--ifm-color-primary);
+  color: #ffffff;
+}
+
 .sdkReferenceSubsection {
   min-width: 0;
   margin-top: 1.5rem;
@@ -713,11 +741,116 @@ body {
     overflow-x: hidden;
   }
 
-  .sdkReferenceSidebar {
+  .sdkReference > .sdkReferenceSidebar {
+    display: none;
+  }
+
+  .sdkReferenceMobileDrawer {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: block;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .sdkReferenceMobileDrawer--open {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .sdkReferenceMobileDrawerBackdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    padding: 0;
+    background: rgba(15, 23, 42, 0);
+    transition: background 160ms ease;
+  }
+
+  .sdkReferenceMobileDrawer--open .sdkReferenceMobileDrawerBackdrop {
+    background: rgba(15, 23, 42, 0.48);
+  }
+
+  .sdkReferenceMobileDrawerPanel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    width: min(22rem, calc(100vw - 3rem));
+    max-width: 100%;
+    background: var(--ifm-background-surface-color);
+    box-shadow: 1.25rem 0 3rem rgba(15, 23, 42, 0.22);
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+  }
+
+  .sdkReferenceMobileDrawer--open .sdkReferenceMobileDrawerPanel {
+    transform: translateX(0);
+  }
+
+  .sdkReferenceMobileDrawerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    border-bottom: 1px solid var(--ifm-color-emphasis-200);
+    padding: 0.9rem 1rem;
+  }
+
+  .sdkReferenceMobileDrawerHeader strong {
+    color: var(--ifm-heading-color);
+    font-size: 1rem;
+  }
+
+  .sdkReferenceMobileDrawerClose {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--ifm-color-emphasis-300);
+    border-radius: 0.5rem;
+    padding: 0;
+    background: var(--ifm-background-color);
+    color: var(--ifm-font-color-base);
+  }
+
+  .sdkReferenceMobileDrawerClose:hover,
+  .sdkReferenceMobileDrawerClose:focus-visible {
+    border-color: var(--ifm-color-primary);
+    color: var(--ifm-color-primary);
+  }
+
+  .sdkReferenceMobileDrawerClose span,
+  .sdkReferenceMobileDrawerClose span::before {
+    position: absolute;
+    width: 1rem;
+    height: 0.125rem;
+    border-radius: 999px;
+    background: currentColor;
+    content: '';
+  }
+
+  .sdkReferenceMobileDrawerClose span {
+    transform: rotate(45deg);
+  }
+
+  .sdkReferenceMobileDrawerClose span::before {
+    left: 0;
+    transform: rotate(90deg);
+  }
+
+  .sdkReferenceMobileDrawerPanel .sdkReferenceSidebar {
     position: static;
     height: auto;
+    min-height: 0;
     border-right: 0;
-    border-bottom: 1px solid var(--ifm-color-emphasis-200);
+    padding: 1rem;
   }
 
   .sdkReferenceContent {

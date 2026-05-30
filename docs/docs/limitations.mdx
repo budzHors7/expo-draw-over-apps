@@ -22,6 +22,10 @@ Android requires the user to grant draw-over-apps permission in system settings.
 
 The real floating bubble is hosted by an Android service. Preview components run inside your app and do not create native overlay windows.
 
+## Overlay shared values
+
+Overlay shared values store numbers only. Use them for counters, timer values, selected steps, and small renderer coordination values. Keep objects, private data, and larger app state in your own store.
+
 ## Compose renderer status
 
 `@expo/ui` is optional, and `setComposeBubbleRenderer()` is available. Current Android overlay builds use a React Native fallback for the packaged Compose-flavored renderer to avoid unstable overlay mounting.

@@ -1,4 +1,5 @@
 import React from 'react';
+import CodeBlock from '@theme/CodeBlock';
 import Heading from '@theme/Heading';
 import {
   VersionedDocsLayout,
@@ -15,7 +16,8 @@ type VersionedContentPageProps = {
 };
 
 const installCommands: Record<VersionKey, string> = {
-  '56-beta': 'npm install expo-draw-over-apps@56.0.2-beta.1 react-native-reanimated',
+  '56': `npm install expo-draw-over-apps@56.0.4
+npx expo install react-native-reanimated react-native-worklets`,
   '55': 'npm install expo-draw-over-apps@55.0.2',
 };
 
@@ -74,9 +76,12 @@ function GettingStarted({ versionKey }: { versionKey: VersionKey }) {
 
       <section id="installation" className="sdkReferenceSection">
         <Heading as="h2">Installation</Heading>
-        <pre>
-          <code>{installCommands[versionKey]}</code>
-        </pre>
+        <CodeBlock language="bash">{installCommands[versionKey]}</CodeBlock>
+        {versionKey === '56' ? (
+          <p>
+            Install <code>@expo/ui</code> only when you use <code>NativeWindowContainer</code> with the native Android surface or the packaged Compose-flavored renderer.
+          </p>
+        ) : null}
       </section>
 
       <section id="requirements" className="sdkReferenceSection">
@@ -95,7 +100,7 @@ function GettingStarted({ versionKey }: { versionKey: VersionKey }) {
           <li>Call <code>canDrawOverlays()</code> before showing a bubble.</li>
           <li>Call <code>requestPermission()</code> when permission is missing.</li>
           <li>Call <code>showBubble()</code> after permission is granted.</li>
-          <li>Use <code>useBubbleState()</code> to read visible state and shared counter state in React.</li>
+          <li>Use <code>useBubbleState()</code> to read overlay visibility state in React.</li>
         </ul>
       </section>
     </>
@@ -103,12 +108,12 @@ function GettingStarted({ versionKey }: { versionKey: VersionKey }) {
 }
 
 function Tutorial({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56-beta';
+  const isSdk56 = versionKey === '56';
 
   return (
     <>
       <PageHeader title="Tutorial" versionKey={versionKey}>
-        Follow the Android overlay flow for this SDK track. Shared behavior is shown in both versions. SDK 56 beta-only APIs stay on SDK 56 beta pages.
+        Follow the Android overlay flow for this SDK track. Shared behavior is shown in both versions. SDK 56 APIs stay on SDK 56 pages.
       </PageHeader>
 
       <section id="permission-flow" className="sdkReferenceSection">
@@ -130,12 +135,14 @@ function Tutorial({ versionKey }: { versionKey: VersionKey }) {
       </section>
 
       {isSdk56 ? (
-        <section id="sdk-56-beta-additions" className="sdkReferenceSection">
-          <Heading as="h2">SDK 56 beta additions</Heading>
+        <section id="sdk-56-additions" className="sdkReferenceSection">
+          <Heading as="h2">SDK 56 additions</Heading>
           <ul>
             <li>FloatingWindowPreview for rendering a bubble fixture inside the app before starting the overlay service.</li>
             <li>Edge hide controls for tucking a bubble against the screen edge.</li>
-            <li>ReactNativeWindowContainer for Reanimated width, height, and radius transitions.</li>
+            <li>Close helpers that release overlay surfaces when a window is done.</li>
+            <li>Native-backed numeric shared values for counters and window state that need to stay fresh after backgrounding.</li>
+            <li>ReactNativeWindowContainer for Reanimated width, height, and radius transitions with system light/dark defaults.</li>
             <li>NativeWindowContainer for an Expo UI Android Host/Surface backdrop with React Native children.</li>
           </ul>
 
@@ -144,8 +151,7 @@ function Tutorial({ versionKey }: { versionKey: VersionKey }) {
             <p>
               Render the same bubble renderer inside your app while you tune layout and state. This does not ask for overlay permission or start the Android overlay service.
             </p>
-            <pre>
-              <code>{`import { FloatingWindowPreview } from 'expo-draw-over-apps';
+            <CodeBlock language="tsx">{`import { FloatingWindowPreview } from 'expo-draw-over-apps';
 import { CounterBubble } from './CounterBubble';
 
 export function BubblePreviewCard() {
@@ -154,12 +160,10 @@ export function BubblePreviewCard() {
       width={220}
       height={220}
       bubbleId="counter"
-      initialState={{ count: 3 }}
       renderBubble={(props) => <CounterBubble {...props} />}
     />
   );
-}`}</code>
-            </pre>
+}`}</CodeBlock>
           </section>
 
           <section id="edge-hide-controls" className="sdkReferenceSubsection">
@@ -167,8 +171,7 @@ export function BubblePreviewCard() {
             <p>
               Pass <code>edgeHideEnabled</code> when the bubble is shown, or change it later for the same named bubble.
             </p>
-            <pre>
-              <code>{`import { setEdgeHideEnabled, showBubble } from 'expo-draw-over-apps';
+            <CodeBlock language="tsx">{`import { setEdgeHideEnabled, showBubble } from 'expo-draw-over-apps';
 
 const bubbleId = 'counter';
 
@@ -176,8 +179,41 @@ await showBubble(bubbleId, { edgeHideEnabled: true });
 
 function toggleEdgeHide(nextEnabled: boolean) {
   setEdgeHideEnabled(nextEnabled, bubbleId);
-}`}</code>
-            </pre>
+}`}</CodeBlock>
+          </section>
+
+          <section id="overlay-shared-values" className="sdkReferenceSubsection">
+            <Heading as="h3">Use overlay shared values</Heading>
+            <p>
+              Store small numeric values in native state when app controls and overlay controls both need to update the same value. The example app uses this path for counters, timers, and the shared resize-window step.
+            </p>
+            <CodeBlock language="tsx">{`import { Pressable, Text } from 'react-native';
+import {
+  refreshAllOverlaySharedValueStates,
+  setOverlaySharedValue,
+  useOverlaySharedValueState,
+} from 'expo-draw-over-apps';
+
+const valueKey = 'window-container-counter';
+
+export function ResizeControls() {
+  const state = useOverlaySharedValueState(valueKey);
+  const isLarge = state.value >= 1;
+
+  function toggleSize() {
+    setOverlaySharedValue(valueKey, isLarge ? 0 : 1, 'app');
+  }
+
+  return (
+    <Pressable onPress={toggleSize}>
+      <Text>{isLarge ? 'Use small window' : 'Use big window'}</Text>
+    </Pressable>
+  );
+}
+
+function refreshAfterForeground() {
+  refreshAllOverlaySharedValueStates();
+}`}</CodeBlock>
           </section>
 
           <section id="react-native-window-container" className="sdkReferenceSubsection">
@@ -185,30 +221,40 @@ function toggleEdgeHide(nextEnabled: boolean) {
             <p>
               Wrap React Native renderer content when the bubble size or corner radius changes. Numeric <code>width</code>, <code>height</code>, and <code>borderRadius</code> values animate with Reanimated.
             </p>
-            <pre>
-              <code>{`import { Text } from 'react-native';
+            <CodeBlock language="tsx">{`import { Pressable, Text } from 'react-native';
 import {
   ReactNativeWindowContainer,
+  setOverlaySharedValue,
+  useOverlaySharedValueState,
   type BubbleRendererProps,
 } from 'expo-draw-over-apps';
 
-export function ResizeBubble({ state }: BubbleRendererProps) {
-  const expanded = state.count > 0;
+const resizeKey = 'window-container-counter';
+
+export function ResizeBubble({ close }: BubbleRendererProps) {
+  const sharedStep = useOverlaySharedValueState(resizeKey);
+  const expanded = sharedStep.value >= 1;
+
+  function toggleSize() {
+    setOverlaySharedValue(resizeKey, expanded ? 0 : 1, 'bubble');
+  }
 
   return (
     <ReactNativeWindowContainer
       width={expanded ? 240 : 160}
       height={expanded ? 220 : 140}
       borderRadius={expanded ? 36 : 24}
-      backgroundColor="#111827"
     >
-      <Text style={{ color: 'white', fontWeight: '800' }}>
-        Count: {state.count}
-      </Text>
+      <Text style={{ color: 'white', fontWeight: '800' }}>Custom window</Text>
+      <Pressable onPress={toggleSize}>
+        <Text style={{ color: 'white' }}>Resize</Text>
+      </Pressable>
+      <Pressable onPress={close}>
+        <Text style={{ color: 'white' }}>Close</Text>
+      </Pressable>
     </ReactNativeWindowContainer>
   );
-}`}</code>
-            </pre>
+}`}</CodeBlock>
           </section>
 
           <section id="native-window-container" className="sdkReferenceSubsection">
@@ -216,31 +262,42 @@ export function ResizeBubble({ state }: BubbleRendererProps) {
             <p>
               Use the native container when the app has <code>@expo/ui</code> installed and you want the Android Host/Surface backdrop. It still renders React Native children inside the window and falls back to the React Native container when Expo UI is unavailable.
             </p>
-            <pre>
-              <code>{`import { Text } from 'react-native';
+            <CodeBlock language="tsx">{`import { Pressable, Text } from 'react-native';
 import {
   NativeWindowContainer,
+  setOverlaySharedValue,
+  useOverlaySharedValueState,
   type BubbleRendererProps,
 } from 'expo-draw-over-apps';
 
-export function NativeSurfaceBubble({ state }: BubbleRendererProps) {
-  const expanded = state.count > 0;
+const resizeKey = 'window-container-counter';
+
+export function NativeSurfaceBubble({ close }: BubbleRendererProps) {
+  const sharedStep = useOverlaySharedValueState(resizeKey);
+  const expanded = sharedStep.value >= 1;
+
+  function toggleSize() {
+    setOverlaySharedValue(resizeKey, expanded ? 0 : 1, 'bubble');
+  }
 
   return (
     <NativeWindowContainer
       width={expanded ? 260 : 172}
       height={expanded ? 230 : 150}
       borderRadius={expanded ? 40 : 26}
-      surfaceColor="#0f172a"
-      contentColor="#ffffff"
     >
       <Text style={{ color: 'white', fontWeight: '800' }}>
         Native surface
       </Text>
+      <Pressable onPress={toggleSize}>
+        <Text style={{ color: 'white' }}>Resize</Text>
+      </Pressable>
+      <Pressable onPress={close}>
+        <Text style={{ color: 'white' }}>Close</Text>
+      </Pressable>
     </NativeWindowContainer>
   );
-}`}</code>
-            </pre>
+}`}</CodeBlock>
           </section>
         </section>
       ) : null}
@@ -249,7 +306,7 @@ export function NativeSurfaceBubble({ state }: BubbleRendererProps) {
 }
 
 function Fixtures({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56-beta';
+  const isSdk56 = versionKey === '56';
 
   return (
     <>
@@ -260,13 +317,13 @@ function Fixtures({ versionKey }: { versionKey: VersionKey }) {
       <section id="available-fixtures" className="sdkReferenceSection">
         <Heading as="h2">Available fixtures</Heading>
         <ul>
-          <li>React Native Counter: shared counter state, open-app action, hide action, and custom React Native UI.</li>
+          <li>React Native Counter: example-owned counter state, open-app action, close action, and custom React Native UI.</li>
           <li>Jetpack Compose Counter: packaged Compose-flavored renderer powered by <code>@expo/ui</code>.</li>
           {isSdk56 ? (
             <>
-              <li>Countdown Timer: timer state and renderer updates inside a bubble.</li>
-              <li>React Native Resize Bubble: <code>ReactNativeWindowContainer</code> resize behavior.</li>
-              <li>Native Expo UI Resize Bubble: <code>NativeWindowContainer</code> with the Expo UI native backdrop path.</li>
+              <li>Countdown Timer: timer state backed by the example shared-value helper.</li>
+              <li>React Native Resize Bubble: <code>ReactNativeWindowContainer</code> resize behavior driven by the shared <code>window-container-counter</code> value.</li>
+              <li>Native Expo UI Resize Bubble: <code>NativeWindowContainer</code> with the Expo UI native backdrop path and the same shared resize value.</li>
             </>
           ) : null}
         </ul>
@@ -293,8 +350,7 @@ function NativeWind({ versionKey }: { versionKey: VersionKey }) {
 
       <section id="renderer" className="sdkReferenceSection">
         <Heading as="h2">Renderer</Heading>
-        <pre>
-          <code>{`function CounterBubble() {
+        <CodeBlock language="tsx">{`function CounterBubble() {
   return (
     <View className="rounded-2xl bg-zinc-950 px-4 py-3">
       <Text className="text-sm font-semibold text-white">Counter</Text>
@@ -302,15 +358,14 @@ function NativeWind({ versionKey }: { versionKey: VersionKey }) {
   );
 }
 
-setBubbleRenderer(CounterBubble);`}</code>
-        </pre>
+setBubbleRenderer(CounterBubble);`}</CodeBlock>
       </section>
     </>
   );
 }
 
 function PublicApi({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56-beta';
+  const isSdk56 = versionKey === '56';
 
   return (
     <>
@@ -322,19 +377,21 @@ function PublicApi({ versionKey }: { versionKey: VersionKey }) {
         <Heading as="h2">Core API</Heading>
         <ul>
           <li><code>canDrawOverlays()</code> and <code>requestPermission()</code></li>
-          <li><code>showBubble()</code>, <code>hideBubble()</code>, and <code>isBubbleVisible()</code></li>
-          <li><code>incrementBubbleCount()</code>, <code>decrementBubbleCount()</code>, and <code>setBubbleCount()</code></li>
+          <li><code>showBubble()</code>, <code>closeBubble()</code>, and <code>isBubbleVisible()</code></li>
           <li><code>setBubbleRenderer()</code>, <code>setBubbleRendererForBubble()</code>, and <code>setComposeBubbleRenderer()</code></li>
           <li><code>useBubbleState()</code> and <code>subscribeToBubbleState()</code></li>
         </ul>
       </section>
 
       {isSdk56 ? (
-        <section id="sdk-56-beta-api" className="sdkReferenceSection">
-          <Heading as="h2">SDK 56 beta API</Heading>
+        <section id="sdk-56-api" className="sdkReferenceSection">
+          <Heading as="h2">SDK 56 API</Heading>
           <ul>
             <li><code>FloatingWindowPreview</code></li>
             <li><code>setEdgeHideEnabled()</code></li>
+            <li><code>setOverlaySharedValue()</code>, <code>useOverlaySharedValueState()</code>, and <code>useAllOverlaySharedValueStates()</code></li>
+            <li><code>getOverlaySharedValueState()</code>, <code>refreshOverlaySharedValueState()</code>, and <code>refreshAllOverlaySharedValueStates()</code></li>
+            <li><code>normalizeOverlaySharedValueKey()</code>, <code>DEFAULT_OVERLAY_SHARED_VALUE_KEY</code>, and <code>MAX_OVERLAY_SHARED_VALUE_KEY_LENGTH</code></li>
             <li><code>ReactNativeWindowContainer</code></li>
             <li><code>NativeWindowContainer</code></li>
           </ul>
@@ -353,17 +410,17 @@ function Demo({ versionKey }: { versionKey: VersionKey }) {
 
       <section id="run-demo" className="sdkReferenceSection">
         <Heading as="h2">Run the demo</Heading>
-        <pre>
-          <code>cd example{'\n'}npm run android</code>
-        </pre>
+        <CodeBlock language="bash">{`cd example
+npm run android`}</CodeBlock>
       </section>
 
       <section id="demo-controls" className="sdkReferenceSection">
         <Heading as="h2">Demo controls</Heading>
         <ul>
           <li>Check and request overlay permission.</li>
-          <li>Show, hide, and open the app from a bubble.</li>
+          <li>Show, close, and open the app from a bubble.</li>
           <li>Switch between the fixtures available to the selected SDK track.</li>
+          {versionKey === '56' ? <li>Update example counters and resize steps through native-backed overlay shared values.</li> : null}
         </ul>
       </section>
     </>
@@ -371,7 +428,7 @@ function Demo({ versionKey }: { versionKey: VersionKey }) {
 }
 
 function Limitations({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56-beta';
+  const isSdk56 = versionKey === '56';
 
   return (
     <>
@@ -386,7 +443,7 @@ function Limitations({ versionKey }: { versionKey: VersionKey }) {
           <li>Expo Go is not supported.</li>
           <li>The overlay permission screen is controlled by Android.</li>
           <li>The floating bubble is hosted by a native Android service.</li>
-          {isSdk56 ? <li>The packaged Compose-flavored renderer currently uses the React Native fallback path in live overlay builds.</li> : null}
+          {isSdk56 ? <li>Overlay shared values are numeric. Use your app store for objects, sensitive data, and larger renderer state.</li> : null}
         </ul>
       </section>
     </>
@@ -436,19 +493,20 @@ function getSectionLinks(pageKey: Exclude<VersionedPageKey, 'reference'>, versio
     limitations: [{ href: '#platform', label: 'Platform' }],
   };
 
-  if (pageKey === 'tutorial' && versionKey === '56-beta') {
+  if (pageKey === 'tutorial' && versionKey === '56') {
     return [
       ...common.tutorial,
-      { href: '#sdk-56-beta-additions', label: 'SDK 56 beta additions' },
+      { href: '#sdk-56-additions', label: 'SDK 56 additions' },
       { href: '#floating-window-preview', label: 'FloatingWindowPreview' },
       { href: '#edge-hide-controls', label: 'Edge hide controls' },
+      { href: '#overlay-shared-values', label: 'Overlay shared values' },
       { href: '#react-native-window-container', label: 'ReactNativeWindowContainer' },
       { href: '#native-window-container', label: 'NativeWindowContainer' },
     ];
   }
 
-  if (pageKey === 'public-api' && versionKey === '56-beta') {
-    return [...common['public-api'], { href: '#sdk-56-beta-api', label: 'SDK 56 beta API' }];
+  if (pageKey === 'public-api' && versionKey === '56') {
+    return [...common['public-api'], { href: '#sdk-56-api', label: 'SDK 56 API' }];
   }
 
   return common[pageKey];
