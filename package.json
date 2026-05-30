@@ -40,7 +40,7 @@
   },
   "author": "Anda Hanise <haniseanda@gmail.com> (https://github.com/budzHors7)",
   "license": "MIT",
-  "homepage": "https://expo-draw-over-apps.vercel.app/",
+  "homepage": "https://budzhors7.github.io/expo-draw-over-apps/",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.15",
