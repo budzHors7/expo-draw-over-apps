@@ -1,6 +1,6 @@
 {
   "name": "expo-draw-over-apps",
-  "version": "56.0.5",
+  "version": "56.0.6",
   "description": "Expo module for Android overlay permissions and floating React Native or Jetpack Compose bubbles.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
