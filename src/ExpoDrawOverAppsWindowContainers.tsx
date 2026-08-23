@@ -228,7 +228,7 @@ function getNativeWindProps(className: string | undefined): NativeWindProps {
 }
 
 /**
- * SDK 56 React Native floating-window container.
+ * SDK 56+ React Native floating-window container.
  *
  * Use this inside a bubble renderer to get smooth default resize/radius
  * transitions while keeping normal React Native styles and NativeWind classes.
@@ -271,7 +271,7 @@ export function ReactNativeWindowContainer({
 }
 
 /**
- * SDK 56 native floating-window container with React Native children.
+ * SDK 56+ native floating-window container with React Native children.
  *
  * On Android with `@expo/ui` installed, this renders an Expo UI Host/Surface
  * as the native backdrop and layers React Native children inside the same

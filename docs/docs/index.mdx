@@ -12,9 +12,9 @@ description: Install expo-draw-over-apps and start Android overlay bubbles with 
 
 The package is Android only. It does not run in Expo Go because it includes native Android code.
 
-The versioned docs live under `/versions/latest` and `/versions/v55.0.0`. Use those pages when comparing SDK tracks.
+The versioned docs live under `/versions/latest`, `/versions/v56.0.0`, and `/versions/v55.0.0`. Use those pages when comparing SDK tracks.
 
-SDK 56 is the current stable track. Install `expo-draw-over-apps@56.0.6` for the latest implementation.
+SDK 57 is the current stable track. Install `expo-draw-over-apps@57.0.0` for the latest implementation.
 
 ## Install
 
@@ -22,7 +22,7 @@ SDK 56 is the current stable track. Install `expo-draw-over-apps@56.0.6` for the
 npm install expo-draw-over-apps
 ```
 
-For SDK 56, install Reanimated as the window container animation engine:
+For SDK 57, install Reanimated as the window container animation engine:
 
 ```bash
 npx expo install react-native-reanimated react-native-worklets
@@ -119,7 +119,7 @@ export default function App() {
 
 ## Reanimated window containers
 
-SDK 56 adds two window containers for custom bubble renderers:
+SDK 57 includes the two window containers introduced in SDK 56 for custom bubble renderers:
 
 - `ReactNativeWindowContainer` renders a React Native window surface and animates numeric `width`, `height`, and `borderRadius` changes with Reanimated.
 - `NativeWindowContainer` uses an Expo UI native Host/Surface on Android for the clipped backdrop, then layers React Native children inside the same Reanimated window. It falls back to the React Native container when `@expo/ui` is not installed.

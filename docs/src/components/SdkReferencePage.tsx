@@ -30,6 +30,46 @@ type SdkReferencePageProps = {
 };
 
 const versions: Record<VersionKey, SdkVersionContent> = {
+  '57': {
+    key: '57',
+    label: 'SDK 57',
+    status: 'Latest stable docs',
+    bundledVersion: '57.0.0',
+    installCommand: `npm install expo-draw-over-apps@57.0.0
+npx expo install react-native-reanimated react-native-worklets`,
+    description:
+      'SDK 57 keeps the Android overlay API and updates the module package for Expo SDK 57 and React Native 0.86.',
+    seoDescription:
+      'SDK 57 reference for expo-draw-over-apps on Expo SDK 57, React Native 0.86, overlay shared values, window containers, and Android overlay bubbles.',
+    seoKeywords: [
+      'expo-draw-over-apps sdk 57',
+      'expo sdk 57 android overlay',
+      'React Native 0.86 overlay',
+      'FloatingWindowPreview',
+      'ReactNativeWindowContainer',
+      'NativeWindowContainer',
+      'overlay shared values',
+      'react-native-worklets',
+    ],
+    featureGroups: [
+      {
+        title: 'Core overlay API',
+        items: [
+          'Android draw-over-apps permission helpers.',
+          'Floating bubble overlay with visibility state.',
+          'React Native and Jetpack Compose renderer registration.',
+        ],
+      },
+      {
+        title: 'SDK 57 compatibility',
+        items: [
+          'Built for Expo SDK 57 with React Native 0.86.',
+          'Keeps the SDK 56 close helpers, native shared values, and animated window container APIs.',
+          'Uses the SDK 57 Reanimated and Worklets package line for window container animations.',
+        ],
+      },
+    ],
+  },
   '56': {
     key: '56',
     label: 'SDK 56',
@@ -170,7 +210,7 @@ export default function SdkReferencePage({ routeSegment, versionKey }: SdkRefere
 
       <section id="api" className="sdkReferenceSection">
         <Heading as="h2">API surface</Heading>
-        {versionKey === '56' ? (
+        {versionKey !== '55' ? (
           <ul>
             <li>
               <code>canDrawOverlays</code> and <code>requestPermission</code>

@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
-export type VersionKey = '56' | '55';
+export type VersionKey = '57' | '56' | '55';
 export type VersionRouteSegment = 'latest' | 'v55.0.0' | 'v56.0.0';
 export type VersionedPageKey =
   | 'reference'
@@ -40,9 +40,14 @@ type VersionedDocsLayoutProps = {
 };
 
 export const versionSummaries: Record<VersionKey, VersionSummary> = {
+  '57': {
+    label: 'SDK 57',
+    status: 'Latest stable docs',
+    bundledVersion: '57.0.0',
+  },
   '56': {
     label: 'SDK 56',
-    status: 'Latest stable docs',
+    status: 'Package version 56.0.6',
     bundledVersion: '56.0.6',
   },
   '55': {
@@ -104,7 +109,15 @@ function getVersionRoot(versionKey: VersionKey, routeSegment?: VersionRouteSegme
     return `/versions/${routeSegment}`;
   }
 
-  return versionKey === '55' ? '/versions/v55.0.0' : '/versions/latest';
+  if (versionKey === '55') {
+    return '/versions/v55.0.0';
+  }
+
+  if (versionKey === '56') {
+    return '/versions/v56.0.0';
+  }
+
+  return '/versions/latest';
 }
 
 export function getVersionedPageRoute(
@@ -222,9 +235,11 @@ function VersionSelect({
   pageKey: VersionedPageKey;
   selectedVersion: VersionKey;
 }) {
+  const sdk57Route = useBaseUrl(getVersionSelectRoute('57', pageKey));
   const sdk56Route = useBaseUrl(getVersionSelectRoute('56', pageKey));
   const sdk55Route = useBaseUrl(getVersionSelectRoute('55', pageKey));
   const routeByVersion: Record<VersionKey, string> = {
+    '57': sdk57Route,
     '56': sdk56Route,
     '55': sdk55Route,
   };
@@ -238,6 +253,7 @@ function VersionSelect({
           window.location.href = routeByVersion[event.target.value as VersionKey];
         }}
       >
+        <option value="57">SDK 57</option>
         <option value="56">SDK 56</option>
         <option value="55">SDK 55</option>
       </select>
@@ -364,7 +380,7 @@ export function VersionedDocsLayout({
   title,
   versionKey,
 }: VersionedDocsLayoutProps) {
-  const displayedRouteSegment = routeSegment ?? (versionKey === '55' ? 'v55.0.0' : 'latest');
+  const displayedRouteSegment = routeSegment ?? getVersionRoot(versionKey).replace('/versions/', '');
   const version = versionSummaries[versionKey];
   const pageTitle = `${title} | ${version.label}`;
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);

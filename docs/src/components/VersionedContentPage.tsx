@@ -16,6 +16,8 @@ type VersionedContentPageProps = {
 };
 
 const installCommands: Record<VersionKey, string> = {
+  '57': `npm install expo-draw-over-apps@57.0.0
+npx expo install react-native-reanimated react-native-worklets`,
   '56': `npm install expo-draw-over-apps@56.0.6
 npx expo install react-native-reanimated react-native-worklets`,
   '55': 'npm install expo-draw-over-apps@55.0.2',
@@ -77,7 +79,7 @@ function GettingStarted({ versionKey }: { versionKey: VersionKey }) {
       <section id="installation" className="sdkReferenceSection">
         <Heading as="h2">Installation</Heading>
         <CodeBlock language="bash">{installCommands[versionKey]}</CodeBlock>
-        {versionKey === '56' ? (
+        {versionKey !== '55' ? (
           <p>
             Install <code>@expo/ui</code> only when you use <code>NativeWindowContainer</code> with the native Android surface or the packaged Compose-flavored renderer.
           </p>
@@ -108,12 +110,12 @@ function GettingStarted({ versionKey }: { versionKey: VersionKey }) {
 }
 
 function Tutorial({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56';
+  const hasWindowContainerApis = versionKey !== '55';
 
   return (
     <>
       <PageHeader title="Tutorial" versionKey={versionKey}>
-        Follow the Android overlay flow for this SDK track. Shared behavior is shown in both versions. SDK 56 APIs stay on SDK 56 pages.
+        Follow the Android overlay flow for this SDK track. Shared behavior is shown across supported versions, with SDK 56+ APIs on the SDK 56 and SDK 57 pages.
       </PageHeader>
 
       <section id="permission-flow" className="sdkReferenceSection">
@@ -134,9 +136,9 @@ function Tutorial({ versionKey }: { versionKey: VersionKey }) {
         </ul>
       </section>
 
-      {isSdk56 ? (
+      {hasWindowContainerApis ? (
         <section id="sdk-56-additions" className="sdkReferenceSection">
-          <Heading as="h2">SDK 56 additions</Heading>
+          <Heading as="h2">{versionKey === '57' ? 'SDK 56+ APIs in SDK 57' : 'SDK 56 additions'}</Heading>
           <ul>
             <li>FloatingWindowPreview for rendering a bubble fixture inside the app before starting the overlay service.</li>
             <li>Edge hide controls for tucking a bubble against the screen edge.</li>
@@ -306,7 +308,7 @@ export function NativeSurfaceBubble({ close }: BubbleRendererProps) {
 }
 
 function Fixtures({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56';
+  const hasWindowContainerApis = versionKey !== '55';
 
   return (
     <>
@@ -319,7 +321,7 @@ function Fixtures({ versionKey }: { versionKey: VersionKey }) {
         <ul>
           <li>React Native Counter: example-owned counter state, open-app action, close action, and custom React Native UI.</li>
           <li>Jetpack Compose Counter: packaged Compose-flavored renderer powered by <code>@expo/ui</code>.</li>
-          {isSdk56 ? (
+          {hasWindowContainerApis ? (
             <>
               <li>Countdown Timer: timer state backed by the example shared-value helper.</li>
               <li>React Native Resize Bubble: <code>ReactNativeWindowContainer</code> resize behavior driven by the shared <code>window-container-counter</code> value.</li>
@@ -365,7 +367,7 @@ setBubbleRenderer(CounterBubble);`}</CodeBlock>
 }
 
 function PublicApi({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56';
+  const hasWindowContainerApis = versionKey !== '55';
 
   return (
     <>
@@ -383,9 +385,9 @@ function PublicApi({ versionKey }: { versionKey: VersionKey }) {
         </ul>
       </section>
 
-      {isSdk56 ? (
+      {hasWindowContainerApis ? (
         <section id="sdk-56-api" className="sdkReferenceSection">
-          <Heading as="h2">SDK 56 API</Heading>
+          <Heading as="h2">{versionKey === '57' ? 'SDK 56+ API in SDK 57' : 'SDK 56 API'}</Heading>
           <ul>
             <li><code>FloatingWindowPreview</code></li>
             <li><code>setEdgeHideEnabled()</code></li>
@@ -414,7 +416,7 @@ function Demo({ versionKey }: { versionKey: VersionKey }) {
 npm install
 npx expo prebuild -p android
 npx expo run:android`}</CodeBlock>
-        {versionKey === '56' ? (
+        {versionKey !== '55' ? (
           <p>
             The example uses packed local installs and a config plugin that keeps Reanimated and Worklets CMake staging paths short on Windows.
           </p>
@@ -427,7 +429,7 @@ npx expo run:android`}</CodeBlock>
           <li>Check and request overlay permission.</li>
           <li>Show, close, and open the app from a bubble.</li>
           <li>Switch between the fixtures available to the selected SDK track.</li>
-          {versionKey === '56' ? <li>Update example counters and resize steps through native-backed overlay shared values.</li> : null}
+          {versionKey !== '55' ? <li>Update example counters and resize steps through native-backed overlay shared values.</li> : null}
         </ul>
       </section>
     </>
@@ -435,7 +437,7 @@ npx expo run:android`}</CodeBlock>
 }
 
 function Limitations({ versionKey }: { versionKey: VersionKey }) {
-  const isSdk56 = versionKey === '56';
+  const hasWindowContainerApis = versionKey !== '55';
 
   return (
     <>
@@ -450,8 +452,8 @@ function Limitations({ versionKey }: { versionKey: VersionKey }) {
           <li>Expo Go is not supported.</li>
           <li>The overlay permission screen is controlled by Android.</li>
           <li>The floating bubble is hosted by a native Android service.</li>
-          {isSdk56 ? <li>Overlay shared values are numeric. Use your app store for objects, sensitive data, and larger renderer state.</li> : null}
-          {isSdk56 ? <li>Use static, non-sensitive bubble IDs and overlay shared-value keys. Normalization is not a privacy boundary.</li> : null}
+          {hasWindowContainerApis ? <li>Overlay shared values are numeric. Use your app store for objects, sensitive data, and larger renderer state.</li> : null}
+          {hasWindowContainerApis ? <li>Use static, non-sensitive bubble IDs and overlay shared-value keys. Normalization is not a privacy boundary.</li> : null}
         </ul>
       </section>
     </>
@@ -501,10 +503,10 @@ function getSectionLinks(pageKey: Exclude<VersionedPageKey, 'reference'>, versio
     limitations: [{ href: '#platform', label: 'Platform' }],
   };
 
-  if (pageKey === 'tutorial' && versionKey === '56') {
+  if (pageKey === 'tutorial' && versionKey !== '55') {
     return [
       ...common.tutorial,
-      { href: '#sdk-56-additions', label: 'SDK 56 additions' },
+      { href: '#sdk-56-additions', label: versionKey === '57' ? 'SDK 56+ APIs' : 'SDK 56 additions' },
       { href: '#floating-window-preview', label: 'FloatingWindowPreview' },
       { href: '#edge-hide-controls', label: 'Edge hide controls' },
       { href: '#overlay-shared-values', label: 'Overlay shared values' },
@@ -513,8 +515,8 @@ function getSectionLinks(pageKey: Exclude<VersionedPageKey, 'reference'>, versio
     ];
   }
 
-  if (pageKey === 'public-api' && versionKey === '56') {
-    return [...common['public-api'], { href: '#sdk-56-api', label: 'SDK 56 API' }];
+  if (pageKey === 'public-api' && versionKey !== '55') {
+    return [...common['public-api'], { href: '#sdk-56-api', label: versionKey === '57' ? 'SDK 56+ API' : 'SDK 56 API' }];
   }
 
   return common[pageKey];

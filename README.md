@@ -42,7 +42,7 @@ Docusaurus writes the static output to `docs/build`. The repo also includes a Gi
 npm install expo-draw-over-apps
 ```
 
-For SDK 56 window containers, install Reanimated with Expo's installer:
+For SDK 57 window containers, install Reanimated with Expo's installer:
 
 ```bash
 npx expo install react-native-reanimated react-native-worklets
@@ -58,7 +58,8 @@ npx expo install @expo/ui
 
 ## Version tracks
 
-- SDK 56: current stable implementation, published as `56.0.6`. Adds native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
+- SDK 57: current stable implementation, published as `57.0.0`. Supports Expo SDK 57 / React Native 0.86 and carries forward native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
+- SDK 56: latest npm release is `56.0.6`. It adds native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
 - SDK 55: latest npm release is `55.0.2`. It supports Android overlay permission and floating React Native or Jetpack Compose bubbles. Install with `npm install expo-draw-over-apps@55`.
 
 If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:

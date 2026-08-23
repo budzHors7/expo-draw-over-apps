@@ -4,13 +4,13 @@ plugins {
 }
 
 group = 'expo.modules.drawoverapps'
-version = '56.0.6'
+version = '57.0.0'
 
 android {
   namespace = "expo.modules.drawoverapps"
   defaultConfig {
     versionCode 1
-    versionName "56.0.6"
+    versionName "57.0.0"
   }
   lint {
     abortOnError = false
