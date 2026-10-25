@@ -3,7 +3,7 @@
     "name": "expo-draw-over-apps-example",
     "slug": "expo-draw-over-apps-example",
     "scheme": "drawoverapps",
-    "version": "57.0.0",
+    "version": "58.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
@@ -22,9 +22,8 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 36,
+            "compileSdkVersion": 37,
             "targetSdkVersion": 36,
-            "buildToolsVersion": "36.0.0",
             "usePrecompiledHeaders": true
           }
         }
