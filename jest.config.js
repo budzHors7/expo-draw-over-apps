@@ -8,7 +8,7 @@ module.exports = {
         babelConfig: false,
         tsconfig: {
           ignoreDeprecations: '6.0',
-          jsx: 'react',
+          jsx: 'react-jsx',
           module: 'commonjs',
           rootDir: '.',
         },
@@ -16,6 +16,7 @@ module.exports = {
     ],
   },
   moduleNameMapper: {
+    '^@expo/ui/jetpack-compose$': '<rootDir>/src/__mocks__/@expo-ui-jetpack-compose.js',
     '^react-native$': '<rootDir>/src/__mocks__/react-native.js',
     '^react-native-reanimated$': '<rootDir>/src/__mocks__/react-native-reanimated.js',
   },

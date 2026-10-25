@@ -12,8 +12,13 @@ module.exports = {
   Pressable: hostComponent('Pressable'),
   StyleSheet: {
     create: (styles) => styles,
+    flatten: (style) => {
+      if (!Array.isArray(style)) return style ?? {};
+      return Object.assign({}, ...style.map(module.exports.StyleSheet.flatten));
+    },
   },
   Text: hostComponent('Text'),
+  useColorScheme: () => 'light',
   View: hostComponent('View'),
   __esModule: true,
   default: React,

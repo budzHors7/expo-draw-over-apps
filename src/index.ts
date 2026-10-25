@@ -4,14 +4,7 @@ import {
   createFloatingWindowPreviewState,
   getNextFloatingWindowPreviewState,
 } from './FloatingWindowPreview';
-import {
-  ExpoDrawOverAppsComposeBubbleRenderer,
-  setComposeBubbleRenderer,
-} from './ExpoDrawOverAppsComposeBubbleRenderer';
-import {
-  NativeWindowContainer,
-  ReactNativeWindowContainer,
-} from './ExpoDrawOverAppsWindowContainers';
+import { NativeWindow, ReactNativeWindow } from './ExpoDrawOverAppsWindows';
 import {
   getAllBubbleStates,
   refreshBubbleState,
@@ -158,14 +151,12 @@ export {
   getAllBubbleStates,
   getAllOverlaySharedValueStates,
   getOverlaySharedValueState,
-  ExpoDrawOverAppsComposeBubbleRenderer,
-  NativeWindowContainer,
-  ReactNativeWindowContainer,
+  NativeWindow,
+  ReactNativeWindow,
   refreshAllOverlaySharedValueStates,
   refreshOverlaySharedValueState,
   refreshBubbleState,
   setOverlaySharedValue,
-  setComposeBubbleRenderer,
   setBubbleRenderer,
   setBubbleRendererForBubble,
   subscribeToOverlaySharedValueState,
@@ -179,10 +170,10 @@ export {
 export type { FloatingWindowPreviewProps, FloatingWindowPreviewRenderProps } from './FloatingWindowPreview';
 export type { BubbleRenderer, BubbleRendererProps } from './bubbleRenderer';
 export type {
-  NativeWindowContainerProps,
+  NativeWindowProps,
+  ReactNativeWindowProps,
   WindowAnimationConfig,
-  WindowContainerProps,
-} from './ExpoDrawOverAppsWindowContainers';
+} from './ExpoDrawOverAppsWindows';
 export type { OverlaySharedValueState } from './overlaySharedValue';
 export {
   DEFAULT_OVERLAY_SHARED_VALUE_KEY,
