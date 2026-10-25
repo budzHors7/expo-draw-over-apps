@@ -6,216 +6,246 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import expo.modules.kotlin.Promise
-import expo.modules.kotlin.modules.Module
-import expo.modules.kotlin.modules.ModuleDefinition
+import io.github.expo.modules.v2.Event
+import io.github.expo.modules.v2.ExpoModule
+import io.github.expo.modules.v2.JS
+import io.github.expo.modules.v2.Module
+import io.github.expo.modules.v2.Record
+import io.github.expo.modules.v2.react.androidContext
+import io.github.expo.modules.v2.react.currentActivity
 import java.lang.ref.WeakReference
 import java.util.LinkedHashMap
 
+@Record
+data class BubbleStatePayload(
+  val bubbleId: String,
+  val isVisible: Boolean,
+  val lastUpdatedAt: Long,
+  val lastChangeSource: String
+)
+
+@Record
+data class BubbleStatesPayload(val states: List<BubbleStatePayload>)
+
+@Record
+data class OverlaySharedValuePayload(
+  val valueKey: String,
+  val value: Double,
+  val lastUpdatedAt: Long,
+  val lastChangeSource: String
+)
+
+@Record
+data class OverlaySharedValuesPayload(val values: List<OverlaySharedValuePayload>)
+
+@ExpoModule("ExpoDrawOverApps")
 class ExpoDrawOverAppsModule : Module() {
-  private val context: Context
-    get() = requireNotNull(appContext.reactContext) { "React context is not available" }
+  private val androidAppContext: Context
+    get() = androidContext
 
-  override fun definition() = ModuleDefinition {
-    Name("ExpoDrawOverApps")
-    Events(
-      EVENT_BUBBLE_STATE_CHANGED,
-      EVENT_BUBBLE_STATES_CHANGED,
-      EVENT_OVERLAY_SHARED_VALUE_CHANGED,
-      EVENT_OVERLAY_SHARED_VALUES_CHANGED
+  @Event(name = EVENT_BUBBLE_STATE_CHANGED)
+  private val onBubbleStateChanged = event<BubbleStatePayload>()
+
+  @Event(name = EVENT_BUBBLE_STATES_CHANGED)
+  private val onBubbleStatesChanged = event<BubbleStatesPayload>()
+
+  @Event(name = EVENT_OVERLAY_SHARED_VALUE_CHANGED)
+  private val onOverlaySharedValueChanged = event<OverlaySharedValuePayload>()
+
+  @Event(name = EVENT_OVERLAY_SHARED_VALUES_CHANGED)
+  private val onOverlaySharedValuesChanged = event<OverlaySharedValuesPayload>()
+
+  init {
+    moduleReference = WeakReference(this)
+  }
+
+  override fun onDestroy() {
+    if (moduleReference.get() === this) {
+      moduleReference.clear()
+    }
+  }
+
+  @JS
+  fun canDrawOverlays(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      Settings.canDrawOverlays(androidAppContext)
+    } else {
+      true
+    }
+  }
+
+  @JS
+  suspend fun requestPermission(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(androidAppContext)) {
+      return true
+    }
+
+    val activity = requireNotNull(currentActivity) { "No current activity" }
+    val intent = Intent(
+      Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+      Uri.parse("package:${activity.packageName}")
     )
+    activity.startActivity(intent)
+    return false
+  }
 
-    OnCreate {
-      moduleReference = WeakReference(this@ExpoDrawOverAppsModule)
+  @JS
+  fun getBubbleState(): BubbleStatePayload = getBubbleStatePayload(DEFAULT_BUBBLE_ID)
+
+  @JS
+  fun getBubbleStateById(bubbleId: String): BubbleStatePayload = getBubbleStatePayload(bubbleId)
+
+  @JS
+  fun getAllBubbleStates(): List<BubbleStatePayload> = getAllBubbleStatePayloads()
+
+  @JS
+  fun getOverlaySharedValue(valueKey: String): OverlaySharedValuePayload =
+    getOverlaySharedValuePayload(valueKey)
+
+  @JS
+  fun getAllOverlaySharedValues(): List<OverlaySharedValuePayload> =
+    getAllOverlaySharedValuePayloads()
+
+  @JS
+  fun setOverlaySharedValue(valueKey: String, value: Double, source: String?): Double =
+    setOverlaySharedValueInternal(valueKey, value, source)
+
+  @JS
+  suspend fun showBubble(): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(androidAppContext)) {
+      setBubbleVisibilityInternal(false, DEFAULT_BUBBLE_ID, SOURCE_APP)
+      return false
     }
 
-    OnDestroy {
-      if (moduleReference.get() === this@ExpoDrawOverAppsModule) {
-        moduleReference.clear()
-      }
+    val serviceIntent = Intent(androidAppContext, ExpoDrawOverAppsOverlayService::class.java).apply {
+      action = ExpoDrawOverAppsOverlayService.ACTION_SHOW_BUBBLE
+    }
+    androidAppContext.startService(serviceIntent)
+    return true
+  }
+
+  @JS
+  suspend fun showBubbleInstance(bubbleId: String): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(androidAppContext)) {
+      setBubbleVisibilityInternal(false, bubbleId, SOURCE_APP)
+      return false
     }
 
-    Function("canDrawOverlays") {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        Settings.canDrawOverlays(context)
-      } else {
-        true
-      }
+    val serviceIntent = Intent(androidAppContext, ExpoDrawOverAppsOverlayService::class.java).apply {
+      action = ExpoDrawOverAppsOverlayService.ACTION_SHOW_BUBBLE
+      putExtra(ExpoDrawOverAppsOverlayService.EXTRA_BUBBLE_ID, bubbleId)
     }
+    androidAppContext.startService(serviceIntent)
+    return true
+  }
 
-    AsyncFunction("requestPermission") { promise: Promise ->
-      val activity = appContext.currentActivity ?: run {
-        promise.reject("ERR_NO_ACTIVITY", "No current activity", null)
-        return@AsyncFunction
-      }
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        if (Settings.canDrawOverlays(context)) {
-          promise.resolve(true)
+  @JS
+  fun setEdgeHideEnabled(enabled: Boolean): Boolean {
+    ExpoDrawOverAppsOverlayService.setEdgeHideEnabled(DEFAULT_BUBBLE_ID, enabled)
+    return true
+  }
+
+  @JS
+  fun setEdgeHideEnabledForBubble(bubbleId: String, enabled: Boolean): Boolean {
+    ExpoDrawOverAppsOverlayService.setEdgeHideEnabled(bubbleId, enabled)
+    return true
+  }
+
+  @JS
+  fun hideBubble(): Boolean {
+    startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_BUBBLE)
+    setBubbleVisibilityInternal(false, DEFAULT_BUBBLE_ID, SOURCE_APP)
+    return true
+  }
+
+  @JS
+  fun hideBubbleInstance(bubbleId: String): Boolean {
+    startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_BUBBLE, bubbleId)
+    setBubbleVisibilityInternal(false, bubbleId, SOURCE_APP)
+    return true
+  }
+
+  @JS
+  fun hideAllBubbles(): Boolean {
+    startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_ALL_BUBBLES)
+    hideAllBubblesInternal(SOURCE_APP)
+    return true
+  }
+
+  @JS
+  fun closeBubble(): Boolean = hideBubble()
+
+  @JS
+  fun closeBubbleInstance(bubbleId: String): Boolean = hideBubbleInstance(bubbleId)
+
+  @JS
+  fun closeAllBubbles(): Boolean = hideAllBubbles()
+
+  @JS
+  fun isBubbleVisible(): Boolean = getBubbleStatePayload(DEFAULT_BUBBLE_ID).isVisible
+
+  @JS
+  fun isBubbleVisibleForBubble(bubbleId: String): Boolean = getBubbleStatePayload(bubbleId).isVisible
+
+  @JS
+  suspend fun openApp(): Boolean {
+    val activityManager = androidAppContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+    val didMoveExistingTaskToFront =
+      runCatching {
+        val appTask = activityManager?.appTasks?.firstOrNull()
+        if (appTask != null) {
+          appTask.moveToFront()
+          true
         } else {
-          val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            Uri.parse("package:${activity.packageName}")
-          )
-          activity.startActivity(intent)
-          promise.resolve(false)
+          false
         }
-      } else {
-        promise.resolve(true)
-      }
+      }.getOrDefault(false)
+
+    if (didMoveExistingTaskToFront) {
+      return true
     }
 
-    Function("getBubbleState") {
-      getBubbleStatePayload(DEFAULT_BUBBLE_ID)
-    }
-
-    Function("getBubbleStateById") { bubbleId: String ->
-      getBubbleStatePayload(bubbleId)
-    }
-
-    Function("getAllBubbleStates") {
-      getAllBubbleStatePayloads()
-    }
-
-    Function("getOverlaySharedValue") { valueKey: String ->
-      getOverlaySharedValuePayload(valueKey)
-    }
-
-    Function("getAllOverlaySharedValues") {
-      getAllOverlaySharedValuePayloads()
-    }
-
-    Function("setOverlaySharedValue") { valueKey: String, value: Double, source: String? ->
-      setOverlaySharedValueInternal(valueKey, value, source)
-    }
-
-    AsyncFunction("showBubble") { promise: Promise ->
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-        setBubbleVisibilityInternal(false, DEFAULT_BUBBLE_ID, SOURCE_APP)
-        promise.resolve(false)
-        return@AsyncFunction
-      }
-
-      val serviceIntent = Intent(context, ExpoDrawOverAppsOverlayService::class.java).apply {
-        action = ExpoDrawOverAppsOverlayService.ACTION_SHOW_BUBBLE
-      }
-      context.startService(serviceIntent)
-      promise.resolve(true)
-    }
-
-    AsyncFunction("showBubbleInstance") { bubbleId: String, promise: Promise ->
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-        setBubbleVisibilityInternal(false, bubbleId, SOURCE_APP)
-        promise.resolve(false)
-        return@AsyncFunction
-      }
-
-      val serviceIntent = Intent(context, ExpoDrawOverAppsOverlayService::class.java).apply {
-        action = ExpoDrawOverAppsOverlayService.ACTION_SHOW_BUBBLE
-        putExtra(ExpoDrawOverAppsOverlayService.EXTRA_BUBBLE_ID, bubbleId)
-      }
-      context.startService(serviceIntent)
-      promise.resolve(true)
-    }
-
-    Function("setEdgeHideEnabled") { enabled: Boolean ->
-      ExpoDrawOverAppsOverlayService.setEdgeHideEnabled(DEFAULT_BUBBLE_ID, enabled)
-      true
-    }
-
-    Function("setEdgeHideEnabledForBubble") { bubbleId: String, enabled: Boolean ->
-      ExpoDrawOverAppsOverlayService.setEdgeHideEnabled(bubbleId, enabled)
-      true
-    }
-
-    Function("hideBubble") {
-      startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_BUBBLE)
-      setBubbleVisibilityInternal(false, DEFAULT_BUBBLE_ID, SOURCE_APP)
-      true
-    }
-
-    Function("hideBubbleInstance") { bubbleId: String ->
-      startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_BUBBLE, bubbleId)
-      setBubbleVisibilityInternal(false, bubbleId, SOURCE_APP)
-      true
-    }
-
-    Function("hideAllBubbles") {
-      startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_ALL_BUBBLES)
-      hideAllBubblesInternal(SOURCE_APP)
-      true
-    }
-
-    Function("closeBubble") {
-      startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_BUBBLE)
-      setBubbleVisibilityInternal(false, DEFAULT_BUBBLE_ID, SOURCE_APP)
-      true
-    }
-
-    Function("closeBubbleInstance") { bubbleId: String ->
-      startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_BUBBLE, bubbleId)
-      setBubbleVisibilityInternal(false, bubbleId, SOURCE_APP)
-      true
-    }
-
-    Function("closeAllBubbles") {
-      startOverlayAction(ExpoDrawOverAppsOverlayService.ACTION_CLOSE_ALL_BUBBLES)
-      hideAllBubblesInternal(SOURCE_APP)
-      true
-    }
-
-    Function("isBubbleVisible") {
-      getBubbleStatePayload(DEFAULT_BUBBLE_ID)["isVisible"] as Boolean
-    }
-
-    Function("isBubbleVisibleForBubble") { bubbleId: String ->
-      getBubbleStatePayload(bubbleId)["isVisible"] as Boolean
-    }
-
-    AsyncFunction("openApp") { promise: Promise ->
-      val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-      val didMoveExistingTaskToFront =
-        runCatching {
-          val appTask = activityManager?.appTasks?.firstOrNull()
-          if (appTask != null) {
-            appTask.moveToFront()
-            true
-          } else {
-            false
-          }
-        }.getOrDefault(false)
-
-      if (didMoveExistingTaskToFront) {
-        promise.resolve(true)
-        return@AsyncFunction
-      }
-
-      val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+    val launchIntent = androidAppContext.packageManager
+      .getLaunchIntentForPackage(androidAppContext.packageName)
+      ?.apply {
         addFlags(
           Intent.FLAG_ACTIVITY_NEW_TASK or
             Intent.FLAG_ACTIVITY_SINGLE_TOP or
             Intent.FLAG_ACTIVITY_CLEAR_TOP or
             Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
         )
-      }
+      } ?: return false
 
-      if (launchIntent == null) {
-        promise.resolve(false)
-        return@AsyncFunction
-      }
+    androidAppContext.startActivity(launchIntent)
+    return true
+  }
 
-      context.startActivity(launchIntent)
-      promise.resolve(true)
+  private fun emitBubbleStateChanged(
+    bubbleState: BubbleStatePayload,
+    bubbleStates: BubbleStatesPayload
+  ) {
+    if (bubbleState.bubbleId == DEFAULT_BUBBLE_ID) {
+      onBubbleStateChanged(bubbleState)
     }
+    onBubbleStatesChanged(bubbleStates)
+  }
+
+  private fun emitOverlaySharedValueChanged(
+    value: OverlaySharedValuePayload,
+    values: OverlaySharedValuesPayload
+  ) {
+    onOverlaySharedValueChanged(value)
+    onOverlaySharedValuesChanged(values)
   }
 
   private fun startOverlayAction(actionName: String, bubbleId: String? = null) {
-    val serviceIntent = Intent(context, ExpoDrawOverAppsOverlayService::class.java).apply {
+    val serviceIntent = Intent(androidAppContext, ExpoDrawOverAppsOverlayService::class.java).apply {
       action = actionName
       if (bubbleId != null) {
         putExtra(ExpoDrawOverAppsOverlayService.EXTRA_BUBBLE_ID, bubbleId)
       }
     }
-    context.startService(serviceIntent)
+    androidAppContext.startService(serviceIntent)
   }
 
   companion object {
@@ -248,20 +278,20 @@ class ExpoDrawOverAppsModule : Module() {
     private val overlaySharedValues = LinkedHashMap<String, OverlaySharedValueRecord>()
 
     @Synchronized
-    internal fun getBubbleStatePayload(bubbleId: String = DEFAULT_BUBBLE_ID): Map<String, Any> {
+    internal fun getBubbleStatePayload(bubbleId: String = DEFAULT_BUBBLE_ID): BubbleStatePayload {
       val normalizedBubbleId = normalizeBubbleId(bubbleId)
       val bubbleState = bubbleStates[normalizedBubbleId] ?: BubbleStateRecord()
 
-      return mapOf(
-        "bubbleId" to normalizedBubbleId,
-        "isVisible" to bubbleState.isVisible,
-        "lastUpdatedAt" to bubbleState.lastUpdatedAt,
-        "lastChangeSource" to bubbleState.lastChangeSource
+      return BubbleStatePayload(
+        bubbleId = normalizedBubbleId,
+        isVisible = bubbleState.isVisible,
+        lastUpdatedAt = bubbleState.lastUpdatedAt,
+        lastChangeSource = bubbleState.lastChangeSource
       )
     }
 
     @Synchronized
-    internal fun getAllBubbleStatePayloads(): List<Map<String, Any>> {
+    internal fun getAllBubbleStatePayloads(): List<BubbleStatePayload> {
       val bubbleIds = LinkedHashSet<String>()
       bubbleIds.add(DEFAULT_BUBBLE_ID)
       bubbleIds.addAll(bubbleStates.keys)
@@ -269,20 +299,22 @@ class ExpoDrawOverAppsModule : Module() {
     }
 
     @Synchronized
-    internal fun getOverlaySharedValuePayload(valueKey: String = DEFAULT_SHARED_VALUE_KEY): Map<String, Any> {
+    internal fun getOverlaySharedValuePayload(
+      valueKey: String = DEFAULT_SHARED_VALUE_KEY
+    ): OverlaySharedValuePayload {
       val normalizedValueKey = normalizeSharedValueKey(valueKey)
       val sharedValue = overlaySharedValues.getOrPut(normalizedValueKey) { OverlaySharedValueRecord() }
 
-      return mapOf(
-        "valueKey" to normalizedValueKey,
-        "value" to sharedValue.value,
-        "lastUpdatedAt" to sharedValue.lastUpdatedAt,
-        "lastChangeSource" to sharedValue.lastChangeSource
+      return OverlaySharedValuePayload(
+        valueKey = normalizedValueKey,
+        value = sharedValue.value,
+        lastUpdatedAt = sharedValue.lastUpdatedAt,
+        lastChangeSource = sharedValue.lastChangeSource
       )
     }
 
     @Synchronized
-    internal fun getAllOverlaySharedValuePayloads(): List<Map<String, Any>> {
+    internal fun getAllOverlaySharedValuePayloads(): List<OverlaySharedValuePayload> {
       val valueKeys = LinkedHashSet<String>()
       valueKeys.add(DEFAULT_SHARED_VALUE_KEY)
       valueKeys.addAll(overlaySharedValues.keys)
@@ -334,13 +366,8 @@ class ExpoDrawOverAppsModule : Module() {
     private fun emitBubbleStateChanged(bubbleId: String) {
       val normalizedBubbleId = normalizeBubbleId(bubbleId)
       val bubbleStatePayload = getBubbleStatePayload(normalizedBubbleId)
-      val bubbleStatesPayload = mapOf("states" to getAllBubbleStatePayloads())
-      moduleReference.get()?.let { module ->
-        if (normalizedBubbleId == DEFAULT_BUBBLE_ID) {
-          module.sendEvent(EVENT_BUBBLE_STATE_CHANGED, bubbleStatePayload)
-        }
-        module.sendEvent(EVENT_BUBBLE_STATES_CHANGED, bubbleStatesPayload)
-      }
+      val bubbleStatesPayload = BubbleStatesPayload(getAllBubbleStatePayloads())
+      moduleReference.get()?.emitBubbleStateChanged(bubbleStatePayload, bubbleStatesPayload)
       ExpoDrawOverAppsOverlayService.requestOverlayRedraw(normalizedBubbleId)
     }
 
@@ -348,11 +375,8 @@ class ExpoDrawOverAppsModule : Module() {
     private fun emitOverlaySharedValueChanged(valueKey: String) {
       val normalizedValueKey = normalizeSharedValueKey(valueKey)
       val valuePayload = getOverlaySharedValuePayload(normalizedValueKey)
-      val valuesPayload = mapOf("values" to getAllOverlaySharedValuePayloads())
-      moduleReference.get()?.let { module ->
-        module.sendEvent(EVENT_OVERLAY_SHARED_VALUE_CHANGED, valuePayload)
-        module.sendEvent(EVENT_OVERLAY_SHARED_VALUES_CHANGED, valuesPayload)
-      }
+      val valuesPayload = OverlaySharedValuesPayload(getAllOverlaySharedValuePayloads())
+      moduleReference.get()?.emitOverlaySharedValueChanged(valuePayload, valuesPayload)
       ExpoDrawOverAppsOverlayService.requestOverlayRedraw()
     }
 

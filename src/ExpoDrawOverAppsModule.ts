@@ -1,4 +1,8 @@
-import type { EventSubscription, NativeModule } from 'expo-modules-core';
+import {
+  requireOptionalNativeModule,
+  type EventSubscription,
+  type NativeModule,
+} from 'expo';
 
 import type { BubbleState } from './bubbleTypes';
 import type { OverlaySharedValueState } from './overlaySharedValue';
@@ -59,7 +63,6 @@ type ExpoDrawOverAppsNativeModule = NativeModule<{
 
 export function getExpoDrawOverAppsModule(): ExpoDrawOverAppsNativeModule | null {
   try {
-    const { requireOptionalNativeModule } = require('expo-modules-core') as typeof import('expo-modules-core');
     return requireOptionalNativeModule<ExpoDrawOverAppsNativeModule>('ExpoDrawOverApps');
   } catch (error) {
     console.warn(

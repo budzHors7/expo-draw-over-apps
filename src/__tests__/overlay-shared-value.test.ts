@@ -36,7 +36,7 @@ function loadModule(initialStates: OverlaySharedValueState[] = []) {
     }),
   };
 
-  jest.doMock('expo-modules-core', () => ({
+  jest.doMock('expo', () => ({
     requireOptionalNativeModule: jest.fn(() => nativeModule),
   }));
 
