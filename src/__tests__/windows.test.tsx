@@ -1,6 +1,7 @@
 import React from 'react';
 
 const TestRenderer = require('react-test-renderer');
+const { StyleSheet } = require('react-native');
 
 jest.mock('@expo/ui/jetpack-compose', () => ({
   Host: 'ComposeHost',
@@ -80,11 +81,37 @@ describe('window containers', () => {
     });
 
     const surface = renderer!.root.findByType('View');
-    const animatedStyle = surface.props.style.at(-1);
-    expect(animatedStyle).not.toHaveProperty('width');
-    expect(animatedStyle).not.toHaveProperty('height');
-    expect(animatedStyle.borderRadius).toBe(24);
+    const renderedStyle = StyleSheet.flatten(surface.props.style);
+    expect(renderedStyle).not.toHaveProperty('width');
+    expect(renderedStyle).not.toHaveProperty('height');
+    expect(renderedStyle.borderRadius).toBe(24);
     expect(renderer!.root.findByType('span').children).toEqual(['React Native content']);
+  });
+
+  it('removes non-finite dimensions supplied through the surface style', () => {
+    let renderer: any;
+
+    TestRenderer.act(() => {
+      renderer = TestRenderer.create(
+        <ReactNativeWindow
+          style={{
+            width: Number.POSITIVE_INFINITY,
+            height: Number.NaN,
+            borderRadius: Number.NEGATIVE_INFINITY,
+            opacity: 0.75,
+          }}
+        >
+          <span>Sanitized content</span>
+        </ReactNativeWindow>
+      );
+    });
+
+    const surface = renderer!.root.findByType('View');
+    const renderedStyle = StyleSheet.flatten(surface.props.style);
+    expect(renderedStyle).not.toHaveProperty('width');
+    expect(renderedStyle).not.toHaveProperty('height');
+    expect(renderedStyle.borderRadius).toBe(24);
+    expect(renderedStyle.opacity).toBe(0.75);
   });
 
   it('keeps the unregistered surface to setup guidance and recovery actions', () => {

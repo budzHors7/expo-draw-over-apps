@@ -53,6 +53,20 @@ function getFiniteNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
+function sanitizeWindowStyle(style: StyleProp<ViewStyle>): ViewStyle | undefined {
+  const flattenedStyle = StyleSheet.flatten(style);
+  if (!flattenedStyle) return undefined;
+
+  const sanitizedStyle = { ...flattenedStyle };
+  for (const property of ['width', 'height', 'borderRadius'] as const) {
+    const value = sanitizedStyle[property];
+    if (typeof value === 'number' && !Number.isFinite(value)) {
+      delete sanitizedStyle[property];
+    }
+  }
+  return sanitizedStyle;
+}
+
 function getTimingConfig(animationConfig?: WindowAnimationConfig): WithTimingConfig {
   return {
     duration: animationConfig?.duration ?? DEFAULT_ANIMATION_DURATION,
@@ -134,10 +148,11 @@ export function ReactNativeWindow({
   animationConfig,
   ...viewProps
 }: ReactNativeWindowProps) {
+  const sanitizedStyle = sanitizeWindowStyle(style);
   const resolvedColorScheme = useResolvedColorScheme(colorScheme);
-  const surfaceColor = getSurfaceColor(backgroundColor, style, resolvedColorScheme);
+  const surfaceColor = getSurfaceColor(backgroundColor, sanitizedStyle, resolvedColorScheme);
   const animatedStyle = useWindowAnimatedStyle(
-    style,
+    sanitizedStyle,
     width,
     height,
     borderRadius,
@@ -151,7 +166,7 @@ export function ReactNativeWindow({
       collapsable={false}
       renderToHardwareTextureAndroid
       needsOffscreenAlphaCompositing
-      style={[styles.windowSurface, { backgroundColor: surfaceColor }, style, animatedStyle]}
+      style={[styles.windowSurface, { backgroundColor: surfaceColor }, sanitizedStyle, animatedStyle]}
     >
       <View
         {...getNativeWindProps(contentClassName)}
