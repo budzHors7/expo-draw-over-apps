@@ -1,0 +1,68 @@
+---
+title: 4. Control windows
+sidebar_position: 4
+description: Close windows, enable edge hide, observe state, and share numeric values.
+---
+
+# Control windows
+
+Window lifecycle APIs work with either root. Use the same stable ID when registering, showing, reading, and closing a window.
+
+## Show and close
+
+```tsx
+import { closeAllBubbles, closeBubble, showBubble } from 'expo-draw-over-apps';
+
+await showBubble('status-window');
+closeBubble('status-window');
+closeAllBubbles();
+```
+
+Calling `closeBubble()` releases the Android overlay surface and its React root. A renderer also receives `close()` and `openApp()` callbacks through `BubbleRendererProps`.
+
+## Enable edge hide
+
+```tsx
+await showBubble('status-window', { edgeHideEnabled: true });
+```
+
+The user can drag an edge-enabled window partly off the left or right side of the display while keeping a clickable sliver visible.
+
+## Observe visibility
+
+```tsx
+import { Text } from 'react-native';
+import { useBubbleState } from 'expo-draw-over-apps';
+
+export function Status() {
+  const state = useBubbleState('status-window');
+  return <Text>{state.isVisible ? 'Visible' : 'Closed'}</Text>;
+}
+```
+
+## Share a number with a window
+
+Native shared values are intended for small numeric coordination values such as a counter, step, or timer:
+
+```tsx
+import { Button, Text, View } from 'react-native';
+import { setOverlaySharedValue, useOverlaySharedValueState } from 'expo-draw-over-apps';
+
+const valueKey = 'status-window-step';
+
+export function SharedStep() {
+  const state = useOverlaySharedValueState(valueKey);
+
+  return (
+    <View>
+      <Text>Step: {state.value}</Text>
+      <Button
+        title="Next"
+        onPress={() => setOverlaySharedValue(valueKey, state.value + 1, 'app')}
+      />
+    </View>
+  );
+}
+```
+
+Shared values store finite numbers only. Keep objects, secrets, personal data, and larger application state in your own protected store.

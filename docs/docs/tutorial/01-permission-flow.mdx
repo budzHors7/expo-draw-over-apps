@@ -1,29 +1,24 @@
 ---
-title: Permission flow
+title: 1. Request permission
 sidebar_position: 1
+description: Request and re-check Android draw-over-apps permission.
 ---
 
-# Permission flow
+# Request permission
 
-Android requires the user to grant draw-over-apps permission before your app can show an overlay window. The module exposes a small flow for that.
+Android requires the user to grant draw-over-apps permission in system settings. `requestPermission()` opens that screen; it cannot approve the permission for the user.
 
-1. Call `canDrawOverlays()`.
-2. If it returns `false`, call `requestPermission()`.
-3. Wait for the user to return from Android settings.
-4. Call `canDrawOverlays()` again.
-5. Show a bubble only after permission is granted.
+Copy this component into your app:
 
 ```tsx
 import { useEffect, useState } from 'react';
-import { AppState, Pressable, Text, View } from 'react-native';
+import { AppState, Button, Text, View } from 'react-native';
 import { canDrawOverlays, requestPermission } from 'expo-draw-over-apps';
 
-export function OverlayPermissionGate() {
-  const [granted, setGranted] = useState(false);
+export function OverlayPermission() {
+  const [granted, setGranted] = useState(canDrawOverlays());
 
   useEffect(() => {
-    setGranted(canDrawOverlays());
-
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         setGranted(canDrawOverlays());
@@ -33,20 +28,20 @@ export function OverlayPermissionGate() {
     return () => subscription.remove();
   }, []);
 
-  async function openSettings() {
-    await requestPermission();
-    setGranted(canDrawOverlays());
-  }
-
   return (
     <View style={{ gap: 12 }}>
-      <Text>Overlay permission: {granted ? 'granted' : 'missing'}</Text>
-      <Pressable onPress={() => void openSettings()}>
-        <Text>Open Android overlay settings</Text>
-      </Pressable>
+      <Text>{granted ? 'Overlay permission granted' : 'Overlay permission required'}</Text>
+      {!granted && (
+        <Button
+          title="Open overlay settings"
+          onPress={() => void requestPermission()}
+        />
+      )}
     </View>
   );
 }
 ```
 
-`requestPermission()` returns `true` when permission is already granted. When Android opens settings, users still need to approve the permission themselves.
+Re-check permission when the app becomes active because Android returns the result through system settings, not a normal runtime-permission dialog.
+
+Continue with either [ReactNativeWindow](./react-native-window) or [NativeWindow](./native-window).

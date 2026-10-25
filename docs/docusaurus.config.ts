@@ -12,7 +12,7 @@ const siteUrl = isGithubPagesBuild ? `https://${repositoryOwnerSlug}.github.io` 
 const baseUrl = isGithubPagesBuild ? `/${repositoryName}/` : '/';
 const siteTitle = 'Expo Draw Over Apps';
 const siteDescription =
-  'Versioned docs for expo-draw-over-apps, an Android overlay permission, floating bubble, and native shared-value Expo module.';
+  'SDK 58 documentation for Android overlay permission and application-owned React Native or Jetpack Compose windows.';
 const siteBaseUrl = `${siteUrl}${baseUrl}`;
 const socialImageUrl = `${siteBaseUrl}img/og-preview.png`;
 
@@ -107,7 +107,7 @@ const config: Config = {
       'classic',
       {
         docs: {
-          routeBasePath: 'generated',
+          routeBasePath: 'docs',
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/budzHors7/expo-draw-over-apps/tree/main/docs/',
         },
@@ -135,10 +135,9 @@ const config: Config = {
           'android draw over other apps',
           'expo module',
           'expo sdk module',
-          'expo sdk versioned docs',
+          'expo sdk 58 module',
           'react native overlay permission',
-          'expo ui bubble renderer',
-          'nativewind bubble renderer',
+          'expo ui jetpack compose window',
           'expo overlay shared values',
           'react native worklets overlay',
           'react native android overlay service',
@@ -154,12 +153,12 @@ const config: Config = {
       },
       items: [
         {
-          to: '/versions/latest/sdk/draw-over-apps/',
+          to: '/docs/',
           position: 'left',
           label: 'Docs',
         },
         {
-          to: '/versions/latest/public-api/',
+          to: '/docs/public-api/',
           position: 'left',
           label: 'Public API',
         },

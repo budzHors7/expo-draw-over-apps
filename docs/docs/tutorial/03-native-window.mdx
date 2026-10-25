@@ -1,0 +1,59 @@
+---
+title: 3. Native Compose window
+sidebar_position: 3
+description: Register and show application-owned Expo UI Jetpack Compose content.
+---
+
+# Native Compose window
+
+`NativeWindow` is the only native Compose window root. It forwards Expo UI `Host` props and renders Jetpack Compose components directly—there is no packaged renderer between your app and Expo UI.
+
+The example below is complete after permission has been granted:
+
+```tsx
+import { useEffect } from 'react';
+import { Button as ReactNativeButton } from 'react-native';
+import { Button, Column, Surface, Text } from '@expo/ui/jetpack-compose';
+import { paddingAll } from '@expo/ui/jetpack-compose/modifiers';
+import {
+  NativeWindow,
+  setBubbleRendererForBubble,
+  showBubble,
+  type BubbleRendererProps,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'native-window';
+
+function NativeRenderer({ close }: BubbleRendererProps) {
+  return (
+    <NativeWindow seedColor="#2563eb">
+      <Surface color="#eff6ff" contentColor="#172554" shadowElevation={12}>
+        <Column modifiers={[paddingAll(16)]}>
+          <Text>Application-owned Compose content</Text>
+          <Button onClick={close}>
+            <Text>Close</Text>
+          </Button>
+        </Column>
+      </Surface>
+    </NativeWindow>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    setBubbleRendererForBubble(bubbleId, NativeRenderer);
+    return () => setBubbleRendererForBubble(bubbleId, null);
+  }, []);
+
+  return (
+    <ReactNativeButton
+      title="Show native window"
+      onPress={() => void showBubble(bubbleId)}
+    />
+  );
+}
+```
+
+Compose owns sizing, shape, animation, and layout inside this root. Use Expo UI modifiers such as `size()` and `animateContentSize()` when you need an animated native window. See the [Expo SDK 58 Jetpack Compose reference](https://docs.expo.dev/versions/v58.0.0/sdk/ui/jetpack-compose/) for available components and modifiers.
+
+If native content needs a React Native subtree, add Expo UI's `RNHostView` explicitly at that point. Do not wrap the whole native window in a React Native surface.

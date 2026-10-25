@@ -1,35 +1,31 @@
 ---
 title: Limitations
-sidebar_position: 6
-description: Android, Expo Go, overlay permission, NativeWind, and Compose renderer limitations for expo-draw-over-apps.
+sidebar_position: 4
+description: Platform, permission, build, and renderer constraints for Expo SDK 58.
 ---
 
 # Limitations
 
 ## Android only
 
-The module targets Android overlays. It does not provide iOS overlay behavior.
+The module creates Android application overlay windows. It does not provide iOS overlay behavior.
 
-## Expo Go
+## Development or production build required
 
-Expo Go is not supported because the package includes native Android code. Use a development build, custom client, or standalone Android build.
+Expo Go cannot load this package because it includes native Android code. Rebuild your app after installing or upgrading it.
 
-## User-controlled permission
+## Permission is controlled by the user
 
-Android requires the user to grant draw-over-apps permission in system settings. Your app can open the settings screen, but it cannot approve the permission for the user.
+Android grants `SYSTEM_ALERT_WINDOW` through system settings. Your app can open the correct settings screen and detect the current result, but it cannot approve the permission.
 
-## Native overlay service
+## Expo Modules 2.0 is still evolving
 
-The real floating bubble is hosted by an Android service. Preview components run inside your app and do not create native overlay windows.
+The SDK 58 release uses the new Expo Modules API. Follow SDK 58-compatible Expo package versions and rebuild native projects after dependency changes.
 
-## Overlay shared values
+## Native content follows Compose semantics
 
-Overlay shared values store numbers only. Use them for counters, timer values, selected steps, and small renderer coordination values. Keep objects, private data, and larger app state in your own store. Shared-value keys cross the JavaScript and native boundary, so keep them static and non-sensitive.
+`NativeWindow` is an Expo UI `Host`, so its children must be `@expo/ui/jetpack-compose` components unless you explicitly introduce `RNHostView`. Sizing and animation belong to Compose modifiers, not React Native styles.
 
-## Compose renderer status
+## IDs and shared values are not storage
 
-`@expo/ui` is optional, and `setComposeBubbleRenderer()` is available. Current Android overlay builds use a React Native fallback for the packaged Compose-flavored renderer to avoid unstable overlay mounting.
-
-## Bubble ID safety
-
-Bubble IDs cross the JavaScript and native boundary. Keep them static and non-sensitive. The module normalizes free-form IDs, but normalization is not a privacy boundary.
+Bubble IDs and shared-value keys cross the JavaScript/native boundary. Keep them static and non-sensitive. Shared values store finite numbers only; use your application store for private or structured data.

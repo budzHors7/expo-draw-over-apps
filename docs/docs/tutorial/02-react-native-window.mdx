@@ -1,0 +1,58 @@
+---
+title: 2. React Native window
+sidebar_position: 2
+description: Register and show application-owned React Native overlay content.
+---
+
+# React Native window
+
+`ReactNativeWindow` is the only React Native window root. Put ordinary React Native views inside it and register the renderer for a stable bubble ID.
+
+The example below is complete after permission has been granted:
+
+```tsx
+import { useEffect } from 'react';
+import { Button, Text } from 'react-native';
+import {
+  ReactNativeWindow,
+  setBubbleRendererForBubble,
+  showBubble,
+  type BubbleRendererProps,
+} from 'expo-draw-over-apps';
+
+const bubbleId = 'react-native-window';
+
+function ReactNativeRenderer({ close }: BubbleRendererProps) {
+  return (
+    <ReactNativeWindow
+      width={220}
+      borderRadius={24}
+      backgroundColor="#111827"
+      contentContainerStyle={{ gap: 12, padding: 16 }}
+    >
+      <Text style={{ color: '#f8fafc', fontWeight: '700' }}>
+        Application-owned React Native content
+      </Text>
+      <Button title="Close" onPress={close} />
+    </ReactNativeWindow>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    setBubbleRendererForBubble(bubbleId, ReactNativeRenderer);
+    return () => setBubbleRendererForBubble(bubbleId, null);
+  }, []);
+
+  return (
+    <Button
+      title="Show React Native window"
+      onPress={() => void showBubble(bubbleId)}
+    />
+  );
+}
+```
+
+Finite numeric `width`, `height`, and `borderRadius` changes animate with Reanimated. Omit `width` or `height` when content should determine that dimension. Use `style` for the outer clipped surface and `contentContainerStyle` for its child layout.
+
+Always clear a registered renderer in the effect cleanup so stale application components are not retained during Fast Refresh or navigation.
