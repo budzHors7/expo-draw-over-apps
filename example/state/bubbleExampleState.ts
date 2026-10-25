@@ -20,20 +20,17 @@ export type ExampleBubbleState = {
   lastChangeSource: ExampleBubbleChangeSource;
 };
 
-export const WINDOW_CONTAINER_SHARED_VALUE_KEY = 'window-container-counter';
+export const WINDOW_SHARED_VALUE_KEY = 'window-size';
 
 const RESIZE_WINDOW_BUBBLE_IDS = new Set([
-  'react-native-resize-bubble',
-  'expo-ui-resize-bubble',
+  'react-native-window',
+  'native-window',
 ]);
 
 const observedBubbleIds = new Set<string>([
   DEFAULT_BUBBLE_ID,
-  'react-native-counter',
-  'jetpack-compose-counter',
-  'countdown-timer',
-  'react-native-resize-bubble',
-  'expo-ui-resize-bubble',
+  'react-native-window',
+  'native-window',
 ]);
 
 function normalizeCount(count: number) {
@@ -43,7 +40,7 @@ function normalizeCount(count: number) {
 function getExampleBubbleValueKey(bubbleId: string) {
   const normalizedBubbleId = normalizeBubbleId(bubbleId);
   return RESIZE_WINDOW_BUBBLE_IDS.has(normalizedBubbleId)
-    ? WINDOW_CONTAINER_SHARED_VALUE_KEY
+    ? WINDOW_SHARED_VALUE_KEY
     : normalizedBubbleId;
 }
 

@@ -21,9 +21,7 @@ import {
   getBubbleTemplate,
 } from './templates/bubblePlaygroundTemplate';
 import {
-  decrementExampleBubbleCount,
   getExampleBubbleState,
-  incrementExampleBubbleCount,
   refreshAllExampleBubbleStates,
   setExampleBubbleCount,
   useAllExampleBubbleStates,
@@ -46,29 +44,13 @@ setOptions({
 preventAutoHideAsync();
 
 function getTemplateToneStyle(tone: BubbleTemplateTone) {
-  switch (tone) {
-    case 'compose':
-      return styles.composeExampleButton;
-    case 'timer':
-      return styles.timerExampleButton;
-    case 'resizeReactNative':
-      return styles.resizeReactNativeExampleButton;
-    case 'resizeExpoUi':
-      return styles.resizeExpoUiExampleButton;
-    case 'reactNative':
-    default:
-      return styles.reactNativeExampleButton;
-  }
-}
-
-function isResizeBubbleExample(exampleId: BubbleExampleId) {
-  return exampleId === 'react-native-resize-bubble' || exampleId === 'expo-ui-resize-bubble';
+  return tone === 'native' ? styles.nativeExampleButton : styles.reactNativeExampleButton;
 }
 
 export default function App() {
   const [granted, setGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeExample, setActiveExample] = useState<BubbleExampleId>('react-native-counter');
+  const [activeExample, setActiveExample] = useState<BubbleExampleId>('react-native-window');
   const [edgeHideEnabled, setEdgeHideEnabledState] = useState(true);
   const activeOverlayState = useBubbleState(activeExample);
   const activeExampleState = useExampleBubbleState(activeExample);
@@ -139,10 +121,7 @@ export default function App() {
       setActiveExample(exampleId);
       const template = getBubbleTemplate(exampleId);
       const currentExampleState = getExampleBubbleState(exampleId);
-      if (
-        template.initialCount > 0 &&
-        (exampleId === 'countdown-timer' || currentExampleState.count === 0)
-      ) {
+      if (template.initialCount > 0 && currentExampleState.count === 0) {
         setExampleBubbleCount(template.initialCount, 'bubble', exampleId);
       }
       await showBubble(exampleId, { edgeHideEnabled });
@@ -158,61 +137,23 @@ export default function App() {
   const isGranted = granted === true;
   const activeTemplate = getBubbleTemplate(activeExample);
   const visibleBubbleCount = visibleStates.filter(({ isVisible }) => isVisible).length;
-  const activeIsResizeBubble = isResizeBubbleExample(activeExample);
-  const activeControls =
-    activeExample === 'countdown-timer'
-      ? [
-          {
-            label: 'Restart',
-            onPress: () => setExampleBubbleCount(activeTemplate.initialCount, 'app', activeExample),
-            style: styles.blueButton,
-          },
-          {
-            label: '10 Seconds',
-            onPress: () => setExampleBubbleCount(10, 'app', activeExample),
-            style: styles.amberButton,
-          },
-          {
-            label: 'Stop',
-            onPress: () => setExampleBubbleCount(0, 'app', activeExample),
-            style: styles.slateButton,
-          },
-        ]
-      : activeIsResizeBubble
-        ? [
-            {
-              label: 'Small',
-              onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_MIN_STEP, 'app', activeExample),
-              style: styles.resizeExpoUiExampleButton,
-            },
-            {
-              label: 'Medium',
-              onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_INITIAL_STEP, 'app', activeExample),
-              style: styles.tealButton,
-            },
-            {
-              label: 'Big',
-              onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_MAX_STEP, 'app', activeExample),
-              style: styles.resizeReactNativeExampleButton,
-            },
-          ]
-      : [
-          {
-            label: '+1 In App',
-            onPress: () => incrementExampleBubbleCount('app', activeExample),
-            style: styles.blueButton,
-          },
-          {
-            label: '-1 In App',
-            onPress: () => decrementExampleBubbleCount('app', activeExample),
-            style: styles.amberButton,
-          },
-          {
-            label: 'Reset',
-            onPress: () => setExampleBubbleCount(0, 'app', activeExample),
-            style: styles.slateButton,
-          },
-        ];
+  const activeControls = [
+    {
+      label: 'Small',
+      onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_MIN_STEP, 'app', activeExample),
+      style: styles.nativeExampleButton,
+    },
+    {
+      label: 'Medium',
+      onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_INITIAL_STEP, 'app', activeExample),
+      style: styles.tealButton,
+    },
+    {
+      label: 'Big',
+      onPress: () => setExampleBubbleCount(RESIZE_BUBBLE_MAX_STEP, 'app', activeExample),
+      style: styles.reactNativeExampleButton,
+    },
+  ];
 
   return (
     <View style={styles.safeArea}>
@@ -224,8 +165,8 @@ export default function App() {
             <Text style={styles.eyebrow}>Expo Draw Over Apps</Text>
             <Text style={styles.title}>Bubble Playground</Text>
             <Text style={styles.subtitle}>
-              Test overlay permission, launch different bubble renderers, and control the active bubble without the UI
-              collapsing on smaller screens.
+              Compare the two SDK 58 window roots: application-owned React Native content and
+              application-owned Jetpack Compose content.
             </Text>
           </View>
 
@@ -298,7 +239,7 @@ export default function App() {
                     </View>
                     <View style={styles.statusPill}>
                       <Text style={styles.statusPillText}>
-                        {isResizeBubbleExample(bubbleId) ? `Size ${getResizeBubbleStepConfig(exampleState.count).label}` : `Value ${exampleState.count}`}
+                        Size {getResizeBubbleStepConfig(exampleState.count).label}
                       </Text>
                     </View>
                   </View>
@@ -622,12 +563,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
-  blueButton: {
-    backgroundColor: '#2563eb',
-  },
-  amberButton: {
-    backgroundColor: '#d97706',
-  },
   slateButton: {
     backgroundColor: '#475569',
   },
@@ -647,16 +582,7 @@ const styles = StyleSheet.create({
   reactNativeExampleButton: {
     backgroundColor: '#0f766e',
   },
-  composeExampleButton: {
-    backgroundColor: '#0369a1',
-  },
-  timerExampleButton: {
-    backgroundColor: '#b45309',
-  },
-  resizeReactNativeExampleButton: {
-    backgroundColor: '#be123c',
-  },
-  resizeExpoUiExampleButton: {
+  nativeExampleButton: {
     backgroundColor: '#0891b2',
   },
 });

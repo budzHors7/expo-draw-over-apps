@@ -1,22 +1,13 @@
 import type { BubbleRenderer } from 'expo-draw-over-apps';
 
 import {
-  CountdownTimerBubbleRenderer,
-  JetpackComposeBubbleRenderer,
-  NativeExpoUiResizeBubbleRenderer,
-  ReactNativeResizeBubbleRenderer,
-  ReactNativeBubbleRenderer,
+  NativeWindowRenderer,
+  ReactNativeWindowRenderer,
   RESIZE_BUBBLE_INITIAL_STEP,
-  TIMER_DURATION_SECONDS,
 } from '../components';
 
-export type BubbleExampleId =
-  | 'react-native-counter'
-  | 'jetpack-compose-counter'
-  | 'countdown-timer'
-  | 'react-native-resize-bubble'
-  | 'expo-ui-resize-bubble';
-export type BubbleTemplateTone = 'reactNative' | 'compose' | 'timer' | 'resizeReactNative' | 'resizeExpoUi';
+export type BubbleExampleId = 'react-native-window' | 'native-window';
+export type BubbleTemplateTone = 'reactNative' | 'native';
 
 export type BubblePlaygroundTemplate = {
   id: BubbleExampleId;
@@ -30,44 +21,20 @@ export type BubblePlaygroundTemplate = {
 // Template IDs are static and non-sensitive because they cross the JS/native overlay boundary.
 export const BUBBLE_PLAYGROUND_TEMPLATES: BubblePlaygroundTemplate[] = [
   {
-    id: 'react-native-counter',
-    title: 'React Native Counter Bubble',
-    description: 'Counter bubble rendered with React Native views and Pressables.',
-    initialCount: 0,
-    renderer: ReactNativeBubbleRenderer,
+    id: 'react-native-window',
+    title: 'React Native Window',
+    description: 'Application-owned React Native children in an animated overlay window.',
+    initialCount: RESIZE_BUBBLE_INITIAL_STEP,
+    renderer: ReactNativeWindowRenderer,
     tone: 'reactNative',
   },
   {
-    id: 'jetpack-compose-counter',
-    title: 'Jetpack Compose Counter Bubble',
-    description: 'Counter bubble rendered with the packaged Compose-flavored API.',
-    initialCount: 0,
-    renderer: JetpackComposeBubbleRenderer,
-    tone: 'compose',
-  },
-  {
-    id: 'countdown-timer',
-    title: 'Countdown Timer Bubble',
-    description: 'A timer example that refreshes every second without moving the bubble.',
-    initialCount: TIMER_DURATION_SECONDS,
-    renderer: CountdownTimerBubbleRenderer,
-    tone: 'timer',
-  },
-  {
-    id: 'react-native-resize-bubble',
-    title: 'React Native Resize Bubble',
-    description: 'Animated React Native bubble that smoothly resizes between small and big.',
+    id: 'native-window',
+    title: 'Native Window',
+    description: 'Application-owned Expo UI components rendered directly by Jetpack Compose.',
     initialCount: RESIZE_BUBBLE_INITIAL_STEP,
-    renderer: ReactNativeResizeBubbleRenderer,
-    tone: 'resizeReactNative',
-  },
-  {
-    id: 'expo-ui-resize-bubble',
-    title: 'Native Expo UI Resize Bubble',
-    description: 'Native Expo UI surface with Reanimated resize and React Native children.',
-    initialCount: RESIZE_BUBBLE_INITIAL_STEP,
-    renderer: NativeExpoUiResizeBubbleRenderer,
-    tone: 'resizeExpoUi',
+    renderer: NativeWindowRenderer,
+    tone: 'native',
   },
 ];
 
