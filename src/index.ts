@@ -69,6 +69,17 @@ export function setEdgeHideEnabled(
     : ExpoDrawOverAppsModule.setEdgeHideEnabledForBubble(normalizedBubbleId, enabled);
 }
 
+function normalizeBubbleCoordinate(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : undefined;
+}
+
+function hasBubbleCoordinateOptions(options?: BubbleDisplayOptions): boolean {
+  return options != null && (
+    Object.prototype.hasOwnProperty.call(options, 'x') ||
+    Object.prototype.hasOwnProperty.call(options, 'y')
+  );
+}
+
 /**
  * Shows a named floating bubble and optionally applies display options first.
  */
@@ -83,10 +94,17 @@ export async function showBubble(
   if (options?.edgeHideEnabled != null) {
     setEdgeHideEnabled(options.edgeHideEnabled, normalizedBubbleId);
   }
+  const hasCoordinateOptions = hasBubbleCoordinateOptions(options);
+  const positionX = normalizeBubbleCoordinate(options?.x);
+  const positionY = normalizeBubbleCoordinate(options?.y);
   const didShow =
     normalizedBubbleId === DEFAULT_BUBBLE_ID
-      ? await ExpoDrawOverAppsModule.showBubble()
-      : await ExpoDrawOverAppsModule.showBubbleInstance(normalizedBubbleId);
+      ? hasCoordinateOptions
+        ? await ExpoDrawOverAppsModule.showBubble(positionX, positionY)
+        : await ExpoDrawOverAppsModule.showBubble()
+      : hasCoordinateOptions
+        ? await ExpoDrawOverAppsModule.showBubbleInstance(normalizedBubbleId, positionX, positionY)
+        : await ExpoDrawOverAppsModule.showBubbleInstance(normalizedBubbleId);
   refreshBubbleState(normalizedBubbleId);
   return didShow;
 }

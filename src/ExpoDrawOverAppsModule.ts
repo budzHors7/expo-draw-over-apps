@@ -27,8 +27,8 @@ type ExpoDrawOverAppsNativeModule = NativeModule<{
   getOverlaySharedValue(valueKey: string): OverlaySharedValueState;
   getAllOverlaySharedValues(): OverlaySharedValueState[];
   setOverlaySharedValue(valueKey: string, value: number, source?: string): number;
-  showBubble(): Promise<boolean>;
-  showBubbleInstance(bubbleId: string): Promise<boolean>;
+  showBubble(x?: number, y?: number): Promise<boolean>;
+  showBubbleInstance(bubbleId: string, x?: number, y?: number): Promise<boolean>;
   setEdgeHideEnabled(enabled: boolean): boolean;
   setEdgeHideEnabledForBubble(bubbleId: string, enabled: boolean): boolean;
   hideBubble(): boolean;

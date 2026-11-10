@@ -44,4 +44,8 @@ export type BubbleState = {
 export type BubbleDisplayOptions = {
   /** Allows the bubble to tuck into the left or right screen edge while leaving a clickable sliver. */
   edgeHideEnabled?: boolean;
+  /** Initial horizontal overlay position in screen pixels. */
+  x?: number;
+  /** Initial vertical overlay position in screen pixels. */
+  y?: number;
 };

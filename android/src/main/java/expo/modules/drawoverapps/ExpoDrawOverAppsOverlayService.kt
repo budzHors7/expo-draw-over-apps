@@ -86,6 +86,8 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     val bubbleId = normalizeBubbleId(intent?.getStringExtra(EXTRA_BUBBLE_ID))
+    val requestedX = intent?.getOptionalIntExtra(EXTRA_POSITION_X)
+    val requestedY = intent?.getOptionalIntExtra(EXTRA_POSITION_Y)
 
     when (intent?.action) {
       ACTION_HIDE_ALL_BUBBLES,
@@ -98,7 +100,7 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
         hideBubble(bubbleId, SOURCE_APP)
         stopSelfIfIdle()
       }
-      else -> showBubble(bubbleId)
+      else -> showBubble(bubbleId, requestedX, requestedY)
     }
     return START_NOT_STICKY
   }
@@ -117,8 +119,16 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
 
   override fun onBind(intent: Intent?): IBinder? = null
 
-  private fun showBubble(bubbleId: String) {
-    if (overlayInstances.containsKey(bubbleId)) {
+  private fun Intent.getOptionalIntExtra(name: String): Int? {
+    return if (hasExtra(name)) getIntExtra(name, 0) else null
+  }
+
+  private fun showBubble(bubbleId: String, requestedX: Int?, requestedY: Int?) {
+    val existingOverlay = overlayInstances[bubbleId]
+    if (existingOverlay != null) {
+      if (requestedX != null || requestedY != null) {
+        applyRequestedPosition(existingOverlay, requestedX, requestedY)
+      }
       ExpoDrawOverAppsModule.setBubbleVisibilityInternal(true, bubbleId, SOURCE_APP)
       requestOverlayRedraw(bubbleId)
       return
@@ -152,7 +162,7 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
       return
     }
 
-    val windowLayoutParams = createLayoutParams(bubbleId)
+    val windowLayoutParams = createLayoutParams(bubbleId, requestedX, requestedY)
     val container =
       DraggableOverlayLayout(
         overlayContext,
@@ -205,9 +215,45 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
       )
     ExpoDrawOverAppsModule.setBubbleVisibilityInternal(true, bubbleId, SOURCE_APP)
     container.post {
-      dockBubbleIfNeeded(bubbleId)
+      if (requestedX != null || requestedY != null) {
+        overlayInstances[bubbleId]?.let { overlayInstance ->
+          applyRequestedPosition(overlayInstance, requestedX, requestedY)
+        }
+      } else {
+        dockBubbleIfNeeded(bubbleId)
+      }
       requestOverlayRedraw(bubbleId)
     }
+  }
+
+  private fun applyRequestedPosition(
+    overlayInstance: OverlayInstance,
+    requestedX: Int?,
+    requestedY: Int?
+  ) {
+    val movementBounds = getMovementBounds()
+    val (bubbleWidth, _) = getOverlaySize(overlayInstance.container)
+    val maxPositionX =
+      if (bubbleWidth > 0) {
+        (movementBounds.right - bubbleWidth).coerceAtLeast(movementBounds.left)
+      } else {
+        movementBounds.right
+      }
+    val position = OverlayPosition.resolve(
+      storedX = overlayInstance.layoutParams.x,
+      storedY = overlayInstance.layoutParams.y,
+      requestedX = requestedX,
+      requestedY = requestedY,
+      minX = movementBounds.left,
+      minY = movementBounds.top,
+      maxX = maxPositionX,
+      maxY = getMaxReachableY(movementBounds),
+    )
+
+    overlayInstance.layoutParams.x = position.x
+    overlayInstance.layoutParams.y = position.y
+    storeBubblePosition(overlayInstance.bubbleId, position.x, position.y)
+    applyDockState(overlayInstance, false, null)
   }
 
   private fun View.attachOverlayViewTreeOwners() {
@@ -485,7 +531,11 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     ).coerceAtMost(hiddenPortion)
   }
 
-  private fun createLayoutParams(bubbleId: String): WindowManager.LayoutParams {
+  private fun createLayoutParams(
+    bubbleId: String,
+    requestedX: Int?,
+    requestedY: Int?
+  ): WindowManager.LayoutParams {
     val overlayType =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -494,7 +544,18 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
         WindowManager.LayoutParams.TYPE_PHONE
       }
 
-    val (positionX, positionY) = getOrCreateBubblePosition(bubbleId)
+    val (storedX, storedY) = getOrCreateBubblePosition(bubbleId)
+    val movementBounds = getMovementBounds()
+    val position = OverlayPosition.resolve(
+      storedX = storedX,
+      storedY = storedY,
+      requestedX = requestedX,
+      requestedY = requestedY,
+      minX = movementBounds.left,
+      minY = movementBounds.top,
+      maxX = movementBounds.right,
+      maxY = movementBounds.bottom,
+    )
 
     return WindowManager.LayoutParams(
       WindowManager.LayoutParams.WRAP_CONTENT,
@@ -506,8 +567,8 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
       PixelFormat.TRANSLUCENT
     ).apply {
       gravity = Gravity.TOP or Gravity.START
-      x = positionX
-      y = positionY
+      x = position.x
+      y = position.y
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         layoutInDisplayCutoutMode =
           WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -522,6 +583,8 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     const val ACTION_CLOSE_BUBBLE = "expo.modules.drawoverapps.action.CLOSE_BUBBLE"
     const val ACTION_CLOSE_ALL_BUBBLES = "expo.modules.drawoverapps.action.CLOSE_ALL_BUBBLES"
     const val EXTRA_BUBBLE_ID = "expo.modules.drawoverapps.extra.BUBBLE_ID"
+    const val EXTRA_POSITION_X = "expo.modules.drawoverapps.extra.POSITION_X"
+    const val EXTRA_POSITION_Y = "expo.modules.drawoverapps.extra.POSITION_Y"
     const val BUBBLE_COMPONENT_NAME = "ExpoDrawOverAppsBubble"
     private const val DEFAULT_BUBBLE_ID = "default"
     private const val MAX_BUBBLE_ID_LENGTH = 80
