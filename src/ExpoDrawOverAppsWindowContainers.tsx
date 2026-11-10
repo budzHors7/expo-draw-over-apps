@@ -186,23 +186,11 @@ function useWindowAnimatedStyle(
   const animatedHeight = useTimingValue(targetHeight, animationConfig);
   const animatedRadius = useTimingValue(targetRadius, animationConfig);
 
-  return useAnimatedStyle(() => {
-    const nextStyle: ViewStyle = {};
-
-    if (animatedWidth.value >= 0) {
-      nextStyle.width = animatedWidth.value;
-    }
-
-    if (animatedHeight.value >= 0) {
-      nextStyle.height = animatedHeight.value;
-    }
-
-    if (animatedRadius.value >= 0) {
-      nextStyle.borderRadius = animatedRadius.value;
-    }
-
-    return nextStyle;
-  });
+  return useAnimatedStyle(() => ({
+    width: animatedWidth.value >= 0 ? animatedWidth.value : undefined,
+    height: animatedHeight.value >= 0 ? animatedHeight.value : undefined,
+    borderRadius: animatedRadius.value >= 0 ? animatedRadius.value : undefined,
+  }));
 }
 
 function useResolvedColorScheme(colorScheme: WindowColorScheme | undefined) {

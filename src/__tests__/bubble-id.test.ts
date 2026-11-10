@@ -22,7 +22,7 @@ function loadModule(nativeOverrides: Partial<NativeModuleMock> = {}) {
     ...nativeOverrides,
   };
 
-  jest.doMock('expo-modules-core', () => ({
+  jest.doMock('expo', () => ({
     requireOptionalNativeModule: jest.fn(() => nativeModule),
   }));
 

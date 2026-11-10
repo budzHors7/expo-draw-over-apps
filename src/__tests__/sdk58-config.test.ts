@@ -54,4 +54,28 @@ describe('Expo SDK 58 configuration', () => {
     expect(moduleConfig.platforms).toEqual(['android']);
     expect(moduleConfig.android).toBeUndefined();
   });
+
+  it('uses the Expo Modules 2 annotated Android bridge', () => {
+    const kotlinModule = fs.readFileSync(
+      path.join(
+        repositoryRoot,
+        'android/src/main/java/expo/modules/drawoverapps/ExpoDrawOverAppsModule.kt'
+      ),
+      'utf8'
+    );
+    const typescriptLoader = fs.readFileSync(
+      path.join(repositoryRoot, 'src/ExpoDrawOverAppsModule.ts'),
+      'utf8'
+    );
+
+    expect(kotlinModule).toContain('io.github.expo.modules.v2');
+    expect(kotlinModule).toContain('@ExpoModule("ExpoDrawOverApps")');
+    expect(kotlinModule).toContain('@JS');
+    expect(kotlinModule).toContain('@Event');
+    expect(kotlinModule).not.toContain('ModuleDefinition');
+    expect(typescriptLoader).toMatch(
+      /import\s+\{[^}]*requireOptionalNativeModule[^}]*\}\s+from\s+'expo'/
+    );
+    expect(typescriptLoader).not.toContain("require('expo-modules-core')");
+  });
 });
