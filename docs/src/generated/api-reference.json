@@ -1,0 +1,287 @@
+{
+  "moduleVersion": "58.0.0",
+  "entries": [
+    {
+      "name": "BubbleChangeSource",
+      "kind": "type",
+      "signature": "BubbleChangeSource: \"app\" | \"bubble\"",
+      "description": ""
+    },
+    {
+      "name": "BubbleDisplayOptions",
+      "kind": "type",
+      "signature": "BubbleDisplayOptions",
+      "description": "Options applied when a bubble is shown."
+    },
+    {
+      "name": "BubbleRenderer",
+      "kind": "type",
+      "signature": "BubbleRenderer: ComponentType<BubbleRendererProps>",
+      "description": "React component used to draw a floating bubble."
+    },
+    {
+      "name": "BubbleRendererProps",
+      "kind": "type",
+      "signature": "BubbleRendererProps",
+      "description": "Props passed to every custom bubble renderer."
+    },
+    {
+      "name": "BubbleState",
+      "kind": "type",
+      "signature": "BubbleState",
+      "description": "Shared state for a named floating bubble."
+    },
+    {
+      "name": "canDrawOverlays",
+      "kind": "function",
+      "signature": "canDrawOverlays(): boolean",
+      "description": "Returns whether Android currently allows this app to draw over other apps."
+    },
+    {
+      "name": "closeAllBubbles",
+      "kind": "function",
+      "signature": "closeAllBubbles(): boolean",
+      "description": "Closes every floating bubble known to the native overlay service."
+    },
+    {
+      "name": "closeBubble",
+      "kind": "function",
+      "signature": "closeBubble(bubbleId: string): boolean",
+      "description": "Closes one named floating bubble and releases its overlay surface."
+    },
+    {
+      "name": "createFloatingWindowPreviewState",
+      "kind": "function",
+      "signature": "createFloatingWindowPreviewState(bubbleId: string, state: Partial<BubbleState>): BubbleState",
+      "description": "Creates normalized preview state for a named bubble."
+    },
+    {
+      "name": "DEFAULT_BUBBLE_ID",
+      "kind": "value",
+      "signature": "DEFAULT_BUBBLE_ID: \"default\"",
+      "description": ""
+    },
+    {
+      "name": "DEFAULT_OVERLAY_SHARED_VALUE_KEY",
+      "kind": "value",
+      "signature": "DEFAULT_OVERLAY_SHARED_VALUE_KEY: \"default\"",
+      "description": "Default key used when an overlay shared value key is empty or omitted."
+    },
+    {
+      "name": "FloatingWindowPreview",
+      "kind": "component",
+      "signature": "FloatingWindowPreview(__namedParameters: FloatingWindowPreviewProps): Element",
+      "description": "Renders a bubble renderer inside the app for design and fixture testing."
+    },
+    {
+      "name": "FloatingWindowPreviewProps",
+      "kind": "type",
+      "signature": "FloatingWindowPreviewProps",
+      "description": "Props for rendering a bubble fixture inside the app without starting the native overlay service."
+    },
+    {
+      "name": "FloatingWindowPreviewRenderProps",
+      "kind": "type",
+      "signature": "FloatingWindowPreviewRenderProps: BubbleRendererProps & object",
+      "description": "Renderer props used by `FloatingWindowPreview`."
+    },
+    {
+      "name": "getAllBubbleStates",
+      "kind": "function",
+      "signature": "getAllBubbleStates(): BubbleState[]",
+      "description": "Returns the latest known state for every named bubble."
+    },
+    {
+      "name": "getAllOverlaySharedValueStates",
+      "kind": "function",
+      "signature": "getAllOverlaySharedValueStates(): OverlaySharedValueState[]",
+      "description": "Returns the latest known shared value state for every key."
+    },
+    {
+      "name": "getNextFloatingWindowPreviewState",
+      "kind": "function",
+      "signature": "getNextFloatingWindowPreviewState(currentState: BubbleState, patch: Partial<BubbleState>, source: BubbleChangeSource): BubbleState",
+      "description": "Applies a state patch to preview state."
+    },
+    {
+      "name": "getOverlaySharedValueState",
+      "kind": "function",
+      "signature": "getOverlaySharedValueState(valueKey: string): OverlaySharedValueState",
+      "description": "Returns the latest known shared value state for one key."
+    },
+    {
+      "name": "hideAllBubbles",
+      "kind": "function",
+      "signature": "hideAllBubbles(): boolean",
+      "description": ""
+    },
+    {
+      "name": "hideBubble",
+      "kind": "function",
+      "signature": "hideBubble(bubbleId: string): boolean",
+      "description": ""
+    },
+    {
+      "name": "isBubbleVisible",
+      "kind": "function",
+      "signature": "isBubbleVisible(bubbleId: string): boolean",
+      "description": "Returns the latest known visibility state for one named bubble."
+    },
+    {
+      "name": "MAX_BUBBLE_ID_LENGTH",
+      "kind": "value",
+      "signature": "MAX_BUBBLE_ID_LENGTH: 80",
+      "description": ""
+    },
+    {
+      "name": "MAX_OVERLAY_SHARED_VALUE_KEY_LENGTH",
+      "kind": "value",
+      "signature": "MAX_OVERLAY_SHARED_VALUE_KEY_LENGTH: 80",
+      "description": "Maximum normalized length for overlay shared value keys."
+    },
+    {
+      "name": "NativeWindow",
+      "kind": "component",
+      "signature": "NativeWindow(__namedParameters: HostProps): Element",
+      "description": "A direct Expo UI Jetpack Compose host for application-owned native windows."
+    },
+    {
+      "name": "NativeWindowProps",
+      "kind": "type",
+      "signature": "NativeWindowProps: HostProps",
+      "description": ""
+    },
+    {
+      "name": "normalizeBubbleId",
+      "kind": "function",
+      "signature": "normalizeBubbleId(bubbleId?: string): string",
+      "description": "Normalizes a JavaScript bubble ID before it is sent to the native overlay service.\r\n\r\nUnsupported characters become `-`, repeated dashes collapse, and empty values use\r\n`DEFAULT_BUBBLE_ID`."
+    },
+    {
+      "name": "normalizeOverlaySharedValueKey",
+      "kind": "function",
+      "signature": "normalizeOverlaySharedValueKey(valueKey?: string): string",
+      "description": "Normalizes a shared value key before it is read from or written to native state.\r\n\r\nUnsupported characters become `-`, repeated dashes collapse, and empty values use\r\n`DEFAULT_OVERLAY_SHARED_VALUE_KEY`."
+    },
+    {
+      "name": "openApp",
+      "kind": "function",
+      "signature": "openApp(): Promise<boolean>",
+      "description": "Brings the host app to the foreground from a bubble action."
+    },
+    {
+      "name": "OverlaySharedValueState",
+      "kind": "type",
+      "signature": "OverlaySharedValueState",
+      "description": "Native-backed numeric value shared between the app and overlay renderers."
+    },
+    {
+      "name": "ReactNativeWindow",
+      "kind": "component",
+      "signature": "ReactNativeWindow(__namedParameters: ReactNativeWindowProps): Element",
+      "description": "A Reanimated React Native window for application-owned bubble renderers."
+    },
+    {
+      "name": "ReactNativeWindowProps",
+      "kind": "type",
+      "signature": "ReactNativeWindowProps: ViewProps & NativeWindProps & object",
+      "description": ""
+    },
+    {
+      "name": "refreshAllOverlaySharedValueStates",
+      "kind": "function",
+      "signature": "refreshAllOverlaySharedValueStates(): OverlaySharedValueState[]",
+      "description": "Reads native state and returns the latest shared value state for every key."
+    },
+    {
+      "name": "refreshBubbleState",
+      "kind": "function",
+      "signature": "refreshBubbleState(bubbleId: string): BubbleState",
+      "description": "Reads native state and returns the latest state for one named bubble."
+    },
+    {
+      "name": "refreshOverlaySharedValueState",
+      "kind": "function",
+      "signature": "refreshOverlaySharedValueState(valueKey: string): OverlaySharedValueState",
+      "description": "Reads native state and returns the latest shared value state for one key."
+    },
+    {
+      "name": "requestPermission",
+      "kind": "function",
+      "signature": "requestPermission(): Promise<boolean>",
+      "description": "Opens the Android overlay permission screen when permission is missing."
+    },
+    {
+      "name": "setBubbleRenderer",
+      "kind": "function",
+      "signature": "setBubbleRenderer(renderer: BubbleRenderer | null): void",
+      "description": "Registers a global renderer used by bubbles without a per-bubble override.\r\n\r\nPass `null` to restore the default renderer."
+    },
+    {
+      "name": "setBubbleRendererForBubble",
+      "kind": "function",
+      "signature": "setBubbleRendererForBubble(bubbleId: string, renderer: BubbleRenderer | null): void",
+      "description": "Registers or clears a renderer for one named bubble."
+    },
+    {
+      "name": "setEdgeHideEnabled",
+      "kind": "function",
+      "signature": "setEdgeHideEnabled(enabled: boolean, bubbleId: string): boolean",
+      "description": "Enables or disables edge-hide behavior for one named bubble."
+    },
+    {
+      "name": "setOverlaySharedValue",
+      "kind": "function",
+      "signature": "setOverlaySharedValue(valueKey: string, value: number, source: BubbleChangeSource): number",
+      "description": "Stores a numeric shared value in native state and returns the committed value."
+    },
+    {
+      "name": "showBubble",
+      "kind": "function",
+      "signature": "showBubble(bubbleId: string, options?: BubbleDisplayOptions): Promise<boolean>",
+      "description": "Shows a named floating bubble and optionally applies display options first."
+    },
+    {
+      "name": "subscribeToBubbleState",
+      "kind": "function",
+      "signature": "subscribeToBubbleState(listener: BubbleListener): (): void",
+      "description": "Subscribes to bubble state changes and returns an unsubscribe function."
+    },
+    {
+      "name": "subscribeToOverlaySharedValueState",
+      "kind": "function",
+      "signature": "subscribeToOverlaySharedValueState(listener: OverlaySharedValueListener): (): void",
+      "description": "Subscribes to shared value changes and returns an unsubscribe function."
+    },
+    {
+      "name": "useAllBubbleStates",
+      "kind": "function",
+      "signature": "useAllBubbleStates(): BubbleState[]",
+      "description": "React hook for the latest state of all named bubbles."
+    },
+    {
+      "name": "useAllOverlaySharedValueStates",
+      "kind": "function",
+      "signature": "useAllOverlaySharedValueStates(): OverlaySharedValueState[]",
+      "description": "React hook for the latest shared value state of every key."
+    },
+    {
+      "name": "useBubbleState",
+      "kind": "function",
+      "signature": "useBubbleState(bubbleId: string): BubbleState",
+      "description": "React hook for the latest state of one named bubble."
+    },
+    {
+      "name": "useOverlaySharedValueState",
+      "kind": "function",
+      "signature": "useOverlaySharedValueState(valueKey: string): OverlaySharedValueState",
+      "description": "React hook for the latest shared value state of one key."
+    },
+    {
+      "name": "WindowAnimationConfig",
+      "kind": "type",
+      "signature": "WindowAnimationConfig: Partial<WithTimingConfig> & object",
+      "description": ""
+    }
+  ]
+}

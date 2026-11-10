@@ -30,7 +30,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: docs/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            docs/package-lock.json
+
+      - name: Install module dependencies
+        run: npm ci
+
+      - name: Build TypeScript declarations
+        run: npm run build
 
       - name: Install docs dependencies
         run: npm ci
@@ -43,7 +51,7 @@ jobs:
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/build
+          path: docs/out
 
   deploy:
     needs: build

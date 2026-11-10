@@ -1,210 +1,192 @@
 # expo-draw-over-apps
 
-`expo-draw-over-apps` is an Expo module for Android overlay permission and floating bubble UI.
+An Android Expo module for draw-over-apps permission and application-owned floating windows.
 
-It can:
+The `58.x` package line targets **Expo SDK 58**, React Native 0.88, and the Expo Modules 2 bridge. It exposes two window surfaces:
 
-- check and request the `draw over other apps` permission
-- show named floating bubbles from an Android overlay service
-- close bubbles and release their overlay surfaces
-- edge-hide a bubble on the left or right side of the screen
-- keep overlay visibility state in sync
-- share numeric overlay values through native state, including foreground refreshes after background overlay updates
-- open the app from a bubble
-- preview bubble UI inside the app before showing a native overlay
-- register custom React Native renderers
-- style custom renderers with NativeWind when your app already uses it
-- use the packaged `@expo/ui` Compose-flavored renderer API
-- wrap custom renderers in Reanimated React Native or Expo UI native window containers for smoother resizing
+- `ReactNativeWindow` for React Native content with Reanimated size and radius transitions
+- `NativeWindow` for native content built with `@expo/ui/jetpack-compose`
 
-This package is Android only. It does not run in Expo Go because it includes native Android code.
+You can show multiple named windows, choose their initial `x` and `y` screen coordinates, move visible windows, edge-hide them, share numeric native state, and close each native surface independently.
 
-## Docs
-
-The documentation site lives in `docs/`.
-
-```bash
-npm run docs:install
-npm run docs:dev
-```
-
-Build the static site:
-
-```bash
-npm run docs:build
-```
-
-Docusaurus writes the static output to `docs/build`. The repo also includes a GitHub Pages workflow that publishes that folder.
+> Android only. This module contains native code and does not run in Expo Go.
 
 ## Install
 
 ```bash
-npm install expo-draw-over-apps
+npx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets
 ```
 
-For SDK 57 window containers, install Reanimated with Expo's installer:
+Build a development client after installation:
 
 ```bash
-npx expo install react-native-reanimated react-native-worklets
+npx expo run:android
 ```
 
-Install `@expo/ui` only if you want the packaged Compose-flavored renderer API or the native Expo UI window container:
-
-```bash
-npx expo install @expo/ui
-```
-
-`@expo/ui` is an optional peer dependency. Apps that use only React Native window containers do not need it.
-
-## Version tracks
-
-- SDK 57: current stable implementation, published as `57.0.0`. Supports Expo SDK 57 / React Native 0.86 and carries forward native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
-- SDK 56: latest npm release is `56.0.6`. It adds native overlay shared values, Reanimated-backed `ReactNativeWindowContainer`, and `NativeWindowContainer`.
-- SDK 55: latest npm release is `55.0.2`. It supports Android overlay permission and floating React Native or Jetpack Compose bubbles. Install with `npm install expo-draw-over-apps@55`.
-
-If your app is a bare React Native app and does not already use Expo modules, install Expo modules first:
-
-[Install Expo modules in a React Native project](https://docs.expo.dev/bare/installing-expo-modules/)
-
-## Quick start
+## Permission
 
 ```tsx
-import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { canDrawOverlays, requestPermission } from 'expo-draw-over-apps';
+
+if (!canDrawOverlays()) {
+  await requestPermission();
+}
+```
+
+The user changes this permission in Android system settings. Recheck `canDrawOverlays()` when your app returns to the foreground.
+
+## React Native window
+
+Create a renderer from ordinary React Native components:
+
+```tsx
+import { Pressable, StyleSheet, Text } from 'react-native';
 import {
-  canDrawOverlays,
-  closeBubble,
-  requestPermission,
-  setOverlaySharedValue,
+  ReactNativeWindow,
   showBubble,
-  useBubbleState,
-  useOverlaySharedValueState,
+  type BubbleRendererProps,
 } from 'expo-draw-over-apps';
 
-const counterKey = 'quick-start-counter';
+export function StatusWindow({ bubbleId, close }: BubbleRendererProps) {
+  return (
+    <ReactNativeWindow
+      width={220}
+      height={150}
+      borderRadius={28}
+      backgroundColor="#0f172a"
+      animationConfig={{ duration: 220 }}
+      style={styles.window}
+      contentContainerStyle={styles.content}
+    >
+      <Text style={styles.title}>Upload complete</Text>
+      <Pressable onPress={() => void showBubble(bubbleId, { x: 240, y: 120 })}>
+        <Text style={styles.action}>Move</Text>
+      </Pressable>
+      <Pressable onPress={close}><Text style={styles.action}>Close</Text></Pressable>
+    </ReactNativeWindow>
+  );
+}
 
-export default function App() {
-  const [granted, setGranted] = useState(false);
-  const bubbleState = useBubbleState();
-  const counterState = useOverlaySharedValueState(counterKey);
+const styles = StyleSheet.create({
+  window: { borderWidth: 1, borderColor: '#38bdf8', padding: 16 },
+  content: { flex: 1, justifyContent: 'space-between' },
+  title: { color: '#f8fafc', fontSize: 18, fontWeight: '800' },
+  action: { color: '#7dd3fc', fontWeight: '700' },
+});
+```
 
+## Native window
+
+`NativeWindow` is a direct Expo UI Jetpack Compose host. Its descendants must be Compose components rather than React Native views.
+
+```tsx
+import { Button, Column, Shape, Surface, Text } from '@expo/ui/jetpack-compose';
+import { fillMaxWidth, paddingAll, size } from '@expo/ui/jetpack-compose/modifiers';
+import { NativeWindow, showBubble, type BubbleRendererProps } from 'expo-draw-over-apps';
+
+export function NativeStatusWindow({ bubbleId, close }: BubbleRendererProps) {
+  return (
+    <NativeWindow seedColor="#2563eb">
+      <Surface
+        tonalElevation={4}
+        shadowElevation={12}
+        shape={Shape.RoundedCorner({
+          cornerRadii: { topStart: 28, topEnd: 28, bottomStart: 28, bottomEnd: 28 },
+        })}
+        modifiers={[size(240, 220)]}
+      >
+        <Column
+          horizontalAlignment="center"
+          verticalArrangement={{ spacedBy: 10 }}
+          modifiers={[fillMaxWidth(), paddingAll(16)]}
+        >
+          <Text style={{ typography: 'titleMedium', fontWeight: '800' }}>Upload complete</Text>
+          <Button onClick={() => void showBubble(bubbleId, { x: 240, y: 120 })}>
+            <Text>Move</Text>
+          </Button>
+          <Button onClick={close}><Text>Close</Text></Button>
+        </Column>
+      </Surface>
+    </NativeWindow>
+  );
+}
+```
+
+See Expo's [SDK 58 Jetpack Compose reference](https://docs.expo.dev/versions/v58.0.0/sdk/ui/jetpack-compose/) for the supported native components and modifiers. Expo UI for Android is beta in this SDK.
+
+## Register and show
+
+Register application-owned renderers before starting the overlay service. Clear them and close their native surfaces during cleanup.
+
+```tsx
+import { useEffect } from 'react';
+import {
+  closeBubble,
+  setBubbleRendererForBubble,
+  showBubble,
+} from 'expo-draw-over-apps';
+import { StatusWindow } from './StatusWindow';
+
+const BUBBLE_ID = 'status-window';
+
+export function OverlayRegistration() {
   useEffect(() => {
-    setGranted(canDrawOverlays());
+    setBubbleRendererForBubble(BUBBLE_ID, StatusWindow);
+
+    return () => {
+      closeBubble(BUBBLE_ID);
+      setBubbleRendererForBubble(BUBBLE_ID, null);
+    };
   }, []);
 
-  async function handlePermission() {
-    await requestPermission();
-    setGranted(canDrawOverlays());
-  }
-
-  async function handleToggleBubble() {
-    if (bubbleState.isVisible) {
-      closeBubble();
-      return;
-    }
-
-    await showBubble('default', { edgeHideEnabled: true });
-  }
-
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <Text>Overlay permission: {granted ? 'granted' : 'missing'}</Text>
-      <Text>Bubble visible: {bubbleState.isVisible ? 'yes' : 'no'}</Text>
-      <Text>Shared counter: {counterState.value}</Text>
-
-      <Pressable onPress={() => void handlePermission()}>
-        <Text>Request permission</Text>
-      </Pressable>
-
-      <Pressable onPress={() => void handleToggleBubble()}>
-        <Text>{bubbleState.isVisible ? 'Close bubble' : 'Show bubble'}</Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => setOverlaySharedValue(counterKey, counterState.value + 1, 'app')}
-      >
-        <Text>+1 in app</Text>
-      </Pressable>
-    </View>
-  );
+  return null;
 }
+
+await showBubble(BUBBLE_ID, { x: 48, y: 180, edgeHideEnabled: true });
 ```
 
-## Smooth window containers
+Coordinates are optional physical screen pixels measured from the top-left corner. Each axis can be supplied independently. Android clamps explicit positions into the available display bounds. Calling `showBubble` with an already-visible ID repositions that window immediately.
 
-Use the window containers when a bubble changes size. Both accept React Native children, React Native `style`, and NativeWind `className` / `contentClassName`. When no background is declared, both containers follow the system light/dark scheme; pass `backgroundColor`, a style background, or `colorScheme` to force a look.
+## Main API
 
-```tsx
-import { Pressable, Text } from 'react-native';
-import {
-  ReactNativeWindowContainer,
-  setOverlaySharedValue,
-  useOverlaySharedValueState,
-} from 'expo-draw-over-apps';
+- Permission: `canDrawOverlays`, `requestPermission`
+- Windows: `showBubble`, `closeBubble`, `closeAllBubbles`, `isBubbleVisible`, `setEdgeHideEnabled`
+- Renderers: `setBubbleRenderer`, `setBubbleRendererForBubble`, `ReactNativeWindow`, `NativeWindow`
+- State: `useBubbleState`, `useAllBubbleStates`, `subscribeToBubbleState`
+- Numeric shared values: `setOverlaySharedValue`, `useOverlaySharedValueState`, `getOverlaySharedValueState`
+- In-app fixtures: `FloatingWindowPreview`
 
-const resizeKey = 'window-container-counter';
-
-export function SmoothBubble() {
-  const sharedStep = useOverlaySharedValueState(resizeKey);
-  const expanded = sharedStep.value >= 1;
-
-  return (
-    <ReactNativeWindowContainer
-      width={expanded ? 238 : 154}
-      height={expanded ? 256 : 172}
-      borderRadius={expanded ? 44 : 28}
-      className="border-2 border-rose-400 bg-slate-950 px-4 py-4"
-      contentClassName="flex-1 items-center justify-center"
-    >
-      <Text style={{ color: 'white', fontWeight: '900' }}>Smooth resize</Text>
-      <Pressable
-        onPress={() => setOverlaySharedValue(resizeKey, expanded ? 0 : 1, 'bubble')}
-      >
-        <Text style={{ color: 'white' }}>Resize</Text>
-      </Pressable>
-    </ReactNativeWindowContainer>
-  );
-}
-```
-
-## Data safety
-
-Use static, non-sensitive bubble IDs and overlay shared-value keys. IDs and keys cross the JavaScript/native boundary and are normalized for stability, not privacy. Overlay shared values store numbers only; keep secrets, personal data, objects, and larger app state in your own protected store.
-
-## Example app
-
-The example app in `example/` shows permission handling, edge hide, named bubbles, example-owned counter/timer helpers backed by native shared values, fixture previews, and renderer switching.
-
-Current fixtures:
-
-- React Native Counter Bubble
-- Jetpack Compose Counter Bubble
-- Countdown Timer Bubble
-- React Native Resize Bubble
-- Native Expo UI Resize Bubble
+The complete generated reference and focused tutorials are on the [documentation site](https://budzhors7.github.io/expo-draw-over-apps/).
 
 ## Development
 
 ```bash
+npm install
 npm run build
 npm test
+npm run lint
 ```
 
-Install and build the Android example app:
+For the docs website:
+
+```bash
+npm run docs:install
+npm run docs:dev
+npm run docs:build
+```
+
+The Next.js App Router site uses MDX and exports static GitHub Pages assets to `docs/out`.
+
+Run the example on an Android emulator for native overlay verification:
 
 ```bash
 cd example
 npm install
-npx expo prebuild -p android
 npx expo run:android
 ```
 
-The example keeps local `file:..` installs packed with `install-links=true`. This avoids duplicate native module discovery while still testing the publishable package shape. Its Expo config plugin also keeps Reanimated and Worklets CMake staging paths short enough for Windows Android builds.
+## Project
 
-Run `npx expo install --fix` inside `example/` when Expo reports dependency drift.
-
-## Open source
-
-- [Contributing guide](./CONTRIBUTING.md)
+- [Contributing](./CONTRIBUTING.md)
 - [Code of Conduct](./CODE_OF_CONDUCT.md)
-- [License](./LICENSE)
+- [MIT License](./LICENSE)

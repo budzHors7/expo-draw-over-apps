@@ -1,0 +1,66 @@
+# Expo SDK 58 guide
+
+`expo-draw-over-apps` is an Android-only Expo module for permission-aware, application-owned floating windows. This guide has one supported path: Expo SDK 58, React Native 0.88, and the Expo Modules 2 bridge.
+
+## Install
+
+Use Expo's installer so the native window dependencies match your SDK:
+
+```bash
+npx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets
+```
+
+Because this package contains native Android code, build a development client. It does not run in Expo Go.
+
+```bash
+npx expo run:android
+```
+
+## Choose a window
+
+Use `ReactNativeWindow` when the renderer is ordinary React Native UI. It animates width, height, and corner-radius changes with Reanimated.
+
+Use `NativeWindow` when the renderer is Expo UI Jetpack Compose. It is a direct `Host`, so its children must come from `@expo/ui/jetpack-compose`, not React Native.
+
+<table>
+  <thead>
+    <tr><th>API</th><th>Content</th><th>Best for</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>ReactNativeWindow</code></td><td>React Native views</td><td>Existing RN components, NativeWind, animated resizing</td></tr>
+    <tr><td><code>NativeWindow</code></td><td>Expo UI Jetpack Compose views</td><td>Native Material surfaces and Compose modifiers</td></tr>
+  </tbody>
+</table>
+
+## Show it
+
+Register a renderer before starting the overlay service, then pass a stable bubble ID. The optional `x` and `y` coordinates are physical screen pixels measured from the top-left corner.
+
+```tsx
+import { useEffect } from 'react';
+import {
+  closeBubble,
+  setBubbleRendererForBubble,
+  showBubble,
+} from 'expo-draw-over-apps';
+import { StatusWindow } from './StatusWindow';
+
+const BUBBLE_ID = 'status-window';
+
+export function OverlayRegistration() {
+  useEffect(() => {
+    setBubbleRendererForBubble(BUBBLE_ID, StatusWindow);
+
+    return () => {
+      closeBubble(BUBBLE_ID);
+      setBubbleRendererForBubble(BUBBLE_ID, null);
+    };
+  }, []);
+
+  return null;
+}
+
+await showBubble(BUBBLE_ID, { x: 48, y: 180 });
+```
+
+Continue with [overlay permission](./permission/), then choose the [React Native window](./react-native-window/) or [native window](./native-window/) tutorial.

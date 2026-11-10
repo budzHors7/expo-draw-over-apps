@@ -1,0 +1,23 @@
+# Limitations
+
+The module targets Android and requires native code. Plan around these platform constraints before shipping.
+
+- Expo Go is not supported; use a development build or a release build.
+- The user must explicitly grant Android's draw-over-apps permission.
+- iOS does not offer a general equivalent to Android application overlays.
+- Expo UI Jetpack Compose is beta in Expo SDK 58.
+- Overlay coordinates use physical screen pixels, not React Native density-independent layout units.
+- Android may stop background services under device-specific battery or memory policies.
+- A floating window can cover content in other apps; use conservative sizes and always provide a clear close action.
+- Renderer registration lives in JavaScript. Keep the application process and the registration lifecycle in mind when recovering after termination.
+
+## Production checklist
+
+1. Explain the feature before opening Android settings.
+2. Provide a visible close action inside every renderer.
+3. Test coordinate clamping, dragging, edge hide, rotation, and display cutouts.
+4. Test app backgrounding, force-stop, reboot, and OEM battery restrictions.
+5. Avoid sensitive content in overlays and overlay shared-value keys.
+6. Verify both light and dark themes for `ReactNativeWindow` and the Compose theme used by `NativeWindow`.
+
+The included example app is the reference for Expo SDK 58. It contains exactly two renderer fixtures—one for each window API—and explicit move actions for emulator testing.

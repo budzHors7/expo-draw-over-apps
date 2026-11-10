@@ -1,0 +1,58 @@
+# Overlay permission
+
+Android requires the user to grant “display over other apps” access before a floating window can be attached.
+
+## Request permission
+
+Check synchronously, request asynchronously, and only show a window after access is granted.
+
+```tsx
+import { useState } from 'react';
+import { Button, Text, View } from 'react-native';
+import {
+  canDrawOverlays,
+  requestPermission,
+  showBubble,
+} from 'expo-draw-over-apps';
+
+export function PermissionGate() {
+  const [granted, setGranted] = useState(() => canDrawOverlays());
+
+  async function enableOverlays() {
+    await requestPermission();
+    setGranted(canDrawOverlays());
+  }
+
+  return (
+    <View>
+      <Text>{granted ? 'Ready' : 'Permission required'}</Text>
+      <Button title="Grant permission" onPress={() => void enableOverlays()} />
+      <Button
+        title="Show window"
+        disabled={!granted}
+        onPress={() => void showBubble('status-window', { x: 48, y: 180 })}
+      />
+    </View>
+  );
+}
+```
+
+`requestPermission()` opens Android system settings when access is missing. The returned value is useful, but checking again after the app resumes is the most reliable source of truth.
+
+## Refresh on resume
+
+The user leaves your app to change the setting. Refresh when React Native reports that the app is active again.
+
+```tsx
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+      setGranted(canDrawOverlays());
+    }
+  });
+
+  return () => subscription.remove();
+}, []);
+```
+
+Do not repeatedly reopen settings after a denial. Keep the user in control and explain why your feature needs an overlay.

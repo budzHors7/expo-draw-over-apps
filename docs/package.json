@@ -1,37 +1,28 @@
 {
   "name": "expo-draw-over-apps-docs",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packageManager": "npm@11.9.0",
   "scripts": {
-    "build": "docusaurus build",
-    "clear": "docusaurus clear",
-    "dev": "docusaurus start",
-    "serve": "docusaurus serve"
+    "build": "npm run generate:api && next build",
+    "dev": "npm run generate:api && next dev",
+    "generate:api": "node scripts/generate-api-reference.mjs",
+    "serve": "npx serve out"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.10.1",
-    "@docusaurus/plugin-client-redirects": "^3.10.1",
-    "@docusaurus/preset-classic": "^3.10.1",
-    "docusaurus-plugin-typedoc": "^1.4.2",
-    "prism-react-renderer": "^2.4.1",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
-    "typedoc": "^0.28.19",
-    "typedoc-docusaurus-theme": "^1.4.2",
-    "typedoc-plugin-markdown": "^4.11.0"
+    "@mdx-js/loader": "3.1.1",
+    "@mdx-js/react": "3.1.1",
+    "@next/mdx": "16.4.6",
+    "next": "16.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.10.1",
-    "@docusaurus/tsconfig": "^3.10.1",
-    "@docusaurus/types": "^3.10.1",
-    "@types/node": "^25.6.0",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
-    "typescript": "^6.0.2"
-  },
-  "overrides": {
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3"
+    "@types/mdx": "2.0.14",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typedoc": "0.28.20",
+    "typescript": "6.0.2"
   }
 }

@@ -1,0 +1,77 @@
+# React Native window
+
+`ReactNativeWindow` is a Reanimated surface for renderers made from React Native views. Your application owns the contents, behavior, dimensions, and cleanup.
+
+## Complete renderer
+
+```tsx
+import { Pressable, StyleSheet, Text } from 'react-native';
+import {
+  ReactNativeWindow,
+  showBubble,
+  type BubbleRendererProps,
+} from 'expo-draw-over-apps';
+
+export function StatusWindow({ bubbleId, close }: BubbleRendererProps) {
+  return (
+    <ReactNativeWindow
+      width={220}
+      height={150}
+      borderRadius={28}
+      backgroundColor="#0f172a"
+      animationConfig={{ duration: 220 }}
+      style={styles.window}
+      contentContainerStyle={styles.content}
+    >
+      <Text style={styles.title}>Upload complete</Text>
+      <Pressable onPress={() => void showBubble(bubbleId, { x: 240, y: 120 })}>
+        <Text style={styles.action}>Move</Text>
+      </Pressable>
+      <Pressable onPress={close}>
+        <Text style={styles.action}>Close</Text>
+      </Pressable>
+    </ReactNativeWindow>
+  );
+}
+
+const styles = StyleSheet.create({
+  window: { borderWidth: 1, borderColor: '#38bdf8', padding: 16 },
+  content: { flex: 1, justifyContent: 'space-between' },
+  title: { color: '#f8fafc', fontSize: 18, fontWeight: '800' },
+  action: { color: '#7dd3fc', fontWeight: '700' },
+});
+```
+
+The component accepts normal `View` props plus `width`, `height`, `borderRadius`, `backgroundColor`, `contentContainerStyle`, and `animationConfig`. Set `duration: 0` when an immediate resize is preferable.
+
+## Register and show
+
+```tsx
+import { useEffect } from 'react';
+import {
+  closeBubble,
+  setBubbleRendererForBubble,
+  showBubble,
+} from 'expo-draw-over-apps';
+import { StatusWindow } from './StatusWindow';
+
+const BUBBLE_ID = 'status-window';
+
+export function StatusWindowRegistration() {
+  useEffect(() => {
+    setBubbleRendererForBubble(BUBBLE_ID, StatusWindow);
+    return () => {
+      closeBubble(BUBBLE_ID);
+      setBubbleRendererForBubble(BUBBLE_ID, null);
+    };
+  }, []);
+
+  return null;
+}
+
+export function showStatusWindow() {
+  return showBubble(BUBBLE_ID, { x: 48, y: 180 });
+}
+```
+
+Keep the registration mounted while the overlay may be visible. Clearing it with `null` prevents stale renderer references during fast refresh and navigation changes.

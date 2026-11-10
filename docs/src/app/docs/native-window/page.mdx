@@ -1,0 +1,82 @@
+# Native window
+
+`NativeWindow` is a direct Expo UI Jetpack Compose `Host`. Use it when the overlay content should be a native Compose hierarchy.
+
+> Expo UI for Android is beta in Expo SDK 58. Pin SDK-compatible versions and verify behavior on the Android versions you support.
+
+## Complete renderer
+
+```tsx
+import { Button, Column, Shape, Surface, Text } from '@expo/ui/jetpack-compose';
+import { fillMaxWidth, paddingAll, size } from '@expo/ui/jetpack-compose/modifiers';
+import {
+  NativeWindow,
+  showBubble,
+  type BubbleRendererProps,
+} from 'expo-draw-over-apps';
+
+export function NativeStatusWindow({ bubbleId, close }: BubbleRendererProps) {
+  return (
+    <NativeWindow seedColor="#2563eb">
+      <Surface
+        tonalElevation={4}
+        shadowElevation={12}
+        shape={Shape.RoundedCorner({
+          cornerRadii: { topStart: 28, topEnd: 28, bottomStart: 28, bottomEnd: 28 },
+        })}
+        modifiers={[size(240, 220)]}
+      >
+        <Column
+          horizontalAlignment="center"
+          verticalArrangement={{ spacedBy: 10 }}
+          modifiers={[fillMaxWidth(), paddingAll(16)]}
+        >
+          <Text style={{ typography: 'titleMedium', fontWeight: '800' }}>
+            Upload complete
+          </Text>
+          <Button onClick={() => void showBubble(bubbleId, { x: 240, y: 120 })}>
+            <Text>Move</Text>
+          </Button>
+          <Button onClick={close}><Text>Close</Text></Button>
+        </Column>
+      </Surface>
+    </NativeWindow>
+  );
+}
+```
+
+The exact SDK 58 component and modifier APIs are documented in the [official Expo UI Jetpack Compose reference](https://docs.expo.dev/versions/v58.0.0/sdk/ui/jetpack-compose/).
+
+## Register and show
+
+Registration is the same for either window type—the renderer component determines which surface is created.
+
+```tsx
+import { useEffect } from 'react';
+import {
+  closeBubble,
+  setBubbleRendererForBubble,
+  showBubble,
+} from 'expo-draw-over-apps';
+import { NativeStatusWindow } from './NativeStatusWindow';
+
+const BUBBLE_ID = 'native-status-window';
+
+export function NativeStatusRegistration() {
+  useEffect(() => {
+    setBubbleRendererForBubble(BUBBLE_ID, NativeStatusWindow);
+    return () => {
+      closeBubble(BUBBLE_ID);
+      setBubbleRendererForBubble(BUBBLE_ID, null);
+    };
+  }, []);
+
+  return null;
+}
+
+export function showNativeStatusWindow() {
+  return showBubble(BUBBLE_ID, { x: 48, y: 180 });
+}
+```
+
+Do not place React Native `View`, `Text`, or `Pressable` components inside `NativeWindow`. Use Expo UI Compose components and modifiers throughout that host.

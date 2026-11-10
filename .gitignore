@@ -54,7 +54,9 @@ out/
 node_modules/
 docs/.next/
 docs/.docusaurus/
+docs/.generated/
 docs/build/
+docs/next-env.d.ts
 docs/docs/public-api/
 docs/out/
 docs/node_modules/

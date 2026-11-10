@@ -23,14 +23,14 @@ This project is an open source Expo module focused on Android overlay permission
 1. Install root dependencies with `npm install`.
 2. Install the docs app dependencies with `npm run docs:install`.
 3. Build the module with `npm run build`.
-4. Start the docs site with `npm run docs:dev`.
+4. Start the Next.js docs site with `npm run docs:dev`.
 5. Use the `example/` app when you need to verify real overlay behavior on Android.
 
 ## Making Changes
 
 - Follow the current structure and naming in the repo instead of introducing a parallel pattern.
 - If you change public module behavior, update the README, docs site, and example app when needed.
-- If you touch the docs UI, make sure light and dark mode both still work.
+- If you touch the docs UI, make sure the App Router static export and both light and dark mode still work.
 - Avoid unrelated formatting-only changes in the same pull request.
 
 ## Pull Request Checklist
@@ -44,7 +44,7 @@ This project is an open source Expo module focused on Android overlay permission
 ## Testing Expectations
 
 - Run `npm run build` for module changes.
-- Run `npm run docs:build` for docs site changes.
+- Run `npm run docs:build` for docs site changes and inspect the generated `docs/out` site.
 - If a change affects Android behavior, test it in the example app or document what you were able to verify.
 
 ## Reporting Bugs
