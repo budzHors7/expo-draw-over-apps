@@ -23,17 +23,14 @@ export type ExampleBubbleState = {
 export const WINDOW_CONTAINER_SHARED_VALUE_KEY = 'window-container-counter';
 
 const RESIZE_WINDOW_BUBBLE_IDS = new Set([
-  'react-native-resize-bubble',
-  'expo-ui-resize-bubble',
+  'react-native-window',
+  'native-window',
 ]);
 
 const observedBubbleIds = new Set<string>([
   DEFAULT_BUBBLE_ID,
-  'react-native-counter',
-  'jetpack-compose-counter',
-  'countdown-timer',
-  'react-native-resize-bubble',
-  'expo-ui-resize-bubble',
+  'react-native-window',
+  'native-window',
 ]);
 
 function normalizeCount(count: number) {
