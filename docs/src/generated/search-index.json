@@ -1,0 +1,458 @@
+[
+  {
+    "title": "Overview",
+    "page": "Overview",
+    "href": "/docs",
+    "text": "export const metadata = { title: 'Expo SDK 58 guide' }; Expo SDK 58 guide expo-draw-over-apps is an Android-only Expo module for permission-aware, application-owned floating windows. This guide has one supported path: Expo SDK 58, React Native 0.88, and the Expo Modules 2 bridge."
+  },
+  {
+    "title": "Install",
+    "page": "Overview",
+    "href": "/docs#install",
+    "text": "Install Use Expo's installer so the native window dependencies match your SDK: bash npx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets Or with Bun: bash bunx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets The module major follows the Expo SDK major, so 58.x is the supported line for SDK 58. Its package metadata requires the expo peer range ^58.0.0 . Because this package contains native Android code, build a development client. It does not run in Expo Go. bash npx expo run:android"
+  },
+  {
+    "title": "Choose a window",
+    "page": "Overview",
+    "href": "/docs#choose-a-window",
+    "text": "Choose a window Use ReactNativeWindow when the renderer is ordinary React Native UI. It animates width, height, and corner-radius changes with Reanimated. Use NativeWindow when the renderer is Expo UI Jetpack Compose. It is a direct Host , so its children must come from @expo/ui/jetpack-compose , not React Native. API Content Best for ReactNativeWindow React Native views Existing RN components, NativeWind, animated resizing NativeWindow Expo UI Jetpack Compose views Native Material surfaces and Compose modifiers"
+  },
+  {
+    "title": "Show it",
+    "page": "Overview",
+    "href": "/docs#show-it",
+    "text": "Show it Register a renderer before starting the overlay service, then pass a stable bubble ID. Use physical-pixel x and y coordinates for exact placement or location for one of nine predefined screen positions. tsx import { useEffect } from 'react'; import { closeBubble, setBubbleRendererForBubble, showBubble, } from 'expo-draw-over-apps'; import { StatusWindow } from './StatusWindow'; const BUBBLE_ID = 'status-window'; export function OverlayRegistration() { useEffect(() => { setBubbleRendererForBubble(BUBBLE_ID, StatusWindow); return () => { closeBubble(BUBBLE_ID); setBubbleRendererForBubble(BUBBLE_ID, null); }; }, []); return null; } await showBubble(BUBBLE_ID, { x: 48, y: 180 }); await showBubble(BUBBLE_ID, { location: 'bottom-right' }); Continue with [overlay permission](./permission/), then choose the [React Native window](./react-native-window/) or [native window](./native-window/) tutorial."
+  },
+  {
+    "title": "Multiple windows",
+    "page": "Overview",
+    "href": "/docs#multiple-windows",
+    "text": "Multiple windows Need two or more overlays at the same time? The [multiple-window setup guide](./multiple-windows/) has visible tabs for Expo Router and App.tsx / no Router projects, plus examples for independent positions and shared renderers."
+  },
+  {
+    "title": "Permission",
+    "page": "Permission",
+    "href": "/docs/permission",
+    "text": "export const metadata = { title: 'Overlay permission' }; Overlay permission Android requires the user to grant “display over other apps” access before a floating window can be attached."
+  },
+  {
+    "title": "Request permission",
+    "page": "Permission",
+    "href": "/docs/permission#request-permission",
+    "text": "Request permission Check synchronously, request asynchronously, and only show a window after access is granted. tsx import { useState } from 'react'; import { Button, Text, View } from 'react-native'; import { canDrawOverlays, requestPermission, showBubble, } from 'expo-draw-over-apps'; export function PermissionGate() { const [granted, setGranted] = useState(() => canDrawOverlays()); async function enableOverlays() { await requestPermission(); setGranted(canDrawOverlays()); } return ( {granted ? 'Ready' : 'Permission required'} void enableOverlays()} /> void showBubble('status-window', { x: 48, y: 180 })} /> ); } requestPermission() opens Android system settings when access is missing. The returned value is useful, but checking again after the app resumes is the most reliable source of truth."
+  },
+  {
+    "title": "Refresh on resume",
+    "page": "Permission",
+    "href": "/docs/permission#refresh-on-resume",
+    "text": "Refresh on resume The user leaves your app to change the setting. Refresh when React Native reports that the app is active again. tsx useEffect(() => { const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') { setGranted(canDrawOverlays()); } }); return () => subscription.remove(); }, []); Do not repeatedly reopen settings after a denial. Keep the user in control and explain why your feature needs an overlay."
+  },
+  {
+    "title": "React Native window",
+    "page": "React Native window",
+    "href": "/docs/react-native-window",
+    "text": "export const metadata = { title: 'React Native window' }; React Native window ReactNativeWindow is a Reanimated surface for renderers made from React Native views. Your application owns the contents, behavior, dimensions, and cleanup."
+  },
+  {
+    "title": "Complete renderer",
+    "page": "React Native window",
+    "href": "/docs/react-native-window#complete-renderer",
+    "text": "Complete renderer tsx import { Pressable, StyleSheet, Text } from 'react-native'; import { ReactNativeWindow, showBubble, type BubbleRendererProps, } from 'expo-draw-over-apps'; export function StatusWindow({ bubbleId, close }: BubbleRendererProps) { return ( Upload complete void showBubble(bubbleId, { x: 240, y: 120 })}> Move Close ); } const styles = StyleSheet.create({ window: { borderWidth: 1, borderColor: ' 38bdf8', padding: 16 }, content: { flex: 1, justifyContent: 'space-between' }, title: { color: ' f8fafc', fontSize: 18, fontWeight: '800' }, action: { color: ' 7dd3fc', fontWeight: '700' }, }); The component accepts normal View props plus width , height , borderRadius , backgroundColor , contentContainerStyle , and animationConfig . Set duration: 0 when an immediate resize is preferable."
+  },
+  {
+    "title": "Register and show",
+    "page": "React Native window",
+    "href": "/docs/react-native-window#register-and-show",
+    "text": "Register and show tsx import { useEffect } from 'react'; import { closeBubble, setBubbleRendererForBubble, showBubble, } from 'expo-draw-over-apps'; import { StatusWindow } from './StatusWindow'; const BUBBLE_ID = 'status-window'; export function StatusWindowRegistration() { useEffect(() => { setBubbleRendererForBubble(BUBBLE_ID, StatusWindow); return () => { closeBubble(BUBBLE_ID); setBubbleRendererForBubble(BUBBLE_ID, null); }; }, []); return null; } export function showStatusWindow() { return showBubble(BUBBLE_ID, { x: 48, y: 180 }); } Keep the registration mounted while the overlay may be visible. Clearing it with null prevents stale renderer references during fast refresh and navigation changes."
+  },
+  {
+    "title": "Native window",
+    "page": "Native window",
+    "href": "/docs/native-window",
+    "text": "export const metadata = { title: 'Native window' }; Native window NativeWindow is a direct Expo UI Jetpack Compose Host . Use it when the overlay content should be a native Compose hierarchy. > Expo UI for Android is beta in Expo SDK 58. Pin SDK-compatible versions and verify behavior on the Android versions you support."
+  },
+  {
+    "title": "Complete renderer",
+    "page": "Native window",
+    "href": "/docs/native-window#complete-renderer",
+    "text": "Complete renderer tsx import { Button, Column, Shape, Surface, Text } from '@expo/ui/jetpack-compose'; import { fillMaxWidth, paddingAll, size } from '@expo/ui/jetpack-compose/modifiers'; import { NativeWindow, showBubble, type BubbleRendererProps, } from 'expo-draw-over-apps'; export function NativeStatusWindow({ bubbleId, close }: BubbleRendererProps) { return ( Upload complete void showBubble(bubbleId, { x: 240, y: 120 })}> Move Close ); } The exact SDK 58 component and modifier APIs are documented in the [official Expo UI Jetpack Compose reference](https://docs.expo.dev/versions/v58.0.0/sdk/ui/jetpack-compose/)."
+  },
+  {
+    "title": "Register and show",
+    "page": "Native window",
+    "href": "/docs/native-window#register-and-show",
+    "text": "Register and show Registration is the same for either window type—the renderer component determines which surface is created. tsx import { useEffect } from 'react'; import { closeBubble, setBubbleRendererForBubble, showBubble, } from 'expo-draw-over-apps'; import { NativeStatusWindow } from './NativeStatusWindow'; const BUBBLE_ID = 'native-status-window'; export function NativeStatusRegistration() { useEffect(() => { setBubbleRendererForBubble(BUBBLE_ID, NativeStatusWindow); return () => { closeBubble(BUBBLE_ID); setBubbleRendererForBubble(BUBBLE_ID, null); }; }, []); return null; } export function showNativeStatusWindow() { return showBubble(BUBBLE_ID, { x: 48, y: 180 }); } Do not place React Native View , Text , or Pressable components inside NativeWindow . Use Expo UI Compose components and modifiers throughout that host."
+  },
+  {
+    "title": "Multiple windows",
+    "page": "Multiple windows",
+    "href": "/docs/multiple-windows",
+    "text": "import { SetupTab, SetupTabs } from '../../../components/SetupTabs'; export const metadata = { title: 'Multiple overlay windows' }; Multiple overlay windows Every simultaneous window needs a unique, stable ID. Register one renderer for each ID, keep those registrations mounted, then call showBubble once for every window you want to display. The renderer registration and overlay actions are the same in every Expo project. Only the place where you mount the registration differs: - Expo Router: wrap the navigator in the root src/app/_layout.tsx . - Without Expo Router: wrap the existing application UI or navigator in App.tsx ."
+  },
+  {
+    "title": "Choose your project setup",
+    "page": "Multiple windows",
+    "href": "/docs/multiple-windows#choose-your-project-setup",
+    "text": "Choose your project setup Select the project type first, then create the shared registration and action files shown below the tabs. Mount in the root layout Expo Router uses its root _layout.tsx for initialization and top-level providers. Wrap the existing Stack , Tabs , NativeTabs , or other navigator with the registration component. This keeps the renderers registered while users navigate between routes. See Expo's [root layout documentation](https://docs.expo.dev/router/basics/navigation-layouts/ root-layout). tsx // src/app/_layout.tsx import { Stack } from 'expo-router/stack'; import { OverlayWindowsRegistration } from '../overlays/overlay-registration'; export default function RootLayout() { return ( ); } Render the shared controls from any route: tsx // src/app/index.tsx import { OverlayControls } from '../components/overlay-controls'; export default function HomeRoute() { return ; } Projects using a root-level app folder instead of src/app use the same layout code with adjusted relative imports. Mount in App.tsx Wrap the UI already returned by App.tsx . This example renders the shared controls directly: tsx // App.tsx import { OverlayControls } from './src/components/overlay-controls'; import { OverlayWindowsRegistration } from './src/overlays/overlay-registration'; export default function App() { return ( ); } If the project uses React Navigation or another navigator, replace OverlayControls above with that existing navigator. Keep OverlayWindowsRegistration above it so every screen can control the windows. Keep the shared overlay code outside the route directory: text src/ components/ overlay-controls.tsx overlays/ overlay-ids.ts overlay-registration.tsx overlay-actions.ts CallControlsWindow.tsx UploadStatusWindow.tsx"
+  },
+  {
+    "title": "Register two renderers",
+    "page": "Multiple windows",
+    "href": "/docs/multiple-windows#register-two-renderers",
+    "text": "Register two renderers Start with constants for the two overlay IDs: tsx // src/overlays/overlay-ids.ts export const CALL_CONTROLS_ID = 'call-controls'; export const UPLOAD_STATUS_ID = 'upload-status'; Create one registration component. This example registers a React Native call controller and a native Compose upload status window. Build those renderer components using the [React Native window](../react-native-window/) and [native window](../native-window/) guides. tsx // src/overlays/overlay-registration.tsx import { useEffect, type PropsWithChildren } from 'react'; import { closeBubble, setBubbleRendererForBubble, } from 'expo-draw-over-apps'; import { CallControlsWindow } from './CallControlsWindow'; import { UploadStatusWindow } from './UploadStatusWindow'; import { CALL_CONTROLS_ID, UPLOAD_STATUS_ID } from './overlay-ids'; export function OverlayWindowsRegistration({ children }: PropsWithChildren) { useEffect(() => { setBubbleRendererForBubble(CALL_CONTROLS_ID, CallControlsWindow); setBubbleRendererForBubble(UPLOAD_STATUS_ID, UploadStatusWindow); return () => { closeBubble(CALL_CONTROLS_ID); closeBubble(UPLOAD_STATUS_ID); setBubbleRendererForBubble(CALL_CONTROLS_ID, null); setBubbleRendererForBubble(UPLOAD_STATUS_ID, null); }; }, []); return children; }"
+  },
+  {
+    "title": "Show and control the windows",
+    "page": "Multiple windows",
+    "href": "/docs/multiple-windows#show-and-control-the-windows",
+    "text": "Show and control the windows Create shared actions that work in both project types. Request [Android overlay permission](../permission/) before calling showOverlayWindows . tsx // src/overlays/overlay-actions.ts import { closeBubble, showBubble } from 'expo-draw-over-apps'; import { CALL_CONTROLS_ID, UPLOAD_STATUS_ID } from './overlay-ids'; export async function showOverlayWindows() { const results = await Promise.all([ showBubble(CALL_CONTROLS_ID, { location: 'top-left' }), showBubble(UPLOAD_STATUS_ID, { location: 'bottom-right' }), ]); return results.every(Boolean); } export function closeUploadStatusWindow() { return closeBubble(UPLOAD_STATUS_ID); } The same controls component can be rendered by an Expo Router route, App.tsx , or any screen in an existing navigator: tsx // src/components/overlay-controls.tsx import { Pressable, ScrollView, Text } from 'react-native'; import { closeUploadStatusWindow, showOverlayWindows, } from '../overlays/overlay-actions'; export function OverlayControls() { return ( void showOverlayWindows()}> Show both overlay windows Close only the upload window ); } Calling showBubble again with one ID only repositions that window. Closing one ID does not affect the other registered windows. tsx await showBubble(CALL_CONTROLS_ID, { x: 48, y: 180 }); closeBubble(UPLOAD_STATUS_ID); Add more windows by repeating the same pair: register a unique ID with setBubbleRendererForBubble , then call showBubble with that ID."
+  },
+  {
+    "title": "Reuse one renderer",
+    "page": "Multiple windows",
+    "href": "/docs/multiple-windows#reuse-one-renderer",
+    "text": "Reuse one renderer Several IDs may share the same renderer. Its BubbleRendererProps include the current bubbleId , so it can read and update the correct window's state. tsx const CONTACT_WINDOW_IDS = ['contact-alex', 'contact-sam', 'contact-lee'] as const; useEffect(() => { for (const bubbleId of CONTACT_WINDOW_IDS) { setBubbleRendererForBubble(bubbleId, ContactWindow); } return () => { for (const bubbleId of CONTACT_WINDOW_IDS) { closeBubble(bubbleId); setBubbleRendererForBubble(bubbleId, null); } }; }, []); await Promise.all( CONTACT_WINDOW_IDS.map((bubbleId, index) => showBubble(bubbleId, { x: 32 + index 72, y: 120 + index 96 }) ) ); Do not reuse one ID for two simultaneous windows. An ID identifies one native overlay surface, so a later call with the same ID updates the existing window instead of creating another one."
+  },
+  {
+    "title": "Window controls",
+    "page": "Window controls",
+    "href": "/docs/window-controls",
+    "text": "export const metadata = { title: 'Window controls' }; Window controls Named windows can be positioned, moved, edge-hidden, inspected, and closed independently."
+  },
+  {
+    "title": "Predefined locations",
+    "page": "Window controls",
+    "href": "/docs/window-controls#predefined-locations",
+    "text": "Predefined locations Use location when the window should snap to one of nine screen positions while remaining completely visible. tsx await showBubble('player', { location: 'top-left' }); await showBubble('player', { location: 'top-center' }); await showBubble('player', { location: 'top-right' }); await showBubble('player', { location: 'center-left' }); await showBubble('player', { location: 'center' }); await showBubble('player', { location: 'center-right' }); await showBubble('player', { location: 'bottom-left' }); await showBubble('player', { location: 'bottom-center' }); await showBubble('player', { location: 'bottom-right' }); top and bottom are shorter aliases for top-center and bottom-center . An explicit coordinate overrides the matching preset axis. This keeps the preset's other axis: tsx await showBubble('player', { location: 'bottom-left', x: 120 });"
+  },
+  {
+    "title": "Coordinates",
+    "page": "Window controls",
+    "href": "/docs/window-controls#coordinates",
+    "text": "Coordinates x and y are optional physical screen pixels measured from the display's top-left corner. You may provide either axis independently. tsx await showBubble('player', { x: 48, y: 180 }); await showBubble('player', { x: 240 }); await showBubble('player', { y: 120 }); Android clamps supplied coordinates to the available display bounds so the window remains reachable. Omitting coordinates and location preserves the module's existing placement behavior."
+  },
+  {
+    "title": "Move an open window",
+    "page": "Window controls",
+    "href": "/docs/window-controls#move-an-open-window",
+    "text": "Move an open window Calling showBubble for an already-visible ID repositions that window immediately. This makes in-window “move” actions straightforward: tsx void showBubble(bubbleId, { x: 240, y: 120 })}> Move window An explicit position also clears an edge-docked offset before applying the new coordinates."
+  },
+  {
+    "title": "Close and edge hide",
+    "page": "Window controls",
+    "href": "/docs/window-controls#close-and-edge-hide",
+    "text": "Close and edge hide tsx import { closeAllBubbles, closeBubble, isBubbleVisible, setEdgeHideEnabled, showBubble, } from 'expo-draw-over-apps'; setEdgeHideEnabled(true, 'player'); await showBubble('player', { edgeHideEnabled: true, x: 48, y: 180 }); if (isBubbleVisible('player')) { closeBubble('player'); } closeAllBubbles(); Closing releases the native overlay surface and its React root. Prefer closeBubble over the deprecated hideBubble compatibility alias."
+  },
+  {
+    "title": "Limitations",
+    "page": "Limitations",
+    "href": "/docs/limitations",
+    "text": "export const metadata = { title: 'Limitations' }; Limitations The module targets Android and requires native code. Plan around these platform constraints before shipping. - Expo Go is not supported; use a development build or a release build. - The user must explicitly grant Android's draw-over-apps permission. - iOS does not offer a general equivalent to Android application overlays. - Expo UI Jetpack Compose is beta in Expo SDK 58. - Overlay coordinates use physical screen pixels, not React Native density-independent layout units. - Android may stop background services under device-specific battery or memory policies. - A floating window can cover content in other apps; use conservative sizes and always provide a clear close action. - Renderer registration lives in JavaScript. Keep the application process and the registration lifecycle in mind when recovering after termination."
+  },
+  {
+    "title": "Production checklist",
+    "page": "Limitations",
+    "href": "/docs/limitations#production-checklist",
+    "text": "Production checklist 1. Explain the feature before opening Android settings. 2. Provide a visible close action inside every renderer. 3. Test coordinate clamping, dragging, edge hide, rotation, and display cutouts. 4. Test app backgrounding, force-stop, reboot, and OEM battery restrictions. 5. Avoid sensitive content in overlays and overlay shared-value keys. 6. Verify both light and dark themes for ReactNativeWindow and the Compose theme used by NativeWindow . The included example app is the reference for Expo SDK 58. It contains exactly two renderer fixtures—one for each window API—and explicit move actions for emulator testing."
+  },
+  {
+    "title": "Public API",
+    "page": "Public API",
+    "href": "/docs/public-api",
+    "text": "import { ApiReference } from '../../../components/ApiReference'; export const metadata = { title: 'Public API' }; Public API This reference is regenerated from the TypeScript declarations every time the Next.js documentation site builds. The source of truth remains the exported module surface in src/index.ts ."
+  },
+  {
+    "title": "Generated reference",
+    "page": "Public API",
+    "href": "/docs/public-api#generated-reference",
+    "text": "Generated reference"
+  },
+  {
+    "title": "BubbleChangeSource",
+    "page": "Public API",
+    "href": "/docs/public-api#bubblechangesource",
+    "text": "BubbleChangeSource: \"app\" | \"bubble\" "
+  },
+  {
+    "title": "BubbleDisplayOptions",
+    "page": "Public API",
+    "href": "/docs/public-api#bubbledisplayoptions",
+    "text": "BubbleDisplayOptions Options applied when a bubble is shown."
+  },
+  {
+    "title": "BubbleLocation",
+    "page": "Public API",
+    "href": "/docs/public-api#bubblelocation",
+    "text": "BubbleLocation: \"top\" | \"bottom\" | \"top-left\" | \"top-center\" | \"top-right\" | \"center-left\" | \"center\" | \"center-right\" | \"bottom-left\" | \"bottom-center\" | \"bottom-right\" Named screen positions that keep the complete overlay inside the visible movement bounds."
+  },
+  {
+    "title": "BubbleRenderer",
+    "page": "Public API",
+    "href": "/docs/public-api#bubblerenderer",
+    "text": "BubbleRenderer: ComponentType<BubbleRendererProps> React component used to draw a floating bubble."
+  },
+  {
+    "title": "BubbleRendererProps",
+    "page": "Public API",
+    "href": "/docs/public-api#bubblerendererprops",
+    "text": "BubbleRendererProps Props passed to every custom bubble renderer."
+  },
+  {
+    "title": "BubbleState",
+    "page": "Public API",
+    "href": "/docs/public-api#bubblestate",
+    "text": "BubbleState Shared state for a named floating bubble."
+  },
+  {
+    "title": "canDrawOverlays",
+    "page": "Public API",
+    "href": "/docs/public-api#candrawoverlays",
+    "text": "canDrawOverlays(): boolean Returns whether Android currently allows this app to draw over other apps."
+  },
+  {
+    "title": "closeAllBubbles",
+    "page": "Public API",
+    "href": "/docs/public-api#closeallbubbles",
+    "text": "closeAllBubbles(): boolean Closes every floating bubble known to the native overlay service."
+  },
+  {
+    "title": "closeBubble",
+    "page": "Public API",
+    "href": "/docs/public-api#closebubble",
+    "text": "closeBubble(bubbleId: string): boolean Closes one named floating bubble and releases its overlay surface."
+  },
+  {
+    "title": "createFloatingWindowPreviewState",
+    "page": "Public API",
+    "href": "/docs/public-api#createfloatingwindowpreviewstate",
+    "text": "createFloatingWindowPreviewState(bubbleId: string, state: Partial<BubbleState>): BubbleState Creates normalized preview state for a named bubble."
+  },
+  {
+    "title": "DEFAULT_BUBBLE_ID",
+    "page": "Public API",
+    "href": "/docs/public-api#default_bubble_id",
+    "text": "DEFAULT_BUBBLE_ID: \"default\" "
+  },
+  {
+    "title": "DEFAULT_OVERLAY_SHARED_VALUE_KEY",
+    "page": "Public API",
+    "href": "/docs/public-api#default_overlay_shared_value_key",
+    "text": "DEFAULT_OVERLAY_SHARED_VALUE_KEY: \"default\" Default key used when an overlay shared value key is empty or omitted."
+  },
+  {
+    "title": "FloatingWindowPreview",
+    "page": "Public API",
+    "href": "/docs/public-api#floatingwindowpreview",
+    "text": "FloatingWindowPreview(__namedParameters: FloatingWindowPreviewProps): Element Renders a bubble renderer inside the app for design and fixture testing."
+  },
+  {
+    "title": "FloatingWindowPreviewProps",
+    "page": "Public API",
+    "href": "/docs/public-api#floatingwindowpreviewprops",
+    "text": "FloatingWindowPreviewProps Props for rendering a bubble fixture inside the app without starting the native overlay service."
+  },
+  {
+    "title": "FloatingWindowPreviewRenderProps",
+    "page": "Public API",
+    "href": "/docs/public-api#floatingwindowpreviewrenderprops",
+    "text": "FloatingWindowPreviewRenderProps: BubbleRendererProps & object Renderer props used by `FloatingWindowPreview`."
+  },
+  {
+    "title": "getAllBubbleStates",
+    "page": "Public API",
+    "href": "/docs/public-api#getallbubblestates",
+    "text": "getAllBubbleStates(): BubbleState[] Returns the latest known state for every named bubble."
+  },
+  {
+    "title": "getAllOverlaySharedValueStates",
+    "page": "Public API",
+    "href": "/docs/public-api#getalloverlaysharedvaluestates",
+    "text": "getAllOverlaySharedValueStates(): OverlaySharedValueState[] Returns the latest known shared value state for every key."
+  },
+  {
+    "title": "getNextFloatingWindowPreviewState",
+    "page": "Public API",
+    "href": "/docs/public-api#getnextfloatingwindowpreviewstate",
+    "text": "getNextFloatingWindowPreviewState(currentState: BubbleState, patch: Partial<BubbleState>, source: BubbleChangeSource): BubbleState Applies a state patch to preview state."
+  },
+  {
+    "title": "getOverlaySharedValueState",
+    "page": "Public API",
+    "href": "/docs/public-api#getoverlaysharedvaluestate",
+    "text": "getOverlaySharedValueState(valueKey: string): OverlaySharedValueState Returns the latest known shared value state for one key."
+  },
+  {
+    "title": "hideAllBubbles",
+    "page": "Public API",
+    "href": "/docs/public-api#hideallbubbles",
+    "text": "hideAllBubbles(): boolean "
+  },
+  {
+    "title": "hideBubble",
+    "page": "Public API",
+    "href": "/docs/public-api#hidebubble",
+    "text": "hideBubble(bubbleId: string): boolean "
+  },
+  {
+    "title": "isBubbleVisible",
+    "page": "Public API",
+    "href": "/docs/public-api#isbubblevisible",
+    "text": "isBubbleVisible(bubbleId: string): boolean Returns the latest known visibility state for one named bubble."
+  },
+  {
+    "title": "MAX_BUBBLE_ID_LENGTH",
+    "page": "Public API",
+    "href": "/docs/public-api#max_bubble_id_length",
+    "text": "MAX_BUBBLE_ID_LENGTH: 80 "
+  },
+  {
+    "title": "MAX_OVERLAY_SHARED_VALUE_KEY_LENGTH",
+    "page": "Public API",
+    "href": "/docs/public-api#max_overlay_shared_value_key_length",
+    "text": "MAX_OVERLAY_SHARED_VALUE_KEY_LENGTH: 80 Maximum normalized length for overlay shared value keys."
+  },
+  {
+    "title": "NativeWindow",
+    "page": "Public API",
+    "href": "/docs/public-api#nativewindow",
+    "text": "NativeWindow(__namedParameters: HostProps): Element A direct Expo UI Jetpack Compose host for application-owned native windows."
+  },
+  {
+    "title": "NativeWindowProps",
+    "page": "Public API",
+    "href": "/docs/public-api#nativewindowprops",
+    "text": "NativeWindowProps: HostProps "
+  },
+  {
+    "title": "normalizeBubbleId",
+    "page": "Public API",
+    "href": "/docs/public-api#normalizebubbleid",
+    "text": "normalizeBubbleId(bubbleId?: string): string Normalizes a JavaScript bubble ID before it is sent to the native overlay service.\r\n\r\nUnsupported characters become `-`, repeated dashes collapse, and empty values use\r\n`DEFAULT_BUBBLE_ID`."
+  },
+  {
+    "title": "normalizeOverlaySharedValueKey",
+    "page": "Public API",
+    "href": "/docs/public-api#normalizeoverlaysharedvaluekey",
+    "text": "normalizeOverlaySharedValueKey(valueKey?: string): string Normalizes a shared value key before it is read from or written to native state.\r\n\r\nUnsupported characters become `-`, repeated dashes collapse, and empty values use\r\n`DEFAULT_OVERLAY_SHARED_VALUE_KEY`."
+  },
+  {
+    "title": "openApp",
+    "page": "Public API",
+    "href": "/docs/public-api#openapp",
+    "text": "openApp(): Promise<boolean> Brings the host app to the foreground from a bubble action."
+  },
+  {
+    "title": "OverlaySharedValueState",
+    "page": "Public API",
+    "href": "/docs/public-api#overlaysharedvaluestate",
+    "text": "OverlaySharedValueState Native-backed numeric value shared between the app and overlay renderers."
+  },
+  {
+    "title": "ReactNativeWindow",
+    "page": "Public API",
+    "href": "/docs/public-api#reactnativewindow",
+    "text": "ReactNativeWindow(__namedParameters: ReactNativeWindowProps): Element A Reanimated React Native window for application-owned bubble renderers."
+  },
+  {
+    "title": "ReactNativeWindowProps",
+    "page": "Public API",
+    "href": "/docs/public-api#reactnativewindowprops",
+    "text": "ReactNativeWindowProps: ViewProps & NativeWindProps & object "
+  },
+  {
+    "title": "refreshAllOverlaySharedValueStates",
+    "page": "Public API",
+    "href": "/docs/public-api#refreshalloverlaysharedvaluestates",
+    "text": "refreshAllOverlaySharedValueStates(): OverlaySharedValueState[] Reads native state and returns the latest shared value state for every key."
+  },
+  {
+    "title": "refreshBubbleState",
+    "page": "Public API",
+    "href": "/docs/public-api#refreshbubblestate",
+    "text": "refreshBubbleState(bubbleId: string): BubbleState Reads native state and returns the latest state for one named bubble."
+  },
+  {
+    "title": "refreshOverlaySharedValueState",
+    "page": "Public API",
+    "href": "/docs/public-api#refreshoverlaysharedvaluestate",
+    "text": "refreshOverlaySharedValueState(valueKey: string): OverlaySharedValueState Reads native state and returns the latest shared value state for one key."
+  },
+  {
+    "title": "requestPermission",
+    "page": "Public API",
+    "href": "/docs/public-api#requestpermission",
+    "text": "requestPermission(): Promise<boolean> Opens the Android overlay permission screen when permission is missing."
+  },
+  {
+    "title": "setBubbleRenderer",
+    "page": "Public API",
+    "href": "/docs/public-api#setbubblerenderer",
+    "text": "setBubbleRenderer(renderer: BubbleRenderer | null): void Registers a global renderer used by bubbles without a per-bubble override.\r\n\r\nPass `null` to restore the default renderer."
+  },
+  {
+    "title": "setBubbleRendererForBubble",
+    "page": "Public API",
+    "href": "/docs/public-api#setbubblerendererforbubble",
+    "text": "setBubbleRendererForBubble(bubbleId: string, renderer: BubbleRenderer | null): void Registers or clears a renderer for one named bubble."
+  },
+  {
+    "title": "setEdgeHideEnabled",
+    "page": "Public API",
+    "href": "/docs/public-api#setedgehideenabled",
+    "text": "setEdgeHideEnabled(enabled: boolean, bubbleId: string): boolean Enables or disables edge-hide behavior for one named bubble."
+  },
+  {
+    "title": "setOverlaySharedValue",
+    "page": "Public API",
+    "href": "/docs/public-api#setoverlaysharedvalue",
+    "text": "setOverlaySharedValue(valueKey: string, value: number, source: BubbleChangeSource): number Stores a numeric shared value in native state and returns the committed value."
+  },
+  {
+    "title": "showBubble",
+    "page": "Public API",
+    "href": "/docs/public-api#showbubble",
+    "text": "showBubble(bubbleId: string, options?: BubbleDisplayOptions): Promise<boolean> Shows a named floating bubble and optionally applies display options first."
+  },
+  {
+    "title": "subscribeToBubbleState",
+    "page": "Public API",
+    "href": "/docs/public-api#subscribetobubblestate",
+    "text": "subscribeToBubbleState(listener: BubbleListener): (): void Subscribes to bubble state changes and returns an unsubscribe function."
+  },
+  {
+    "title": "subscribeToOverlaySharedValueState",
+    "page": "Public API",
+    "href": "/docs/public-api#subscribetooverlaysharedvaluestate",
+    "text": "subscribeToOverlaySharedValueState(listener: OverlaySharedValueListener): (): void Subscribes to shared value changes and returns an unsubscribe function."
+  },
+  {
+    "title": "useAllBubbleStates",
+    "page": "Public API",
+    "href": "/docs/public-api#useallbubblestates",
+    "text": "useAllBubbleStates(): BubbleState[] React hook for the latest state of all named bubbles."
+  },
+  {
+    "title": "useAllOverlaySharedValueStates",
+    "page": "Public API",
+    "href": "/docs/public-api#usealloverlaysharedvaluestates",
+    "text": "useAllOverlaySharedValueStates(): OverlaySharedValueState[] React hook for the latest shared value state of every key."
+  },
+  {
+    "title": "useBubbleState",
+    "page": "Public API",
+    "href": "/docs/public-api#usebubblestate",
+    "text": "useBubbleState(bubbleId: string): BubbleState React hook for the latest state of one named bubble."
+  },
+  {
+    "title": "useOverlaySharedValueState",
+    "page": "Public API",
+    "href": "/docs/public-api#useoverlaysharedvaluestate",
+    "text": "useOverlaySharedValueState(valueKey: string): OverlaySharedValueState React hook for the latest shared value state of one key."
+  },
+  {
+    "title": "WindowAnimationConfig",
+    "page": "Public API",
+    "href": "/docs/public-api#windowanimationconfig",
+    "text": "WindowAnimationConfig: Partial<WithTimingConfig> & object "
+  }
+]

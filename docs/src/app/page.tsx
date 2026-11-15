@@ -1,43 +1,45 @@
+import Image from 'next/image';
 import Link from 'next/link';
-
-const features = [
-  ['Position precisely', 'Set x and y in screen pixels when a window opens or while it is already visible.'],
-  ['Own the renderer', 'Register a component for each named bubble and clean it up with the same lifecycle as your app.'],
-  ['Choose the surface', 'Use a Reanimated React Native window or a direct Expo UI Jetpack Compose host.'],
-];
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { CodeBlock } from '../components/CodeBlock';
+import { assetPath } from '../lib/navigation';
 
 export default function HomePage() {
   return (
-    <main>
+    <main className="landing" id="main-content">
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Android overlays · Expo SDK 58</p>
-          <h1>Floating windows, owned by your Expo app.</h1>
+          <h1>Floating windows,<br />owned by your Expo app.</h1>
           <p className="hero-lede">
-            Request draw-over-apps permission, register application-owned window UI, and place it exactly where it should appear.
+            Add floating windows using Android’s overlay permission. Build application-owned content with React Native or Jetpack Compose, then place it precisely with coordinates or nine predefined positions.
           </p>
           <div className="hero-actions">
-            <Link className="primary-action" href="/docs">Start with SDK 58</Link>
-            <a className="secondary-action" href="https://github.com/budzHors7/expo-draw-over-apps">View on GitHub</a>
+            <Link className="primary-action" href="/docs">Get started <ArrowRight size={19} aria-hidden="true" /></Link>
+            <a className="secondary-action" href="https://github.com/budzHors7/expo-draw-over-apps">View on GitHub <ArrowUpRight size={17} aria-hidden="true" /></a>
           </div>
         </div>
-        <div className="window-diagram" aria-label="Application code showing a window through the Android overlay service">
-          <div><span>01</span><strong>Register</strong><code>setBubbleRendererForBubble</code></div>
-          <i aria-hidden="true">→</i>
-          <div><span>02</span><strong>Position</strong><code>{'{ x: 48, y: 180 }'}</code></div>
-          <i aria-hidden="true">→</i>
-          <div><span>03</span><strong>Render</strong><code>ReactNativeWindow | NativeWindow</code></div>
+        <Image className="hero-illustration" src={assetPath('/images/floating-windows.png')} width={1365} height={1140} sizes="(max-width: 760px) 90vw, 520px" alt="Floating windows positioned at top-left, center, and bottom-right on a nine-point grid" priority />
+      </section>
+      <section className="window-flow" aria-labelledby="flow-title">
+        <h2 id="flow-title">From your code to the screen</h2>
+        <div className="flow-grid">
+          <div><h3>Register</h3><code>setBubbleRendererForBubble</code></div>
+          <ArrowRight className="flow-arrow" size={19} aria-hidden="true" />
+          <div><h3>Position</h3><code>{"{ location: 'top-right' }"}</code></div>
+          <ArrowRight className="flow-arrow" size={19} aria-hidden="true" />
+          <div><h3>Render</h3><code>ReactNativeWindow | NativeWindow</code></div>
         </div>
       </section>
-      <section className="feature-lines" aria-label="Highlights">
-        {features.map(([title, description]) => (
-          <article key={title}><h2>{title}</h2><p>{description}</p></article>
-        ))}
+      <section className="landing-install" aria-labelledby="install-title">
+        <h2 id="install-title">Install</h2>
+        <CodeBlock code="npx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets" language="bash" />
+        <p className="landing-note">Android only. Build a development client to use the module; Expo Go is not supported.</p>
       </section>
-      <section className="install-strip">
-        <div><p className="eyebrow">Install</p><h2>One SDK 58 path</h2></div>
-        <pre><code>npx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets</code></pre>
-      </section>
+      <footer className="landing-footer">
+        <Link href="/docs/react-native-window">React Native window <ArrowRight size={14} aria-hidden="true" /></Link>
+        <Link href="/docs/native-window">Native window <ArrowRight size={14} aria-hidden="true" /></Link>
+        <Link href="/docs/multiple-windows">Multiple windows <ArrowRight size={14} aria-hidden="true" /></Link>
+      </footer>
     </main>
   );
 }

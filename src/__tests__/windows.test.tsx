@@ -95,4 +95,37 @@ describe('window APIs', () => {
       'Close',
     ]);
   });
+
+  it('wraps registered renderers in a measurable content boundary', () => {
+    jest.resetModules();
+    (globalThis as typeof globalThis & { React: typeof import('react') }).React = require('react');
+    const BubbleRenderer = () => null;
+    jest.doMock('../bubbleState', () => ({
+      useBubbleState: () => ({
+        bubbleId: 'touch-pass-through',
+        isVisible: true,
+        lastUpdatedAt: 0,
+        lastChangeSource: 'app',
+      }),
+    }));
+    jest.doMock('../bubbleRenderer', () => ({ useBubbleRenderer: () => BubbleRenderer }));
+    jest.doMock('../ExpoDrawOverAppsModule', () => ({
+      getExpoDrawOverAppsModule: () => ({
+        closeBubbleInstance: jest.fn(() => true),
+        openApp: jest.fn(async () => true),
+      }),
+    }));
+
+    const BubbleSurface = require('../ExpoDrawOverAppsBubbleSurface').default as (
+      props: { bubbleId?: string }
+    ) => ReactElement;
+    const surface = BubbleSurface({ bubbleId: 'touch-pass-through' });
+
+    expect(surface.props).toMatchObject({
+      collapsable: false,
+      testID: 'expo-draw-over-apps-window-content',
+      style: { alignSelf: 'flex-start' },
+    });
+    expect((surface.props.children as ReactElement).type).toBe(BubbleRenderer);
+  });
 });

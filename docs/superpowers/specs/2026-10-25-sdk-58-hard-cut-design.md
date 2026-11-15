@@ -16,7 +16,7 @@ The package will stop shipping a pretend Compose renderer or prebuilt bubble pre
 - Replace the two old `*WindowContainer` exports with exactly `ReactNativeWindow` and `NativeWindow`; do not retain deprecated aliases.
 - Make `NativeWindow` a real Expo UI `Host` boundary that directly accepts Jetpack Compose components. React Native content inside it is possible only through Expo UI's documented `RNHostView` interop.
 - Keep the permission, overlay lifecycle, named-bubble, edge-hide, shared-value, renderer-registration, and preview capabilities needed to mount user-owned window content.
-- Let callers choose an overlay's initial or next position with optional absolute `x` and `y` coordinates when showing it.
+- Let callers choose an overlay's initial or next position with optional absolute `x` and `y` coordinates or a predefined visible-screen location when showing it.
 - Reduce the example app to two representative overlay choices: one React Native window and one native Compose window.
 - Replace the SDK 55/56/57 Docusaurus documentation matrix with one unversioned, React-based Next.js documentation experience containing short, complete, copy-paste examples.
 - Validate both window paths in the running Android emulator, including permission, opening, interaction, resizing, closing, and absence of crashes.
@@ -68,7 +68,7 @@ Move Compose support into another package. This would isolate the optional depen
 
 The library keeps `setBubbleRenderer` and `setBubbleRendererForBubble` because the overlay service still needs an application-supplied React component as the root. The two documented renderers consist only of one of the window components plus user-owned children. The library's default surface becomes a concise development message that tells consumers to register a renderer; no styled product UI is supplied.
 
-`showBubble(bubbleId?, options?)` keeps its existing shape and extends `BubbleDisplayOptions` with optional finite numeric `x` and `y` fields. Each supplied coordinate overrides that axis when the call is made; an omitted axis keeps its last stored or default position. The native service clamps supplied coordinates to the current visible movement bounds. Calling `showBubble` for an already-visible bubble applies the supplied coordinates immediately instead of ignoring them. Dragging continues to update the stored position used by later calls that omit coordinates.
+`showBubble(bubbleId?, options?)` keeps its existing shape and extends `BubbleDisplayOptions` with optional finite numeric `x` and `y` fields plus `location`. Supported locations are `top`, `bottom`, `top-left`, `top-right`, `bottom-left`, and `bottom-right`; presets keep the full overlay within the visible movement bounds. Each supplied coordinate overrides that preset axis when the call is made, while an omitted axis uses the preset or keeps its last stored/default position when no preset is provided. The native service clamps supplied coordinates to the current movement bounds. Calling `showBubble` for an already-visible bubble applies the supplied placement immediately instead of ignoring it. Dragging continues to update the stored position used by later calls that omit placement options.
 
 The removed public API is:
 

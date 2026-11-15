@@ -96,7 +96,7 @@ class ExpoDrawOverAppsModule : Module() {
     setOverlaySharedValueInternal(valueKey, value, source)
 
   @JS
-  suspend fun showBubble(x: Int?, y: Int?): Boolean {
+  suspend fun showBubble(x: Int?, y: Int?, location: String?): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(androidAppContext)) {
       setBubbleVisibilityInternal(false, DEFAULT_BUBBLE_ID, SOURCE_APP)
       return false
@@ -104,14 +104,14 @@ class ExpoDrawOverAppsModule : Module() {
 
     val serviceIntent = Intent(androidAppContext, ExpoDrawOverAppsOverlayService::class.java).apply {
       action = ExpoDrawOverAppsOverlayService.ACTION_SHOW_BUBBLE
-      putPositionExtras(x, y)
+      putPositionExtras(x, y, location)
     }
     androidAppContext.startService(serviceIntent)
     return true
   }
 
   @JS
-  suspend fun showBubbleInstance(bubbleId: String, x: Int?, y: Int?): Boolean {
+  suspend fun showBubbleInstance(bubbleId: String, x: Int?, y: Int?, location: String?): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(androidAppContext)) {
       setBubbleVisibilityInternal(false, bubbleId, SOURCE_APP)
       return false
@@ -120,7 +120,7 @@ class ExpoDrawOverAppsModule : Module() {
     val serviceIntent = Intent(androidAppContext, ExpoDrawOverAppsOverlayService::class.java).apply {
       action = ExpoDrawOverAppsOverlayService.ACTION_SHOW_BUBBLE
       putExtra(ExpoDrawOverAppsOverlayService.EXTRA_BUBBLE_ID, bubbleId)
-      putPositionExtras(x, y)
+      putPositionExtras(x, y, location)
     }
     androidAppContext.startService(serviceIntent)
     return true
@@ -220,12 +220,15 @@ class ExpoDrawOverAppsModule : Module() {
     androidAppContext.startService(serviceIntent)
   }
 
-  private fun Intent.putPositionExtras(x: Int?, y: Int?) {
+  private fun Intent.putPositionExtras(x: Int?, y: Int?, location: String?) {
     if (x != null) {
       putExtra(ExpoDrawOverAppsOverlayService.EXTRA_POSITION_X, x)
     }
     if (y != null) {
       putExtra(ExpoDrawOverAppsOverlayService.EXTRA_POSITION_Y, y)
+    }
+    if (location != null) {
+      putExtra(ExpoDrawOverAppsOverlayService.EXTRA_LOCATION, location)
     }
   }
 

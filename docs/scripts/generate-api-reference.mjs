@@ -135,3 +135,26 @@ fs.writeFileSync(
 );
 
 process.stdout.write(`Generated ${entries.length} API entries from TypeDoc.\n`);
+
+const pages = [
+  ['', 'Overview'], ['permission', 'Permission'],
+  ['react-native-window', 'React Native window'], ['native-window', 'Native window'],
+  ['multiple-windows', 'Multiple windows'], ['window-controls', 'Window controls'],
+  ['limitations', 'Limitations'], ['public-api', 'Public API'],
+];
+const sectionId = (text) => text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+const searchEntries = pages.flatMap(([slug, label]) => {
+  const source = fs.readFileSync(path.join(docsRoot, 'src/app/docs', slug, 'page.mdx'), 'utf8');
+  const href = `/docs${slug ? `/${slug}` : ''}`;
+  return source.split(/^## /m).map((section, index) => ({
+    title: index === 0 ? label : section.split('\n')[0].trim(),
+    page: label,
+    href: index === 0 ? href : `${href}#${sectionId(section.split('\n')[0])}`,
+    text: section.replace(/<[^>]*>|[`#*]/g, ' ').replace(/\s+/g, ' ').trim(),
+  }));
+});
+searchEntries.push(...entries.map((entry) => ({
+  title: entry.name, page: 'Public API', href: `/docs/public-api#${entry.name.toLowerCase()}`,
+  text: `${entry.signature} ${entry.description}`,
+})));
+fs.writeFileSync(path.join(docsRoot, 'src/generated/search-index.json'), `${JSON.stringify(searchEntries, null, 2)}\n`);

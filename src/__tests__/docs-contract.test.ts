@@ -49,7 +49,37 @@ describe('SDK 58 documentation site', () => {
     expect(activeContent).toContain('NativeWindow');
     expect(activeContent).toContain('setBubbleRendererForBubble');
     expect(activeContent).toMatch(/showBubble\([^)]*\{\s*x:\s*\d+,\s*y:\s*\d+/s);
+    expect(activeContent).toContain("location: 'bottom-right'");
+    expect(activeContent).toContain("location: 'top-right'");
+    expect(activeContent).toContain("location: 'top-center'");
+    expect(activeContent).toContain("location: 'center'");
+    expect(activeContent).toContain("location: 'bottom-center'");
+    expect(activeContent).toContain('bunx expo install expo-draw-over-apps');
     expect(activeContent).toContain('https://docs.expo.dev/versions/v58.0.0/sdk/ui/jetpack-compose/');
+  });
+
+  it('documents registering and showing multiple independent overlay windows', () => {
+    const multipleWindowsGuide = read('docs/src/app/docs/multiple-windows/page.mdx');
+
+    expect(multipleWindowsGuide).toContain(
+      'setBubbleRendererForBubble(CALL_CONTROLS_ID, CallControlsWindow)'
+    );
+    expect(multipleWindowsGuide).toContain(
+      'setBubbleRendererForBubble(UPLOAD_STATUS_ID, UploadStatusWindow)'
+    );
+    expect(multipleWindowsGuide).toContain("showBubble(CALL_CONTROLS_ID, { location: 'top-left' })");
+    expect(multipleWindowsGuide).toContain(
+      "showBubble(UPLOAD_STATUS_ID, { location: 'bottom-right' })"
+    );
+    expect(multipleWindowsGuide).toContain("import { Stack } from 'expo-router/stack'");
+    expect(multipleWindowsGuide).toContain('export default function RootLayout()');
+    expect(multipleWindowsGuide).toContain('// App.tsx');
+    expect(multipleWindowsGuide).toContain('export default function App()');
+    expect(multipleWindowsGuide).toContain('<OverlayWindowsRegistration>');
+    expect(multipleWindowsGuide).toContain('<SetupTabs>');
+    expect(multipleWindowsGuide).toContain('label="Expo Router"');
+    expect(multipleWindowsGuide).toContain('label="App.tsx / no Router"');
+    expect(multipleWindowsGuide).toContain('CONTACT_WINDOW_IDS.map');
   });
 
   it('removes version selectors, old window names, and Docusaurus runtime code', () => {

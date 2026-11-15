@@ -89,4 +89,36 @@ describe('bubble spawn coordinates', () => {
     expect(nativeModule.showBubble).toHaveBeenCalledWith();
     expect(nativeModule.showBubbleInstance).toHaveBeenCalledWith('named');
   });
+
+  it('forwards predefined locations to default and named bubbles', async () => {
+    const { api, nativeModule } = loadModule();
+
+    await api.showBubble(undefined, { location: 'bottom-center' });
+    await api.showBubble('alerts', { location: 'center-right' });
+
+    expect(nativeModule.showBubble).toHaveBeenCalledWith(
+      undefined,
+      undefined,
+      'bottom-center'
+    );
+    expect(nativeModule.showBubbleInstance).toHaveBeenCalledWith(
+      'alerts',
+      undefined,
+      undefined,
+      'center-right'
+    );
+  });
+
+  it('allows an explicit coordinate to override one predefined location axis', async () => {
+    const { api, nativeModule } = loadModule();
+
+    await api.showBubble('player', { location: 'bottom-left', x: 120.6 });
+
+    expect(nativeModule.showBubbleInstance).toHaveBeenCalledWith(
+      'player',
+      121,
+      undefined,
+      'bottom-left'
+    );
+  });
 });

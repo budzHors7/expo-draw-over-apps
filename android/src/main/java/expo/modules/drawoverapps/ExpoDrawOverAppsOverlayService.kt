@@ -13,6 +13,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.FrameLayout
@@ -64,6 +65,9 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     val reactSurface: ReactSurface,
     var isDocked: Boolean = false,
     var dockEdge: DockEdge? = null,
+    var contentView: View? = null,
+    var contentLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null,
+    var isContentSyncPosted: Boolean = false,
   )
 
   private data class MovementBounds(
@@ -88,6 +92,7 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     val bubbleId = normalizeBubbleId(intent?.getStringExtra(EXTRA_BUBBLE_ID))
     val requestedX = intent?.getOptionalIntExtra(EXTRA_POSITION_X)
     val requestedY = intent?.getOptionalIntExtra(EXTRA_POSITION_Y)
+    val requestedLocation = intent?.getStringExtra(EXTRA_LOCATION)
 
     when (intent?.action) {
       ACTION_HIDE_ALL_BUBBLES,
@@ -100,7 +105,7 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
         hideBubble(bubbleId, SOURCE_APP)
         stopSelfIfIdle()
       }
-      else -> showBubble(bubbleId, requestedX, requestedY)
+      else -> showBubble(bubbleId, requestedX, requestedY, requestedLocation)
     }
     return START_NOT_STICKY
   }
@@ -123,11 +128,16 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     return if (hasExtra(name)) getIntExtra(name, 0) else null
   }
 
-  private fun showBubble(bubbleId: String, requestedX: Int?, requestedY: Int?) {
+  private fun showBubble(
+    bubbleId: String,
+    requestedX: Int?,
+    requestedY: Int?,
+    requestedLocation: String?
+  ) {
     val existingOverlay = overlayInstances[bubbleId]
     if (existingOverlay != null) {
-      if (requestedX != null || requestedY != null) {
-        applyRequestedPosition(existingOverlay, requestedX, requestedY)
+      if (requestedX != null || requestedY != null || requestedLocation != null) {
+        applyRequestedPosition(existingOverlay, requestedX, requestedY, requestedLocation)
       }
       ExpoDrawOverAppsModule.setBubbleVisibilityInternal(true, bubbleId, SOURCE_APP)
       requestOverlayRedraw(bubbleId)
@@ -202,22 +212,40 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
           )
         )
       }
-
     windowManager.addView(container, windowLayoutParams)
     surface.start()
 
-    overlayInstances[bubbleId] =
+    val overlayInstance =
       OverlayInstance(
         bubbleId = bubbleId,
         container = container,
         layoutParams = windowLayoutParams,
         reactSurface = surface,
       )
+    overlayInstances[bubbleId] = overlayInstance
+    val contentLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+      if (!overlayInstance.isContentSyncPosted) {
+        overlayInstance.isContentSyncPosted = true
+        container.post {
+          overlayInstance.isContentSyncPosted = false
+          if (overlayInstances[bubbleId] === overlayInstance) {
+            synchronizeOverlayWindowSize(overlayInstance)
+          }
+        }
+      }
+    }
+    overlayInstance.contentLayoutListener = contentLayoutListener
+    container.viewTreeObserver.addOnGlobalLayoutListener(contentLayoutListener)
     ExpoDrawOverAppsModule.setBubbleVisibilityInternal(true, bubbleId, SOURCE_APP)
     container.post {
-      if (requestedX != null || requestedY != null) {
+      if (requestedX != null || requestedY != null || requestedLocation != null) {
         overlayInstances[bubbleId]?.let { overlayInstance ->
-          applyRequestedPosition(overlayInstance, requestedX, requestedY)
+          applyRequestedPositionWhenReady(
+            overlayInstance,
+            requestedX,
+            requestedY,
+            requestedLocation,
+          )
         }
       } else {
         dockBubbleIfNeeded(bubbleId)
@@ -226,24 +254,69 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     }
   }
 
+  private fun applyRequestedPositionWhenReady(
+    overlayInstance: OverlayInstance,
+    requestedX: Int?,
+    requestedY: Int?,
+    requestedLocation: String?,
+    attempt: Int = 0,
+  ) {
+    val hasMeasuredContent = synchronizeOverlayWindowSize(overlayInstance)
+
+    if (requestedLocation != null && !hasMeasuredContent && attempt < MAX_CONTENT_MEASURE_ATTEMPTS) {
+      overlayInstance.container.postDelayed(
+        {
+          if (overlayInstances[overlayInstance.bubbleId] === overlayInstance) {
+            applyRequestedPositionWhenReady(
+              overlayInstance,
+              requestedX,
+              requestedY,
+              requestedLocation,
+              attempt + 1,
+            )
+          }
+        },
+        CONTENT_MEASURE_RETRY_DELAY_MS,
+      )
+      return
+    }
+
+    applyRequestedPosition(overlayInstance, requestedX, requestedY, requestedLocation)
+  }
+
   private fun applyRequestedPosition(
     overlayInstance: OverlayInstance,
     requestedX: Int?,
-    requestedY: Int?
+    requestedY: Int?,
+    requestedLocation: String?
   ) {
+    synchronizeOverlayWindowSize(overlayInstance)
     val movementBounds = getMovementBounds()
-    val (bubbleWidth, _) = getOverlaySize(overlayInstance.container)
+    val (bubbleWidth, bubbleHeight) = getOverlayContentSize(overlayInstance)
     val maxPositionX =
       if (bubbleWidth > 0) {
         (movementBounds.right - bubbleWidth).coerceAtLeast(movementBounds.left)
       } else {
         movementBounds.right
       }
+    val fullyVisibleMaxY =
+      if (bubbleHeight > 0) {
+        (movementBounds.bottom - bubbleHeight).coerceAtLeast(movementBounds.top)
+      } else {
+        movementBounds.bottom
+      }
+    val locationPosition = OverlayPosition.forLocation(
+      location = requestedLocation,
+      minX = movementBounds.left,
+      minY = movementBounds.top,
+      maxX = maxPositionX,
+      maxY = fullyVisibleMaxY,
+    )
     val position = OverlayPosition.resolve(
       storedX = overlayInstance.layoutParams.x,
       storedY = overlayInstance.layoutParams.y,
-      requestedX = requestedX,
-      requestedY = requestedY,
+      requestedX = requestedX ?: locationPosition?.x,
+      requestedY = requestedY ?: locationPosition?.y,
       minX = movementBounds.left,
       minY = movementBounds.top,
       maxX = maxPositionX,
@@ -268,6 +341,12 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
       return
     }
 
+    overlayInstance.contentLayoutListener?.let { listener ->
+      if (overlayInstance.container.viewTreeObserver.isAlive) {
+        overlayInstance.container.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+      }
+    }
+    overlayInstance.contentLayoutListener = null
     overlayInstance.reactSurface.stop()
     overlayInstance.reactSurface.clear()
     overlayInstance.reactSurface.detach()
@@ -436,6 +515,99 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     return Pair(width, height)
   }
 
+  private fun findOverlayContentView(container: View): View {
+    val (containerWidth, containerHeight) = getOverlaySize(container)
+    if (containerWidth <= 0 || containerHeight <= 0) {
+      return container
+    }
+
+    val descendants = mutableListOf<View>()
+
+    fun collectDescendants(view: View) {
+      if (view !== container) {
+        descendants.add(view)
+      }
+      if (view is ViewGroup) {
+        for (index in 0 until view.childCount) {
+          collectDescendants(view.getChildAt(index))
+        }
+      }
+    }
+
+    collectDescendants(container)
+    descendants.firstOrNull(::isOverlayContentView)?.let { contentView ->
+      return contentView
+    }
+
+    val selectedSize = OverlayPosition.selectContentSize(
+      containerWidth = containerWidth,
+      containerHeight = containerHeight,
+      descendantSizes = descendants.map { view -> Pair(view.width, view.height) },
+    )
+    return descendants.firstOrNull { view ->
+      view.width == selectedSize.first && view.height == selectedSize.second
+    } ?: container
+  }
+
+  private fun getOverlayContentSize(overlayInstance: OverlayInstance): Pair<Int, Int> {
+    val existingContentView = overlayInstance.contentView
+      ?.takeIf { view ->
+        isOverlayContentView(view) &&
+          view.isAttachedToWindow &&
+          view.width > 0 &&
+          view.height > 0
+      }
+    val contentView = existingContentView ?: findOverlayContentView(overlayInstance.container)
+    if (contentView !== overlayInstance.container && isOverlayContentView(contentView)) {
+      overlayInstance.contentView = contentView
+    }
+    return getOverlaySize(contentView)
+  }
+
+  private fun synchronizeOverlayWindowSize(overlayInstance: OverlayInstance): Boolean {
+    val contentView = overlayInstance.contentView
+      ?.takeIf { view ->
+        isOverlayContentView(view) &&
+          view.isAttachedToWindow &&
+          view.width > 0 &&
+          view.height > 0
+      }
+      ?: findOverlayContentView(overlayInstance.container)
+    if (contentView === overlayInstance.container || !isOverlayContentView(contentView)) {
+      return false
+    }
+
+    overlayInstance.contentView = contentView
+    val (contentWidth, contentHeight) = getOverlaySize(contentView)
+    if (contentWidth <= 0 || contentHeight <= 0) {
+      return false
+    }
+
+    val layoutParams = overlayInstance.layoutParams
+    if (layoutParams.width == contentWidth && layoutParams.height == contentHeight) {
+      return true
+    }
+
+    layoutParams.width = contentWidth
+    layoutParams.height = contentHeight
+    val movementBounds = getMovementBounds()
+    val maxPositionX =
+      (movementBounds.right - contentWidth).coerceAtLeast(movementBounds.left)
+    val maxPositionY =
+      (movementBounds.bottom - contentHeight).coerceAtLeast(movementBounds.top)
+    layoutParams.x = layoutParams.x.coerceIn(movementBounds.left, maxPositionX)
+    layoutParams.y = layoutParams.y.coerceIn(movementBounds.top, maxPositionY)
+    storeBubblePosition(overlayInstance.bubbleId, layoutParams.x, layoutParams.y)
+    runCatching {
+      windowManager.updateViewLayout(overlayInstance.container, layoutParams)
+    }
+    return true
+  }
+
+  private fun isOverlayContentView(view: View): Boolean {
+    return view.getTag(com.facebook.react.R.id.react_test_id) == OVERLAY_CONTENT_TEST_ID
+  }
+
   private fun getMovementBounds(): MovementBounds {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       val windowMetrics = windowManager.currentWindowMetrics
@@ -585,6 +757,7 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     const val EXTRA_BUBBLE_ID = "expo.modules.drawoverapps.extra.BUBBLE_ID"
     const val EXTRA_POSITION_X = "expo.modules.drawoverapps.extra.POSITION_X"
     const val EXTRA_POSITION_Y = "expo.modules.drawoverapps.extra.POSITION_Y"
+    const val EXTRA_LOCATION = "expo.modules.drawoverapps.extra.LOCATION"
     const val BUBBLE_COMPONENT_NAME = "ExpoDrawOverAppsBubble"
     private const val DEFAULT_BUBBLE_ID = "default"
     private const val MAX_BUBBLE_ID_LENGTH = 80
@@ -602,6 +775,9 @@ class ExpoDrawOverAppsOverlayService : Service(), LifecycleOwner, SavedStateRegi
     private const val DOCK_THRESHOLD_RATIO = 0.35f
     private const val DOCKED_OPACITY = 0.5f
     private const val RESTORED_OPACITY = 1f
+    private const val OVERLAY_CONTENT_TEST_ID = "expo-draw-over-apps-window-content"
+    private const val MAX_CONTENT_MEASURE_ATTEMPTS = 300
+    private const val CONTENT_MEASURE_RETRY_DELAY_MS = 16L
 
     private var serviceReference = WeakReference<ExpoDrawOverAppsOverlayService?>(null)
     private val bubblePositions = LinkedHashMap<String, Pair<Int, Int>>()

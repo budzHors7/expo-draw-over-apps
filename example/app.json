@@ -23,8 +23,8 @@
         {
           "android": {
             "compileSdkVersion": 37,
-            "targetSdkVersion": 36,
-            "buildToolsVersion": "36.0.0",
+            "targetSdkVersion": 37,
+            "buildToolsVersion": "37.0.0",
             "usePrecompiledHeaders": true
           }
         }

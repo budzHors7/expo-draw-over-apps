@@ -24,7 +24,12 @@ import {
   useOverlaySharedValueState,
 } from './overlaySharedValue';
 import { ensureBubbleSurfaceRegistered } from './registerBubbleSurface';
-import { DEFAULT_BUBBLE_ID, normalizeBubbleId, type BubbleDisplayOptions } from './bubbleTypes';
+import {
+  DEFAULT_BUBBLE_ID,
+  normalizeBubbleId,
+  type BubbleDisplayOptions,
+  type BubbleLocation,
+} from './bubbleTypes';
 
 ensureBubbleSurfaceRegistered();
 
@@ -66,10 +71,31 @@ function normalizeBubbleCoordinate(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : undefined;
 }
 
-function hasBubbleCoordinateOptions(options?: BubbleDisplayOptions): boolean {
+const BUBBLE_LOCATIONS = new Set<BubbleLocation>([
+  'top',
+  'bottom',
+  'top-left',
+  'top-center',
+  'top-right',
+  'center-left',
+  'center',
+  'center-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+]);
+
+function normalizeBubbleLocation(value: unknown): BubbleLocation | undefined {
+  return typeof value === 'string' && BUBBLE_LOCATIONS.has(value as BubbleLocation)
+    ? (value as BubbleLocation)
+    : undefined;
+}
+
+function hasBubblePositionOptions(options?: BubbleDisplayOptions): boolean {
   return options != null && (
     Object.prototype.hasOwnProperty.call(options, 'x') ||
-    Object.prototype.hasOwnProperty.call(options, 'y')
+    Object.prototype.hasOwnProperty.call(options, 'y') ||
+    Object.prototype.hasOwnProperty.call(options, 'location')
   );
 }
 
@@ -87,16 +113,30 @@ export async function showBubble(
   if (options?.edgeHideEnabled != null) {
     setEdgeHideEnabled(options.edgeHideEnabled, normalizedBubbleId);
   }
-  const hasCoordinateOptions = hasBubbleCoordinateOptions(options);
+  const hasPositionOptions = hasBubblePositionOptions(options);
   const positionX = normalizeBubbleCoordinate(options?.x);
   const positionY = normalizeBubbleCoordinate(options?.y);
+  const location = normalizeBubbleLocation(options?.location);
   const didShow =
     normalizedBubbleId === DEFAULT_BUBBLE_ID
-      ? hasCoordinateOptions
-        ? await ExpoDrawOverAppsModule.showBubble(positionX, positionY)
+      ? hasPositionOptions
+        ? location != null
+          ? await ExpoDrawOverAppsModule.showBubble(positionX, positionY, location)
+          : await ExpoDrawOverAppsModule.showBubble(positionX, positionY)
         : await ExpoDrawOverAppsModule.showBubble()
-      : hasCoordinateOptions
-        ? await ExpoDrawOverAppsModule.showBubbleInstance(normalizedBubbleId, positionX, positionY)
+      : hasPositionOptions
+        ? location != null
+          ? await ExpoDrawOverAppsModule.showBubbleInstance(
+              normalizedBubbleId,
+              positionX,
+              positionY,
+              location
+            )
+          : await ExpoDrawOverAppsModule.showBubbleInstance(
+              normalizedBubbleId,
+              positionX,
+              positionY
+            )
         : await ExpoDrawOverAppsModule.showBubbleInstance(normalizedBubbleId);
   refreshBubbleState(normalizedBubbleId);
   return didShow;
@@ -199,4 +239,9 @@ export {
   normalizeOverlaySharedValueKey,
 } from './overlaySharedValue';
 export { DEFAULT_BUBBLE_ID, MAX_BUBBLE_ID_LENGTH, normalizeBubbleId } from './bubbleTypes';
-export type { BubbleChangeSource, BubbleDisplayOptions, BubbleState } from './bubbleTypes';
+export type {
+  BubbleChangeSource,
+  BubbleDisplayOptions,
+  BubbleLocation,
+  BubbleState,
+} from './bubbleTypes';

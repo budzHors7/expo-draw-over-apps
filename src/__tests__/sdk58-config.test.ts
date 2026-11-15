@@ -17,9 +17,10 @@ describe('Expo SDK 58 configuration', () => {
     )[1].android;
 
     expect(packageJson.version).toBe('58.0.0');
+    expect(packageJson.peerDependencies.expo).toBe('^58.0.0');
     expect(packageJson.devDependencies).toMatchObject({
       '@types/jest': '30.0.0',
-      expo: '~58.0.23',
+      expo: '~58.0.25',
       jest: '~30.5.2',
       react: '19.3.0',
       'react-native': '0.88.1',
@@ -29,8 +30,8 @@ describe('Expo SDK 58 configuration', () => {
     });
     expect(packageJson.peerDependenciesMeta?.['@expo/ui']).toBeUndefined();
     expect(examplePackageJson.dependencies).toMatchObject({
-      '@expo/ui': '~58.0.27',
-      expo: '~58.0.23',
+      '@expo/ui': '~58.0.28',
+      expo: '~58.0.25',
       react: '19.3.0',
       'react-native': '0.88.1',
       'react-native-reanimated': '4.7.1',
@@ -38,7 +39,7 @@ describe('Expo SDK 58 configuration', () => {
     });
     expect(appJson.expo.version).toBe('58.0.0');
     expect(buildProperties.compileSdkVersion).toBe(37);
-    expect(buildProperties.targetSdkVersion).toBe(36);
+    expect(buildProperties.targetSdkVersion).toBe(37);
   });
 
   it('opts the Android module into v2 compile-time discovery', () => {

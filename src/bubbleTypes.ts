@@ -24,6 +24,20 @@ export function normalizeBubbleId(bubbleId?: string): string {
 
 export type BubbleChangeSource = 'app' | 'bubble';
 
+/** Named screen positions that keep the complete overlay inside the visible movement bounds. */
+export type BubbleLocation =
+  | 'top'
+  | 'bottom'
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'center-left'
+  | 'center'
+  | 'center-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
+
 /**
  * Shared state for a named floating bubble.
  */
@@ -44,6 +58,8 @@ export type BubbleState = {
 export type BubbleDisplayOptions = {
   /** Allows the bubble to tuck into the left or right screen edge while leaving a clickable sliver. */
   edgeHideEnabled?: boolean;
+  /** Predefined visible-screen location. Explicit `x` or `y` values override that preset axis. */
+  location?: BubbleLocation;
   /** Initial horizontal overlay position in screen pixels. */
   x?: number;
   /** Initial vertical overlay position in screen pixels. */

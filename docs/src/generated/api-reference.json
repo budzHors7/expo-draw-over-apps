@@ -14,6 +14,12 @@
       "description": "Options applied when a bubble is shown."
     },
     {
+      "name": "BubbleLocation",
+      "kind": "type",
+      "signature": "BubbleLocation: \"top\" | \"bottom\" | \"top-left\" | \"top-center\" | \"top-right\" | \"center-left\" | \"center\" | \"center-right\" | \"bottom-left\" | \"bottom-center\" | \"bottom-right\"",
+      "description": "Named screen positions that keep the complete overlay inside the visible movement bounds."
+    },
+    {
       "name": "BubbleRenderer",
       "kind": "type",
       "signature": "BubbleRenderer: ComponentType<BubbleRendererProps>",

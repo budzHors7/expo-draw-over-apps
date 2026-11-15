@@ -53,6 +53,18 @@ function getTemplateToneStyle(tone: BubbleTemplateTone) {
   }
 }
 
+const BUBBLE_LOCATION_CONTROLS = [
+  { label: 'Top Left', location: 'top-left' },
+  { label: 'Top Center', location: 'top-center' },
+  { label: 'Top Right', location: 'top-right' },
+  { label: 'Center Left', location: 'center-left' },
+  { label: 'Center', location: 'center' },
+  { label: 'Center Right', location: 'center-right' },
+  { label: 'Bottom Left', location: 'bottom-left' },
+  { label: 'Bottom Center', location: 'bottom-center' },
+  { label: 'Bottom Right', location: 'bottom-right' },
+] as const;
+
 export default function App() {
   const [granted, setGranted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
@@ -267,7 +279,7 @@ export default function App() {
           <Text style={styles.activeTitle}>{activeTemplate.title}</Text>
           <Text style={styles.sectionText}>{activeTemplate.description}</Text>
           <Text style={styles.helperText}>
-            Resize and Move are available inside each window. Close releases its overlay surface.
+            Resize and Move are available inside each window. You can also snap the active window to a predefined location below.
           </Text>
           <Text style={styles.helperText}>
             Edge hide is currently {edgeHideEnabled ? 'enabled' : 'disabled'} for newly shown bubbles.
@@ -291,6 +303,15 @@ export default function App() {
           </Pressable>
 
           <View style={styles.controlsWrap}>
+            {BUBBLE_LOCATION_CONTROLS.map(({ label, location }) => (
+              <Pressable
+                key={location}
+                onPress={() => void showBubble(activeExample, { location })}
+                style={[styles.controlButton, styles.blueButton]}
+              >
+                <Text style={styles.smallButtonText}>{label}</Text>
+              </Pressable>
+            ))}
             <Pressable
               onPress={() => {
                 const nextValue = !edgeHideEnabled;

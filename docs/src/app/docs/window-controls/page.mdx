@@ -1,6 +1,32 @@
+export const metadata = { title: 'Window controls' };
+
 # Window controls
 
 Named windows can be positioned, moved, edge-hidden, inspected, and closed independently.
+
+## Predefined locations
+
+Use `location` when the window should snap to one of nine screen positions while remaining completely visible.
+
+```tsx
+await showBubble('player', { location: 'top-left' });
+await showBubble('player', { location: 'top-center' });
+await showBubble('player', { location: 'top-right' });
+await showBubble('player', { location: 'center-left' });
+await showBubble('player', { location: 'center' });
+await showBubble('player', { location: 'center-right' });
+await showBubble('player', { location: 'bottom-left' });
+await showBubble('player', { location: 'bottom-center' });
+await showBubble('player', { location: 'bottom-right' });
+```
+
+`top` and `bottom` are shorter aliases for `top-center` and `bottom-center`.
+
+An explicit coordinate overrides the matching preset axis. This keeps the preset's other axis:
+
+```tsx
+await showBubble('player', { location: 'bottom-left', x: 120 });
+```
 
 ## Coordinates
 
@@ -12,7 +38,7 @@ await showBubble('player', { x: 240 });
 await showBubble('player', { y: 120 });
 ```
 
-Android clamps supplied coordinates to the available display bounds so the window remains reachable. Omitting both coordinates preserves the module's existing placement behavior.
+Android clamps supplied coordinates to the available display bounds so the window remains reachable. Omitting coordinates and `location` preserves the module's existing placement behavior.
 
 ## Move an open window
 

@@ -26,46 +26,61 @@ export default function ExpoDrawOverAppsBubbleSurface({
         : getExpoDrawOverAppsModule()?.closeBubbleInstance(bubbleId)) ?? false;
 
     return (
-      <BubbleRenderer
-        bubbleId={bubbleId}
-        state={bubbleState}
-        close={close}
-        hide={close}
-        openApp={() => getExpoDrawOverAppsModule()?.openApp() ?? Promise.resolve(false)}
-      />
+      <View
+        collapsable={false}
+        testID="expo-draw-over-apps-window-content"
+        style={styles.contentBoundary}
+      >
+        <BubbleRenderer
+          bubbleId={bubbleId}
+          state={bubbleState}
+          close={close}
+          hide={close}
+          openApp={() => getExpoDrawOverAppsModule()?.openApp() ?? Promise.resolve(false)}
+        />
+      </View>
     );
   }
 
   return (
-    <View style={styles.bubble}>
-      <Text style={styles.guidance}>Register a bubble renderer to supply your window UI.</Text>
-      <View style={styles.actions}>
-        <Pressable
-          onPress={() => {
-            getExpoDrawOverAppsModule()?.openApp().catch(() => {});
-          }}
-          style={styles.action}
-        >
-          <Text style={styles.actionText}>Open app</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            if (bubbleId === DEFAULT_BUBBLE_ID) {
-              getExpoDrawOverAppsModule()?.closeBubble();
-            } else {
-              getExpoDrawOverAppsModule()?.closeBubbleInstance(bubbleId);
-            }
-          }}
-          style={styles.action}
-        >
-          <Text style={styles.actionText}>Close</Text>
-        </Pressable>
+    <View
+      collapsable={false}
+      testID="expo-draw-over-apps-window-content"
+      style={styles.contentBoundary}
+    >
+      <View style={styles.bubble}>
+        <Text style={styles.guidance}>Register a bubble renderer to supply your window UI.</Text>
+        <View style={styles.actions}>
+          <Pressable
+            onPress={() => {
+              getExpoDrawOverAppsModule()?.openApp().catch(() => {});
+            }}
+            style={styles.action}
+          >
+            <Text style={styles.actionText}>Open app</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              if (bubbleId === DEFAULT_BUBBLE_ID) {
+                getExpoDrawOverAppsModule()?.closeBubble();
+              } else {
+                getExpoDrawOverAppsModule()?.closeBubbleInstance(bubbleId);
+              }
+            }}
+            style={styles.action}
+          >
+            <Text style={styles.actionText}>Close</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  contentBoundary: {
+    alignSelf: 'flex-start',
+  },
   bubble: {
     maxWidth: 260,
     borderRadius: 16,

@@ -1,3 +1,5 @@
+export const metadata = { title: 'Expo SDK 58 guide' };
+
 # Expo SDK 58 guide
 
 `expo-draw-over-apps` is an Android-only Expo module for permission-aware, application-owned floating windows. This guide has one supported path: Expo SDK 58, React Native 0.88, and the Expo Modules 2 bridge.
@@ -9,6 +11,14 @@ Use Expo's installer so the native window dependencies match your SDK:
 ```bash
 npx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets
 ```
+
+Or with Bun:
+
+```bash
+bunx expo install expo-draw-over-apps @expo/ui react-native-reanimated react-native-worklets
+```
+
+The module major follows the Expo SDK major, so `58.x` is the supported line for SDK 58. Its package metadata requires the `expo` peer range `^58.0.0`.
 
 Because this package contains native Android code, build a development client. It does not run in Expo Go.
 
@@ -34,7 +44,7 @@ Use `NativeWindow` when the renderer is Expo UI Jetpack Compose. It is a direct 
 
 ## Show it
 
-Register a renderer before starting the overlay service, then pass a stable bubble ID. The optional `x` and `y` coordinates are physical screen pixels measured from the top-left corner.
+Register a renderer before starting the overlay service, then pass a stable bubble ID. Use physical-pixel `x` and `y` coordinates for exact placement or `location` for one of nine predefined screen positions.
 
 ```tsx
 import { useEffect } from 'react';
@@ -61,6 +71,11 @@ export function OverlayRegistration() {
 }
 
 await showBubble(BUBBLE_ID, { x: 48, y: 180 });
+await showBubble(BUBBLE_ID, { location: 'bottom-right' });
 ```
 
 Continue with [overlay permission](./permission/), then choose the [React Native window](./react-native-window/) or [native window](./native-window/) tutorial.
+
+## Multiple windows
+
+Need two or more overlays at the same time? The [multiple-window setup guide](./multiple-windows/) has visible tabs for **Expo Router** and **App.tsx / no Router** projects, plus examples for independent positions and shared renderers.

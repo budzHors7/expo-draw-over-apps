@@ -1,0 +1,224 @@
+import { SetupTab, SetupTabs } from '../../../components/SetupTabs';
+
+export const metadata = { title: 'Multiple overlay windows' };
+
+# Multiple overlay windows
+
+Every simultaneous window needs a unique, stable ID. Register one renderer for each ID, keep those registrations mounted, then call `showBubble` once for every window you want to display.
+
+The renderer registration and overlay actions are the same in every Expo project. Only the place where you mount the registration differs:
+
+- **Expo Router:** wrap the navigator in the root `src/app/_layout.tsx`.
+- **Without Expo Router:** wrap the existing application UI or navigator in `App.tsx`.
+
+## Choose your project setup
+
+Select the project type first, then create the shared registration and action files shown below the tabs.
+
+<SetupTabs>
+  <SetupTab id="expo-router" label="Expo Router">
+
+    ### Mount in the root layout
+
+    Expo Router uses its root `_layout.tsx` for initialization and top-level providers. Wrap the existing `Stack`, `Tabs`, `NativeTabs`, or other navigator with the registration component. This keeps the renderers registered while users navigate between routes. See Expo's [root layout documentation](https://docs.expo.dev/router/basics/navigation-layouts/#root-layout).
+
+    ```tsx
+    // src/app/_layout.tsx
+    import { Stack } from 'expo-router/stack';
+
+    import { OverlayWindowsRegistration } from '../overlays/overlay-registration';
+
+    export default function RootLayout() {
+      return (
+        <OverlayWindowsRegistration>
+          <Stack />
+        </OverlayWindowsRegistration>
+      );
+    }
+    ```
+
+    Render the shared controls from any route:
+
+    ```tsx
+    // src/app/index.tsx
+    import { OverlayControls } from '../components/overlay-controls';
+
+    export default function HomeRoute() {
+      return <OverlayControls />;
+    }
+    ```
+
+    Projects using a root-level `app` folder instead of `src/app` use the same layout code with adjusted relative imports.
+
+  </SetupTab>
+
+  <SetupTab id="app-tsx" label="App.tsx / no Router">
+
+    ### Mount in App.tsx
+
+    Wrap the UI already returned by `App.tsx`. This example renders the shared controls directly:
+
+    ```tsx
+    // App.tsx
+    import { OverlayControls } from './src/components/overlay-controls';
+    import { OverlayWindowsRegistration } from './src/overlays/overlay-registration';
+
+    export default function App() {
+      return (
+        <OverlayWindowsRegistration>
+          <OverlayControls />
+        </OverlayWindowsRegistration>
+      );
+    }
+    ```
+
+    If the project uses React Navigation or another navigator, replace `OverlayControls` above with that existing navigator. Keep `OverlayWindowsRegistration` above it so every screen can control the windows.
+
+  </SetupTab>
+</SetupTabs>
+
+Keep the shared overlay code outside the route directory:
+
+```text
+src/
+  components/
+    overlay-controls.tsx
+  overlays/
+    overlay-ids.ts
+    overlay-registration.tsx
+    overlay-actions.ts
+    CallControlsWindow.tsx
+    UploadStatusWindow.tsx
+```
+
+## Register two renderers
+
+Start with constants for the two overlay IDs:
+
+```tsx
+// src/overlays/overlay-ids.ts
+export const CALL_CONTROLS_ID = 'call-controls';
+export const UPLOAD_STATUS_ID = 'upload-status';
+```
+
+Create one registration component. This example registers a React Native call controller and a native Compose upload status window. Build those renderer components using the [React Native window](../react-native-window/) and [native window](../native-window/) guides.
+
+```tsx
+// src/overlays/overlay-registration.tsx
+import { useEffect, type PropsWithChildren } from 'react';
+import {
+  closeBubble,
+  setBubbleRendererForBubble,
+} from 'expo-draw-over-apps';
+
+import { CallControlsWindow } from './CallControlsWindow';
+import { UploadStatusWindow } from './UploadStatusWindow';
+import { CALL_CONTROLS_ID, UPLOAD_STATUS_ID } from './overlay-ids';
+
+export function OverlayWindowsRegistration({ children }: PropsWithChildren) {
+  useEffect(() => {
+    setBubbleRendererForBubble(CALL_CONTROLS_ID, CallControlsWindow);
+    setBubbleRendererForBubble(UPLOAD_STATUS_ID, UploadStatusWindow);
+
+    return () => {
+      closeBubble(CALL_CONTROLS_ID);
+      closeBubble(UPLOAD_STATUS_ID);
+      setBubbleRendererForBubble(CALL_CONTROLS_ID, null);
+      setBubbleRendererForBubble(UPLOAD_STATUS_ID, null);
+    };
+  }, []);
+
+  return children;
+}
+```
+
+## Show and control the windows
+
+Create shared actions that work in both project types. Request [Android overlay permission](../permission/) before calling `showOverlayWindows`.
+
+```tsx
+// src/overlays/overlay-actions.ts
+import { closeBubble, showBubble } from 'expo-draw-over-apps';
+
+import { CALL_CONTROLS_ID, UPLOAD_STATUS_ID } from './overlay-ids';
+
+export async function showOverlayWindows() {
+  const results = await Promise.all([
+    showBubble(CALL_CONTROLS_ID, { location: 'top-left' }),
+    showBubble(UPLOAD_STATUS_ID, { location: 'bottom-right' }),
+  ]);
+
+  return results.every(Boolean);
+}
+
+export function closeUploadStatusWindow() {
+  return closeBubble(UPLOAD_STATUS_ID);
+}
+```
+
+The same controls component can be rendered by an Expo Router route, `App.tsx`, or any screen in an existing navigator:
+
+```tsx
+// src/components/overlay-controls.tsx
+import { Pressable, ScrollView, Text } from 'react-native';
+
+import {
+  closeUploadStatusWindow,
+  showOverlayWindows,
+} from '../overlays/overlay-actions';
+
+export function OverlayControls() {
+  return (
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={{ gap: 12, padding: 20 }}
+    >
+      <Pressable onPress={() => void showOverlayWindows()}>
+        <Text>Show both overlay windows</Text>
+      </Pressable>
+
+      <Pressable onPress={closeUploadStatusWindow}>
+        <Text>Close only the upload window</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+```
+
+Calling `showBubble` again with one ID only repositions that window. Closing one ID does not affect the other registered windows.
+
+```tsx
+await showBubble(CALL_CONTROLS_ID, { x: 48, y: 180 });
+closeBubble(UPLOAD_STATUS_ID);
+```
+
+Add more windows by repeating the same pair: register a unique ID with `setBubbleRendererForBubble`, then call `showBubble` with that ID.
+
+## Reuse one renderer
+
+Several IDs may share the same renderer. Its `BubbleRendererProps` include the current `bubbleId`, so it can read and update the correct window's state.
+
+```tsx
+const CONTACT_WINDOW_IDS = ['contact-alex', 'contact-sam', 'contact-lee'] as const;
+
+useEffect(() => {
+  for (const bubbleId of CONTACT_WINDOW_IDS) {
+    setBubbleRendererForBubble(bubbleId, ContactWindow);
+  }
+
+  return () => {
+    for (const bubbleId of CONTACT_WINDOW_IDS) {
+      closeBubble(bubbleId);
+      setBubbleRendererForBubble(bubbleId, null);
+    }
+  };
+}, []);
+
+await Promise.all(
+  CONTACT_WINDOW_IDS.map((bubbleId, index) =>
+    showBubble(bubbleId, { x: 32 + index * 72, y: 120 + index * 96 })
+  )
+);
+```
+
+Do not reuse one ID for two simultaneous windows. An ID identifies one native overlay surface, so a later call with the same ID updates the existing window instead of creating another one.
